@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twitch — Kaelyx</title>
+<link rel="icon" href="/logo/logo.svg">
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  body { min-height: 100vh; display: grid; place-items: center; background: var(--kx-bg); color: var(--kx-white); font: 16px/1.5 var(--f-body); }
+  .box { text-align: center; padding: 24px; }
+  .box img { width: 96px; height: 96px; object-fit: contain; }
+  h1 { font: italic 800 34px/1 var(--f-title); text-transform: uppercase; margin: 18px 0 10px; }
+  p { color: var(--kx-silver); margin: 0 0 20px; }
+  a { color: var(--kx-white); }
+</style>
+</head>
+<body>
+<div class="box">
+  <img src="/logo/logo.svg" alt="">
+  <h1 id="t">Connexion…</h1>
+  <p id="d"></p>
+  <a href="/admin">Retour à l’admin</a>
+</div>
+<script>
+(async () => {
+  const h = new URLSearchParams(location.hash.slice(1)), q = new URLSearchParams(location.search);
+  history.replaceState(null, '', location.pathname);
+  const done = (title, text) => { document.getElementById('t').textContent = title; document.getElementById('d').textContent = text || ''; };
+  if (!h.get('access_token')) return done('Connexion annulée', q.get('error_description') || '');
+  try {
+    const r = await fetch('/api/twitch/token', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: h.get('access_token'), state: h.get('state') }) });
+    const b = await r.json();
+    if (!r.ok) return done('Échec', b.error);
+    done('Twitch connecté', b.login ? 'Compte : ' + b.login : '');
+    setTimeout(() => { if (window.opener) window.close(); }, 1500);
+  } catch { done('Échec', 'Serveur injoignable'); }
+})();
+</script>
+</body>
+</html>

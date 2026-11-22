@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cadre cam — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  /* La source OBS fait exactement la taille réglée (ex. 640 × 360). Le cadre est dessiné 6 px à l’intérieur pour les équerres. */
+  html, body { background: transparent; overflow: hidden; color: var(--kx-white); font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
+  #box { position: absolute; left: 6px; top: 6px; }
+  .name { position: absolute; left: 0; bottom: 0; display: flex; align-items: stretch; height: var(--nh); max-width: 92%; }
+  .name .lg { width: var(--nh); flex: none; display: grid; place-items: center; background: var(--kx-grad); }
+  .name .lg img { width: 62%; height: 62%; object-fit: contain; }
+  .name .tx { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 calc(var(--nh) * .5) 0 calc(var(--nh) * .3);
+    background: var(--kx-panel); clip-path: polygon(0 0, 100% 0, calc(100% - var(--nh) * .25) 100%, 0 100%); }
+  .name b { font-size: calc(var(--nh) * .56); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+  .name small { font-size: calc(var(--nh) * .2); white-space: nowrap; color: var(--kx-silver); }
+  .name { animation: kx-wipe .6s .2s var(--kx-out) both; }
+</style>
+</head>
+<body>
+<div id="box"></div>
+<script src="/js/kx.js"></script>
+<script>
+// Réglages : admin (onglet Cam & casters) ou URL, ex. /cam?w=480&h=270&name=Kaelyx&sub=Coach  ou  /cam?player=yass
+const q = new URLSearchParams(location.search);
+const num = (v, d) => { const n = Number(v); return n >= 80 && n <= 1920 ? n : d; };
+
+KX.watch(st => [st.camframe, st.settings?.logo, q.get('player') && (st.players || []).find(p => p.id === q.get('player'))], st => {
+  const cf = st.camframe || {};
+  const pl = q.get('player') ? (st.players || []).find(p => p.id === q.get('player')) : null;
+  const w = num(q.get('w'), num(cf.w, 640)), h = num(q.get('h'), num(cf.h, 360));
+  const name = q.get('name') ?? pl?.pseudo ?? cf.name ?? '';
+  const sub = q.get('sub') ?? (pl ? [pl.role, pl.game].filter(Boolean).join(' · ') : cf.sub) ?? '';
+  const box = document.getElementById('box');
+  const fw = w - 12, fh = h - 12; // le cadre est dessiné 6 px à l'intérieur : la source OBS fait w × h
+  box.style.width = fw + 'px'; box.style.height = fh + 'px';
+  box.style.setProperty('--nh', Math.round(Math.max(34, Math.min(64, fh * .15))) + 'px');
+  box.innerHTML = KX.frame(fw, fh) + (name ? `<div class="name"><div class="lg">${KX.logo(st)}</div>
+    <div class="tx"><b class="t-title">${KX.esc(name)}</b>${sub ? `<small class="t-label">${KX.esc(sub)}</small>` : ''}</div></div>` : '');
+});
+</script>
+</body>
+</html>

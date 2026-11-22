@@ -1,0 +1,70 @@
+{
+  "name": "streampack-kaelyx",
+  "productName": "Streampack Kaelyx",
+  "version": "1.0.0",
+  "description": "Overlays OBS Kaelyx Esport avec console admin",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "serveur": "node server.js",
+    "icone": "electron electron/make-icon.js",
+    "build": "electron-builder --win",
+    "release": "electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "fr.kaelyx.streampack",
+    "productName": "Streampack Kaelyx",
+    "files": [
+      "server.js",
+      "twitch.js",
+      "public/**",
+      "electron/main.js",
+      "electron/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "masques",
+        "to": "masques",
+        "filter": [
+          "*.png"
+        ]
+      },
+      {
+        "from": "stinger",
+        "to": "stinger",
+        "filter": [
+          "*.webm"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "Streampack Kaelyx",
+      "artifactName": "Streampack-Kaelyx-Setup.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "DevYouen",
+      "repo": "streampack-kaelyx",
+      "releaseType": "release"
+    }
+  },
+  "allowScripts": {
+    "electron@38.8.6": true
+  }
+}

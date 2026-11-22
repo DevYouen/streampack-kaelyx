@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ticker — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  body.embed { height: 64px; }
+  .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; display: flex; transition: transform .6s var(--kx-out), opacity .4s; }
+  .bar.off { transform: translateY(100%); opacity: 0; }
+  .badge { position: relative; z-index: 2; flex: none; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 40px 0 28px;
+    background: var(--kx-grad); clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); }
+  .badge img { width: 34px; height: 34px; object-fit: contain; }
+  .badge b { font: italic 800 28px/1 var(--f-title); letter-spacing: .03em; text-transform: uppercase; padding-right: 4px; }
+  .strip { position: relative; flex: 1; margin-left: -20px; overflow: hidden; background: var(--kx-panel); box-shadow: inset 0 2px 0 var(--kx-violet); display: flex; align-items: center; }
+  .strip::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 70px; z-index: 1; background: linear-gradient(90deg, rgba(42,43,44,1) 35%, rgba(42,43,44,0)); }
+  .track { display: flex; flex: none; align-items: center; white-space: nowrap; will-change: transform; }
+  .item { display: inline-flex; align-items: center; gap: 30px; padding-right: 30px; font: 600 21px/1 var(--f-body); color: var(--kx-white); }
+  .item .k { width: 8px; height: 8px; background: var(--kx-violet); transform: rotate(45deg); }
+  .item svg { color: var(--kx-violet); }
+  .item em { font-style: normal; color: var(--kx-silver); }
+  .grp { display: flex; flex: none; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(var(--shift)); } }
+</style>
+</head>
+<body class="overlay">
+<div class="bar off" id="bar">
+  <div class="badge" id="badge"></div>
+  <div class="strip kx-neon-line" style="--nh:2px;--nd:6s"><div class="track" id="track"></div></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+KX.watch(st => !!st.ticker?.visible, st => document.getElementById('bar').classList.toggle('off', !st.ticker?.visible));
+KX.watch(st => [st.settings?.logo, st.settings?.teamName], st => {
+  document.getElementById('badge').innerHTML = `${KX.logo(st)}<b>${KX.esc(st.settings?.teamName)}</b>`;
+});
+// Défilement sans couture : un « groupe » assez long pour couvrir toute la bande, répété deux fois,
+// et on décale exactement de la largeur d'un groupe (en px) pour boucler sans saut ni trou.
+const track = document.getElementById('track'), strip = track.parentElement;
+let html = '', speed = 60, run = 0, lastW = 0;
+const messages = st => (st.ticker?.items || []).map(x => String(x).trim()).filter(Boolean);
+function layout() {
+  const my = ++run;
+  track.style.animation = 'none';
+  if (!html) { track.innerHTML = ''; return; }
+  track.innerHTML = `<div class="grp">${html}</div>`;
+  // Mesurer une fois les polices chargées, sinon la largeur (et donc la vitesse) est fausse
+  document.fonts.ready.then(() => requestAnimationFrame(() => {
+    if (my !== run) return; // une mise à jour plus récente est arrivée entre-temps
+    const one = track.firstElementChild?.getBoundingClientRect().width;
+    if (!one) return;
+    lastW = strip.clientWidth;
+    const grp = html.repeat(Math.max(1, Math.ceil(lastW / one)));
+    track.innerHTML = `<div class="grp">${grp}</div><div class="grp">${grp}</div>`;
+    const w = track.firstElementChild.getBoundingClientRect().width;
+    track.style.setProperty('--shift', -w + 'px');
+    track.style.animation = `scroll ${w / speed}s linear infinite`;
+  }));
+}
+// La piste ne redémarre que si les messages, les réseaux ou la vitesse changent
+KX.watch(st => [messages(st), KX.socials(st), st.ticker?.speed], st => {
+  const soc = KX.socials(st).map(s => `<span class="item">${KX.icon(s.key, 22)}<em>${KX.esc(s.handle)}</em><i class="k"></i></span>`).join('');
+  html = messages(st).map(x => `<span class="item">${KX.esc(x)}<i class="k"></i></span>`).join('') + soc;
+  speed = Math.max(20, Number(st.ticker?.speed) || 60); // jamais figé, même pendant la saisie de la vitesse
+  layout();
+});
+// Source OBS redimensionnée : on recalcule
+let rsz;
+new ResizeObserver(() => { if (html && strip.clientWidth !== lastW) { clearTimeout(rsz); rsz = setTimeout(layout, 200); } }).observe(strip);
+</script>
+</body>
+</html>

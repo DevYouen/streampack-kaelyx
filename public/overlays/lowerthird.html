@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Lower third — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  .lt { position: absolute; left: 96px; bottom: 140px; display: flex; align-items: stretch; height: 112px; filter: var(--kx-shadow); }
+  .lt-mark { width: 112px; flex: none; display: grid; place-items: center; background: var(--kx-grad); z-index: 2; }
+  .lt-mark img { width: 70px; height: 70px; object-fit: contain; }
+  .lt-body { display: flex; flex-direction: column; }
+  .lt-name { flex: 1; display: flex; align-items: center; padding: 0 56px 0 28px; background: var(--kx-panel); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  .lt-name span { font-size: 64px; white-space: nowrap; padding-right: 8px; }
+  .lt-title { height: 38px; display: flex; align-items: center; gap: 12px; padding: 0 36px 0 28px; width: max-content; background: var(--kx-violet); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .lt-title .k { display: none; }
+  .lt-title span { font: 700 16px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--kx-white); }
+  .lt .claws { display: none; }
+  .lt .bar { display: none; }
+
+  .lt { visibility: hidden; }
+  .lt.in { visibility: visible; }
+  .lt.in .lt-mark { animation: pop .5s var(--kx-out) both; }
+  /* "backwards" et non "both" : à la fin de l'animation, la coupe en biais (clip-path) de chaque bloc revient */
+  .lt.in .lt-name { animation: kx-wipe .6s .12s var(--kx-out) backwards; }
+  .lt.in .lt-title { animation: kx-wipe .6s .26s var(--kx-out) backwards; }
+  .lt-title { --nh: 100%; --nd: 4s; }
+  .lt-title.kx-neon-line::after { opacity: .55; }
+  .lt.out { visibility: visible; animation: out .4s var(--kx-ease) both; }
+  @keyframes pop { from { transform: scaleY(0); } }
+  @keyframes out { to { clip-path: inset(0 100% 0 0); opacity: 0; } }
+</style>
+</head>
+<body class="overlay">
+<div class="lt" id="lt">
+  <div class="claws"><i></i><i></i><i></i></div>
+  <div class="lt-mark" id="mark"></div>
+  <div class="lt-body">
+    <div class="lt-name"><span class="t-title" id="name"></span></div>
+    <div class="lt-title kx-neon-line"><i class="k"></i><span id="title"></span></div>
+  </div>
+  <div class="bar"></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const lt = document.getElementById('lt');
+let shown = false, hideT, lastKey = '', lastShowAt;
+function show() { lt.classList.remove('out'); void lt.offsetWidth; lt.classList.add('in'); shown = true; }
+function hide() { if (!shown) return; lt.classList.remove('in'); lt.classList.add('out'); shown = false; }
+KX.watch(st => st.settings?.logo, st => { document.getElementById('mark').innerHTML = KX.logo(st); });
+KX.on('state', st => {
+  const l = st.lowerthird || {};
+  document.getElementById('name').textContent = l.name || '';
+  document.getElementById('title').textContent = l.title || '';
+  const auto = Number(l.autoHide) || 0;
+  const key = (l.visible ? 1 : 0) + '|' + (l.showAt || 0) + '|' + auto;
+  if (key === lastKey) return; lastKey = key;
+  clearTimeout(hideT);
+  // Temps restant avant masquage automatique : si la source OBS est rechargée après coup, le bandeau ne réapparaît pas
+  const left = auto > 0 ? auto * 1000 - (Date.now() - (Number(l.showAt) || Date.now())) : Infinity;
+  if (l.visible && left > 0) {
+    if (!shown || l.showAt !== lastShowAt) show(); // rejoue l'entrée sur « Afficher », pas quand on change juste la durée
+    lastShowAt = l.showAt;
+    if (left !== Infinity) hideT = setTimeout(hide, left);
+  } else hide();
+});
+</script>
+</body>
+</html>

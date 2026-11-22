@@ -1,0 +1,1 @@
+Dépose ici un fichier alert.mp3 : il sera joué à chaque alerte de l'overlay /alerts.

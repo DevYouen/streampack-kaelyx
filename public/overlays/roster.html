@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Roster — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  .bg { position: absolute; inset: 0; background: var(--kx-bg); }
+  .halo { position: absolute; width: 1800px; height: 1000px; left: 60px; top: 300px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(153,51,204,.4), rgba(86,28,115,.35) 35%, rgba(86,28,115,0) 65%); animation: kx-pulse 7s infinite; }
+  #stars { position: absolute; inset: 0; }
+  .head { position: absolute; left: 120px; top: 90px; display: flex; align-items: center; gap: 26px; }
+  .head img { width: 104px; height: 104px; object-fit: contain; filter: drop-shadow(0 0 22px rgba(153,51,204,.7)); }
+  .head h1 { font-size: 114px; margin: 0; padding-right: 12px; }
+  .grid { position: absolute; left: 120px; right: 120px; top: 300px; display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+  .card { position: relative; width: 300px; height: 540px; --c: 36px; background: var(--kx-hatch), var(--kx-noise), radial-gradient(ellipse 90% 60% at 50% 30%, rgba(153,51,204,.55), rgba(86,28,115,0) 70%), linear-gradient(180deg, var(--kx-deep), var(--kx-bg) 78%); animation: in .8s var(--kx-out) both; filter: drop-shadow(0 20px 30px rgba(42,43,44,.7)); }
+  .card .kx-ph { position: absolute; inset: 0 0 150px 0; display: grid; place-items: center; overflow: hidden; }
+  .card .kx-ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; z-index: 1; }
+  .card .kx-ph span { font: italic 900 150px/1 var(--f-title); background: var(--kx-chrome); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: .28; padding-right: 10px; }
+  .card .shade { position: absolute; left: 0; right: 0; bottom: 150px; height: 160px; background: linear-gradient(0deg, var(--kx-bg), transparent); z-index: 2; }
+  .card .info { position: absolute; left: 0; right: 0; bottom: 0; height: 168px; z-index: 3; padding: 0 0 26px; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; }
+  .card .nm { position: relative; margin-left: -14px; width: calc(100% + 6px); padding: 10px 26px 12px 34px; background: var(--kx-energy); box-shadow: var(--kx-lit); --cut: 18px; }
+  .card .nm b { font-size: 42px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; padding-right: 6px; }
+  .card .meta { display: flex; align-items: center; gap: 12px; padding: 0 24px; }
+  .card .meta .t-label { font-size: 11px; letter-spacing: .2em; white-space: nowrap; }
+  .card .meta i { width: 6px; height: 6px; background: var(--kx-chrome); transform: rotate(45deg); box-shadow: 0 0 8px var(--kx-violet); }
+  .card svg.kx-frame { z-index: 4; }
+  @keyframes in { from { opacity: 0; transform: translateY(60px); } }
+  /* Refonte */
+  .card { background: radial-gradient(ellipse 90% 60% at 50% 30%, rgba(153,51,204,.45), rgba(86,28,115,0) 70%), linear-gradient(180deg, var(--kx-deep), var(--kx-bg) 78%); }
+  .card .nm { margin-left: 0; width: 100%; padding: 10px 22px 12px; --cut: 0px; }
+  .card .nm b { font-size: 46px; }
+  .card .meta .t-label { font-size: 12px; color: var(--kx-white); }
+  .card .meta i { background: var(--kx-violet); box-shadow: none; }
+  .head h1 { font-size: 124px; }
+</style>
+</head>
+<body class="overlay">
+<div class="bg"><div class="halo"></div><canvas id="stars"></canvas></div>
+<div class="head" id="head"></div>
+<div class="grid" id="grid"></div>
+<script src="/js/kx.js"></script>
+<script>
+KX.starfield(document.getElementById('stars'));
+// Plus grande échelle à laquelle toutes les cartes (300 × 540, écart 30) tiennent dans la zone 1680 × 740
+function fitGrid(n) {
+  let z = 1, rows = 1;
+  for (; z > .3; z -= .02) {
+    const perRow = Math.max(1, Math.floor((1680 / z + 30) / 330));
+    rows = Math.ceil(n / perRow);
+    if (rows * 540 + (rows - 1) * 30 <= 740 / z) break;
+  }
+  // Rangées équilibrées (8 joueurs : 4 + 4 plutôt que 7 + 1)
+  const cols = Math.max(1, Math.ceil(n / rows)), w = cols * 330 + 10; // + marge : l’arrondi du zoom ne doit pas faire passer une carte à la ligne
+  const g = document.getElementById('grid');
+  g.style.zoom = z.toFixed(2);
+  g.style.top = Math.round(300 / z) + 'px';
+  g.style.left = g.style.right = Math.max(0, Math.round((1920 / z - w) / 2)) + 'px';
+}
+const game = new URLSearchParams(location.search).get('game');
+const pick = st => (st.players || []).filter(p => !game || (p.game || '').toLowerCase() === game.toLowerCase());
+KX.watch(st => [pick(st).map(p => [p.pseudo, p.role, p.game, p.photo]), st.settings?.logo, st.settings?.teamName, st.settings?.teamSub], st => {
+  const list = (st.players || []).filter(p => !game || (p.game || '').toLowerCase() === game.toLowerCase());
+  document.getElementById('head').innerHTML = `${KX.logo(st)}<div class="claws" style="--h:70px"><i></i><i></i><i></i></div>
+    <div><div class="t-label">${KX.esc(st.settings.teamName)} ${KX.esc(st.settings.teamSub)}${game ? ' · ' + KX.esc(game) : ''}</div>
+    <h1 class="t-title kx-chrome-text">Le roster</h1></div>`;
+  document.getElementById('grid').innerHTML = list.map((p, i) => `
+    <div class="card chamfer" style="animation-delay:${i * 90}ms">
+      ${KX.photo(p.photo, p.pseudo)}
+      <div class="shade"></div>
+      <div class="info"><div class="nm blade kx-sheen"><b class="t-title kx-chrome-text sm">${KX.esc(p.pseudo)}</b></div>
+        <div class="meta"><span class="t-label">${KX.esc(p.role || 'Joueur')}</span>${p.game ? `<i></i><span class="t-label">${KX.esc(p.game)}</span>` : ''}</div></div>
+      ${KX.frame(300, 540, 30, { brackets: false })}
+    </div>`).join('');
+  fitGrid(list.length);
+});
+</script>
+</body>
+</html>

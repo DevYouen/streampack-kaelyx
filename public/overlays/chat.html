@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Chat — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; color: var(--kx-white); font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
+  #list { position: absolute; inset: 0; padding: 18px; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(transparent, #000 90px); mask-image: linear-gradient(transparent, #000 90px); }
+  .m { position: relative; flex: none; padding: 10px 18px 12px 22px; background: var(--kx-plate); --c: 12px;
+    box-shadow: var(--kx-lit), inset 4px 0 0 var(--kx-violet), inset 5px 0 0 rgba(243,241,241,.35); animation: in .45s var(--kx-out) both; transition: opacity .5s, transform .5s var(--kx-ease); }
+  .embed .m { background: var(--kx-noise), linear-gradient(172deg, rgba(243,241,241,.09), rgba(243,241,241,0) 40%), rgba(42,43,44,.7); }
+  .m.out { opacity: 0; transform: translateX(-24px); }
+  .m .h { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .m .u { font: italic 700 19px/1.1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; color: var(--kx-violet); overflow-wrap: anywhere; text-shadow: 0 0 12px rgba(153,51,204,.55); }
+  .m .b { flex: none; padding: 3px 8px; font: 700 10px/1 var(--f-body); letter-spacing: .18em; text-transform: uppercase; background: var(--kx-energy-deep); box-shadow: var(--kx-lit); color: var(--kx-white); --cut: 5px; }
+  .m .b.st { background: var(--kx-energy); }
+  .m .b.sub { background: transparent; box-shadow: inset 0 0 0 1px var(--kx-silver); color: var(--kx-silver); }
+  .m .t { font: 500 20px/1.38 var(--f-body); overflow-wrap: anywhere; }
+  .m.act .t { font-style: italic; color: var(--kx-silver); }
+  .m .t img { height: 28px; vertical-align: -7px; margin: 0 1px; }
+  @keyframes in { from { opacity: 0; transform: translateX(40px); } }
+  /* Refonte : pseudo blanc (meilleur contraste), barre violette à gauche */
+  .m { box-shadow: inset 4px 0 0 var(--kx-violet); --c: 0px; }
+  .embed .m { background: rgba(42,43,44,.82); }
+  .m .u { font: italic 800 21px/1.1 var(--f-title); color: var(--kx-white); text-shadow: none; letter-spacing: .03em; }
+  .m .b { background: var(--kx-deep); box-shadow: none; }
+  .m .b.st { background: var(--kx-violet); }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<script src="/js/kx.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+if (q.has('embed')) document.body.classList.add('embed');
+const list = document.getElementById('list');
+const BADGES = { broadcaster: ['Streamer', 'st'], moderator: ['Mod', ''], vip: ['VIP', ''], subscriber: ['Sub', 'sub'] };
+const MAX = 40;
+
+const hideAfter = () => Number(KX.state?.settings?.twitch?.chatHide) || 0;
+
+function add(m, animate = true) {
+  if (document.querySelector(`[data-id="${CSS.escape(m.id)}"]`)) return;
+  const age = (Date.now() - (m.at || Date.now())) / 1000, hide = hideAfter();
+  if (hide && age >= hide) return;
+  const el = document.createElement('div');
+  el.className = 'm chamfer' + (m.action ? ' act' : '');
+  el.dataset.id = m.id; el.dataset.login = m.login || '';
+  if (!animate) el.style.animation = 'none';
+  const badges = (m.badges || []).filter(b => BADGES[b]).map(b => `<span class="b blade ${BADGES[b][1]}">${BADGES[b][0]}</span>`).join('');
+  const text = (m.parts || []).map(p => p.e && /^[\w-]+$/.test(p.e)
+    ? `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${p.e}/default/dark/2.0" alt="${KX.esc(p.t)}">`
+    : KX.esc(p.t)).join('');
+  el.innerHTML = `<div class="h"><span class="u">${KX.esc(m.user)}</span>${badges}</div><div class="t">${text}</div>`;
+  list.append(el);
+  while (list.children.length > MAX) list.firstElementChild.remove();
+  if (hide) setTimeout(() => remove(el), (hide - age) * 1000);
+}
+function remove(el) { el.classList.add('out'); setTimeout(() => el.remove(), 500); }
+
+KX.on('chat', m => add(m));
+KX.on('chat-clear', c => {
+  list.querySelectorAll('.m').forEach(el => {
+    if ((c.id && el.dataset.id === c.id) || (c.login && el.dataset.login === c.login) || (!c.id && !c.login)) remove(el);
+  });
+});
+
+// Messages récents (rechargement de la source OBS) ; exemple visible seulement dans l'aperçu de l'admin tant qu'aucune chaîne n'est réglée
+fetch('/api/twitch').then(r => r.json()).then(({ status, recent }) => {
+  recent.forEach(m => add(m, false));
+  if (!recent.length && !status.channel && window.top !== window && !q.has('embed')) {
+    const now = Date.now();
+    [{ user: 'Kaelyx', login: 'kaelyx', badges: ['broadcaster'], parts: [{ t: 'Bienvenue sur le live !' }] },
+     { user: 'Nova', login: 'nova', badges: ['moderator'], parts: [{ t: 'GG pour le top 1' }] },
+     { user: 'Viewer', login: 'viewer', badges: ['subscriber'], parts: [{ t: 'Let’s go Kaelyx' }] }]
+      .forEach((m, i) => add({ ...m, id: 'demo' + i, at: now }, false));
+  }
+}).catch(() => {});
+</script>
+</body>
+</html>

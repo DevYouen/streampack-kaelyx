@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Stinger — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  /* Durée totale 2,4 s (fichier WebM : 2,5 s) — écran entièrement couvert entre ~0,7 s et ~1,8 s (point de coupure OBS : 1200 ms).
+     Toutes les animations partagent la même durée --d : les pourcentages des keyframes sont donc des instants de cette timeline. */
+  :root { --d: 2400ms; }
+  .st { position: absolute; inset: 0; overflow: hidden; visibility: hidden; }
+  .st.play { visibility: visible; }
+  .pn { position: absolute; top: -200px; left: -700px; width: 3300px; height: 1480px; transform: translateX(-3600px) skewX(-22deg); }
+  .pn.p1 { background: var(--kx-deep); }
+  .pn.p2 { background: var(--kx-grad); }
+  .pn.p3 { background: radial-gradient(ellipse 40% 50% at 50% 50%, rgba(153,51,204,.45), rgba(86,28,115,0) 70%), var(--kx-bg); }
+  /* Bords néon des panneaux */
+  .pn.p3::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 14px; background: var(--kx-chrome-x); box-shadow: 0 0 40px var(--kx-violet), 0 0 90px rgba(153,51,204,.6); }
+  .pn.p2::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--kx-chrome-x); opacity: .8; box-shadow: 0 0 24px var(--kx-violet); }
+  .play .p1 { animation: sweep var(--d) linear both; }
+  .play .p2 { animation: sweep var(--d) 50ms linear both; }
+  .play .p3 { animation: sweep var(--d) 100ms linear both; }
+  @keyframes sweep {
+    0% { transform: translateX(-3600px) skewX(-22deg); animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+    27% { transform: translateX(0) skewX(-22deg); }
+    68% { transform: translateX(0) skewX(-22deg); animation-timing-function: cubic-bezier(.55, 0, .45, 1); }
+    100% { transform: translateX(3600px) skewX(-22deg); }
+  }
+
+  /* Lignes néon qui traversent l'écran pendant que le logo est affiché */
+  .streak { position: absolute; left: -10%; width: 120%; height: 3px; background: linear-gradient(90deg, rgba(153,51,204,0), #9933CC 40%, #F3F1F1 50%, #9933CC 60%, rgba(153,51,204,0));
+    box-shadow: 0 0 18px #9933CC; opacity: 0; transform: rotate(-22deg) translateX(-120%); z-index: 4; }
+  .streak.s1 { top: 30%; } .streak.s2 { top: 72%; height: 2px; }
+  .play .streak.s1 { animation: streak var(--d) linear both; }
+  .play .streak.s2 { animation: streak2 var(--d) linear both; }
+  @keyframes streak { 0%, 30% { opacity: 0; transform: rotate(-22deg) translateX(-120%); } 32% { opacity: 1; } 52% { opacity: 1; transform: rotate(-22deg) translateX(120%); } 53%, 100% { opacity: 0; transform: rotate(-22deg) translateX(120%); } }
+  @keyframes streak2 { 0%, 40% { opacity: 0; transform: rotate(-22deg) translateX(120%); } 42% { opacity: .8; } 62% { opacity: .8; transform: rotate(-22deg) translateX(-120%); } 63%, 100% { opacity: 0; transform: rotate(-22deg) translateX(-120%); } }
+
+  .core { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 5; opacity: 0; }
+  .core img { position: absolute; width: 320px; height: 320px; left: -160px; top: -200px; object-fit: contain; filter: drop-shadow(0 0 40px rgba(153,51,204,.9)); }
+  .core .ring { position: absolute; width: 680px; height: 230px; left: -340px; top: -155px; border: 3px solid var(--kx-silver); border-color: #F3F1F1 rgba(201,204,209,.3) #F3F1F1 rgba(201,204,209,.3); border-radius: 50%; transform: rotate(-20deg); filter: drop-shadow(0 0 10px rgba(153,51,204,.9)); }
+  .core .flash { position: absolute; width: 1400px; height: 10px; left: -700px; top: -45px; background: var(--kx-chrome-x); transform: rotate(-32deg) scaleX(0); box-shadow: 0 0 30px var(--kx-violet); }
+  .core .word { position: absolute; left: -600px; width: 1200px; top: 150px; text-align: center; white-space: nowrap; }
+  .core .word b { display: inline-block; font: italic 800 96px/1 var(--f-title); text-transform: uppercase; letter-spacing: .06em; padding-right: 12px; text-shadow: 0 0 30px rgba(153,51,204,.8); }
+  .core .word b span { color: var(--kx-violet); }
+  .core .word i { display: block; height: 4px; width: 420px; margin: 16px auto 0; background: linear-gradient(90deg, rgba(153,51,204,0), #F3F1F1, rgba(153,51,204,0)); box-shadow: 0 0 16px #9933CC; transform: scaleX(0); }
+  .play .core { animation: core var(--d) linear both; }
+  .play .core img { animation: logo var(--d) linear both; }
+  .play .core .ring { animation: ring var(--d) linear both; }
+  .play .core .flash { animation: flash var(--d) linear both; }
+  .play .core .word b { animation: word var(--d) linear both; }
+  .play .core .word i { animation: underline var(--d) linear both; }
+  @keyframes core { 0%, 24% { opacity: 0; } 27%, 73% { opacity: 1; } 78%, 100% { opacity: 0; } }
+  @keyframes logo { 0%, 24% { transform: scale(.3) rotate(-12deg); animation-timing-function: cubic-bezier(.16, 1, .3, 1); } 33% { transform: scale(1.08) rotate(0); } 37% { transform: scale(1); } 73% { transform: scale(1.06); } 78%, 100% { transform: scale(1.45); } }
+  @keyframes ring { 0%, 25% { transform: rotate(-20deg) scale(.3); opacity: 0; } 32% { opacity: 1; } 73% { transform: rotate(280deg) scale(1.1); opacity: 1; } 79%, 100% { transform: rotate(330deg) scale(1.6); opacity: 0; } }
+  @keyframes flash { 0%, 28% { transform: rotate(-32deg) scaleX(0); opacity: 1; } 34% { transform: rotate(-32deg) scaleX(1); opacity: 1; } 42%, 100% { transform: rotate(-32deg) scaleX(1); opacity: 0; } }
+  @keyframes word { 0%, 34% { opacity: 0; transform: translateY(24px); letter-spacing: .3em; animation-timing-function: cubic-bezier(.16, 1, .3, 1); } 44% { opacity: 1; transform: none; letter-spacing: .06em; } 72% { opacity: 1; transform: none; } 77%, 100% { opacity: 0; transform: translateY(-10px); } }
+  @keyframes underline { 0%, 38% { transform: scaleX(0); animation-timing-function: cubic-bezier(.16, 1, .3, 1); } 48%, 71% { transform: scaleX(1); opacity: 1; } 77%, 100% { transform: scaleX(1.4); opacity: 0; } }
+</style>
+</head>
+<body class="overlay">
+<div class="st" id="st">
+  <div class="pn p1"></div><div class="pn p2"></div><div class="pn p3"></div>
+  <div class="streak s1"></div><div class="streak s2"></div>
+  <div class="core"><div class="flash"></div><div class="ring"></div><img id="logo" src="/logo/logo.svg" alt="">
+    <div class="word"><b id="word">KAELYX <span>ESPORT</span></b><i></i></div></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const st = document.getElementById('st');
+let endT;
+function play() {
+  st.classList.remove('play'); void st.offsetWidth; st.classList.add('play');
+  // Une fois terminé, on cache tout : rien ne reste à l'écran entre deux transitions
+  clearTimeout(endT); endT = setTimeout(() => st.classList.remove('play'), 2600);
+}
+KX.watch(s => s.settings?.logo, s => { const src = s.settings?.logo; if (src) { const l = document.getElementById('logo'); l.onerror = () => { l.onerror = null; l.src = '/logo/logo.svg'; }; l.src = src; } });
+KX.watch(s => [s.settings?.teamName, s.settings?.teamSub], s => {
+  const n = s.settings?.teamName || 'KAELYX', sub = s.settings?.teamSub || '';
+  document.getElementById('word').innerHTML = KX.esc(n) + (sub ? ' <span>' + KX.esc(sub) + '</span>' : '');
+});
+KX.on('trigger', t => { if (t.kind === 'stinger') play(); });
+const q = new URLSearchParams(location.search);
+if (q.has('loop')) { play(); setInterval(play, 3600); }
+window.kxPlay = play;
+</script>
+</body>
+</html>

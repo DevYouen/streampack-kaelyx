@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Scène — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  /* Fond : anthracite, un halo violet, une bande oblique, une grille très légère */
+  .bg { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; }
+  .halo { position: absolute; width: 1400px; height: 1400px; left: var(--hx, 1340px); top: 50%; margin: -700px 0 0 -700px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(153,51,204,.42) 0%, rgba(86,28,115,.32) 30%, rgba(86,28,115,0) 64%); animation: kx-pulse 8s ease-in-out infinite; }
+  .grid-bg { position: absolute; inset: 0; opacity: .5;
+    background-image: linear-gradient(rgba(201,204,209,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,204,209,.05) 1px, transparent 1px);
+    background-size: 80px 80px; -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); }
+  .band { position: absolute; width: 180px; height: 1700px; top: -300px; background: var(--kx-grad); transform: rotate(24deg); opacity: .9; }
+  .band.thin { width: 24px; opacity: .55; }
+  #stars { position: absolute; inset: 0; opacity: .55; }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 90% at 60% 50%, rgba(42,43,44,0) 55%, rgba(42,43,44,.9) 100%); }
+
+  /* Logo */
+  .mark { position: absolute; left: 1340px; top: 540px; width: 0; height: 0; }
+  .mark .logo { position: absolute; width: 420px; height: 420px; left: -210px; top: -210px; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(18,18,20,.55)); animation: float 7s ease-in-out infinite; }
+  .mark .ring { position: absolute; width: 620px; height: 620px; left: -310px; top: -310px; border-radius: 50%; border: 2px solid rgba(201,204,209,.14); }
+  .mark .ring::after { content: ''; position: absolute; width: 12px; height: 12px; left: 50%; top: -7px; margin-left: -6px; background: var(--kx-violet); transform: rotate(45deg); }
+  .mark .spin { position: absolute; inset: 0; animation: kx-spin 24s linear infinite; }
+  @keyframes float { 50% { transform: translateY(-12px); } }
+  /* Néon qui parcourt l'anneau autour du logo */
+  .mark .neon-ring { position: absolute; width: 620px; height: 620px; left: -310px; top: -310px; overflow: visible; transform: rotate(-90deg); }
+  .mark .neon-ring circle { --nd: 9s; }
+
+  /* Texte */
+  .copy { position: absolute; left: 120px; top: 0; bottom: 0; width: 860px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  .kicker { display: flex; align-items: center; gap: 18px; }
+  .kicker .t-label { font-size: 18px; color: var(--kx-white); letter-spacing: .22em; }
+  .title { font-size: 170px; margin: 0; padding-right: 12px; }
+  .title span { color: var(--kx-violet); }
+  .sub { font: 500 26px/1.4 var(--f-body); color: var(--kx-silver); margin: 0; max-width: 700px; }
+
+  .count { display: flex; align-items: center; gap: 22px; }
+  .digits { display: flex; align-items: center; gap: 6px; filter: var(--kx-shadow); }
+  .digit { width: 108px; height: 132px; display: grid; place-items: center; background: var(--kx-panel); box-shadow: inset 0 -4px 0 var(--kx-violet); }
+  .digit b { font: 800 104px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .colon { font: 800 84px/1 var(--f-title); color: var(--kx-violet); padding: 0 6px 10px; }
+  .done { font-size: 100px; padding-right: 12px; animation: kx-rise .7s var(--kx-out) both; }
+
+  .next { display: inline-flex; align-items: stretch; height: 52px; width: max-content; filter: var(--kx-shadow); }
+  .next b { display: flex; align-items: center; padding: 0 22px; background: var(--kx-violet); font: 800 13px/1 var(--f-body); letter-spacing: .18em; text-transform: uppercase; }
+  .next span { display: flex; align-items: center; padding: 0 30px 0 22px; background: var(--kx-panel); font: 600 22px/1 var(--f-body); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .socials { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+  .soc { display: flex; align-items: center; gap: 10px; font: 600 20px/1 var(--f-body); color: var(--kx-white); }
+  .soc svg { color: var(--kx-violet); }
+
+  #ticker { position: absolute; left: 0; bottom: 0; width: 1920px; height: 64px; border: 0; }
+
+  /* Just chatting */
+  .chat-cam, .chat-box { position: absolute; }
+  .chat-head { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 20px; }
+  .chat-head h1 { font-size: 72px; margin: 0; padding-right: 10px; }
+  .chat-head img { width: 72px; height: 72px; object-fit: contain; }
+  .chat-box .panel { position: absolute; inset: 0; background: rgba(42,43,44,.7); }
+  .chat-box iframe { position: absolute; left: 10px; right: 10px; top: 16px; bottom: 10px; width: calc(100% - 20px); height: calc(100% - 26px); border: 0; }
+  .chat-box .kx-frame { z-index: 2; }
+
+  .enter .copy > * { animation: kx-rise .8s var(--kx-out) both; }
+  .enter .copy > *:nth-child(2) { animation-delay: .07s; } .enter .copy > *:nth-child(3) { animation-delay: .14s; }
+  .enter .copy > *:nth-child(4) { animation-delay: .21s; } .enter .copy > *:nth-child(5) { animation-delay: .28s; }
+</style>
+</head>
+<body class="overlay">
+<div class="bg" id="bg">
+  <div class="halo"></div>
+  <div class="grid-bg"></div>
+  <canvas id="stars"></canvas>
+  <div class="band" style="left:1720px"></div>
+  <div class="band thin" style="left:1660px"></div>
+  <div class="vignette"></div>
+</div>
+<div id="root"></div>
+<iframe id="ticker" scrolling="no" style="display:none"></iframe>
+<script src="/js/kx.js"></script>
+<script>
+const type = location.pathname.split('/')[2] || 'starting';
+KX.starfield(document.getElementById('stars'), 120);
+let lastKey = '';
+
+const CAM = { x: 64, y: 168, w: 1200, h: 675 };
+const CHAT = { x: 1328, y: 168, w: 528, h: 840 };
+
+// Le dernier mot passe à la ligne, en violet
+function titleHTML(t) {
+  const parts = KX.esc(t).split(' ');
+  if (parts.length < 2) return parts.join(' ');
+  const last = parts.pop();
+  return parts.join(' ') + '<br><span>' + last + '</span>';
+}
+
+function render(st) {
+  const sc = (st.scenes || {})[type] || {};
+  const root = document.getElementById('root');
+  const soc = KX.socials(st);
+  const key = type + sc.title + sc.kicker;
+  root.className = key !== lastKey ? 'enter' : '';
+  lastKey = key;
+  const socHTML = soc.map(s => `<div class="soc">${KX.icon(s.key)}${KX.esc(s.handle)}</div>`).join('');
+
+  if (type === 'chatting') {
+    document.querySelector('.halo').style.setProperty('--hx', '1600px');
+    const liveChat = sc.chat !== false; // chat Twitch dans le cadre, sinon zone transparente pour une autre source
+    KX.holeMask(document.getElementById('bg'), 1920, 1080, [
+      KX.chamferPts(CAM.x, CAM.y, CAM.w, CAM.h, 0),
+      ...(liveChat ? [] : [KX.chamferPts(CHAT.x, CHAT.y, CHAT.w, CHAT.h, 0)])
+    ]);
+    root.innerHTML = `
+      <div class="chat-head">${KX.logo(st)}<div class="claws" style="--h:44px"><i></i><i></i><i></i></div>
+        <div><div class="t-label">${KX.esc(sc.kicker)}</div><h1 class="t-title">${KX.esc(sc.title)}</h1></div></div>
+      <div class="chat-cam" style="left:${CAM.x}px;top:${CAM.y}px;width:${CAM.w}px;height:${CAM.h}px">${KX.frame(CAM.w, CAM.h, 56, { border: 4 })}</div>
+      <div class="chat-box" style="left:${CHAT.x}px;top:${CHAT.y}px;width:${CHAT.w}px;height:${CHAT.h}px">${liveChat ? '<div class="panel"></div><iframe src="/chat?embed=1" scrolling="no" title="Chat"></iframe>' : ''}${KX.frame(CHAT.w, CHAT.h, 32, { brackets: false })}</div>
+      <div class="socials" style="position:absolute;left:${CAM.x}px;top:${CAM.y + CAM.h + 40}px">${socHTML}</div>`;
+  } else {
+    root.innerHTML = `
+      <div class="mark"><div class="spin"><div class="ring"></div></div>
+        <svg class="neon-ring" viewBox="0 0 620 620" aria-hidden="true"><g class="kx-neon-run">
+          <circle class="halo" cx="310" cy="310" r="309" pathLength="1000" stroke-width="8"/><circle class="core" cx="310" cy="310" r="309" pathLength="1000" stroke-width="2"/>
+          <circle class="halo b" cx="310" cy="310" r="309" pathLength="1000" stroke-width="8"/><circle class="core b" cx="310" cy="310" r="309" pathLength="1000" stroke-width="2"/>
+        </g></svg>${KX.logo(st, 'logo')}</div>
+      <div class="copy">
+        <div class="kicker"><div class="claws"><i></i><i></i><i></i></div><span class="t-label">${KX.esc(sc.kicker)}</span></div>
+        <h1 class="title t-title">${titleHTML(sc.title || '')}</h1>
+        ${sc.subtitle ? `<p class="sub">${KX.esc(sc.subtitle)}</p>` : '<div></div>'}
+        <div class="count" id="count"></div>
+        <div>
+          ${sc.next ? `<div class="next"><b>À suivre</b><span>${KX.esc(sc.next)}</span></div>` : ''}
+          <div class="socials">${socHTML}</div>
+        </div>
+      </div>`;
+    drawCount();
+  }
+  const tf = document.getElementById('ticker');
+  const showT = st.ticker?.visible && type !== 'chatting';
+  if (showT && !tf.src) tf.src = '/ticker?embed=1';
+  tf.style.display = showT ? 'block' : 'none';
+}
+
+// Compte à rebours : lit endAt en direct, sans reconstruire la scène
+const DONE_LABEL = { starting: "C'est parti !", brb: 'On revient !', tech: 'On revient !', ending: 'À bientôt !' };
+function drawCount() {
+  const box = document.getElementById('count');
+  if (!box) return;
+  const end = KX.state?.scenes?.[type]?.endAt || 0;
+  const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+  if (!end) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  if (!left) {
+    if (!box.dataset.done) { box.dataset.done = '1'; box.innerHTML = `<div class="done t-title">${DONE_LABEL[type] || 'On arrive !'}</div>`; }
+    return;
+  }
+  delete box.dataset.done;
+  const mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+  const dg = d => `<div class="digit"><b>${d}</b></div>`;
+  box.innerHTML = `<div class="digits">${dg(mm[0])}${dg(mm[1])}<span class="colon">:</span>${dg(ss[0])}${dg(ss[1])}</div>`;
+}
+setInterval(drawCount, 1000);
+// Décor : reconstruit seulement si le texte, le logo, les réseaux ou le ticker changent
+KX.watch(st => {
+  const { endAt, ...sc } = (st.scenes || {})[type] || {};
+  return [sc, st.settings?.logo, st.settings?.socials, !!st.ticker?.visible];
+}, render);
+KX.watch(st => st.scenes?.[type]?.endAt || 0, drawCount);
+</script>
+</body>
+</html>

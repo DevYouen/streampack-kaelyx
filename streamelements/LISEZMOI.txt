@@ -1,0 +1,16 @@
+WIDGET D'ALERTES STREAMELEMENTS — KAELYX
+
+Les alertes Twitch (follow, sub, gift, bits, raid) sont gérées directement par le streampack (Admin > Twitch).
+Ce widget sert uniquement pour les DONS : dans ses réglages, décoche Follow, Sub, Gift sub, Bits et Raid pour éviter les doublons.
+
+1. streamelements.com > Overlays > Nouvel overlay (1920x1080)
+2. Ajouter un widget > Static / Custom > Custom widget
+3. Ouvrir l'éditeur (Open Editor) et coller :
+   - onglet HTML   : le contenu de widget.html
+   - onglet CSS    : le contenu de widget.css
+   - onglet JS     : le contenu de widget.js
+   - onglet FIELDS : le contenu de fields.json
+4. Enregistrer, puis dans les réglages du widget : le son et la durée. Le logo Kaelyx est déjà intégré (champ Logo à laisser vide, sauf pour le remplacer).
+5. Copier l'URL de l'overlay StreamElements et l'ajouter dans OBS en source navigateur 1920x1080.
+
+Pour tester : bouton "Emulate" dans l'éditeur StreamElements.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Overlay joueur — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  .cam { position: absolute; }
+
+  /* Plaque nom : bloc logo violet + nom blanc sur anthracite */
+  .plate { position: absolute; display: flex; height: 72px; filter: var(--kx-shadow); }
+  .pl-logo { width: 72px; flex: none; display: grid; place-items: center; background: var(--kx-grad); }
+  .pl-logo img { width: 44px; height: 44px; object-fit: contain; }
+  .pl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 26px 0 20px;
+    background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .pl-name { font-size: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+  .pl-meta { font-size: 12px; white-space: nowrap; }
+  .pl-meta i { display: inline-block; width: 4px; height: 4px; margin: 0 10px 2px; background: var(--kx-violet); vertical-align: middle; }
+  .pl-handle { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 26px 0 20px; background: var(--kx-deep);
+    font: 600 16px/1 var(--f-body); color: var(--kx-white); --cut: 14px; }
+  .plate .pl-main:last-child, .plate .pl-handle { clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .plate.right { flex-direction: row-reverse; }
+  .plate.right .pl-main { text-align: right; padding: 0 20px 0 26px; }
+  .plate.right .pl-main:last-child, .plate.right .pl-handle { clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); }
+
+  /* Tag équipe */
+  .tag { position: absolute; display: flex; height: 48px; filter: var(--kx-shadow); }
+  .tag-logo { width: 48px; display: grid; place-items: center; background: var(--kx-grad); }
+  .tag-logo img { width: 30px; height: 30px; object-fit: contain; }
+  .tag-txt { display: flex; align-items: center; gap: 10px; padding: 0 24px 0 16px; background: var(--kx-panel); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .tag-txt b { font: italic 800 26px/1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; }
+  .tag-txt small { font: 700 11px/1 var(--f-body); letter-spacing: .2em; color: var(--kx-silver); text-transform: uppercase; }
+  .tag .kx-tag { align-self: center; margin-left: 8px; }
+
+  #ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; border: 0; width: 1920px; background: transparent; }
+
+  .enter .cam { animation: camIn .6s var(--kx-out) both; }
+  .enter .plate { animation: kx-wipe .7s .1s var(--kx-out) both; }
+  .enter .plate.right { animation-name: wipeR; }
+  .enter .tag { animation: kx-rise .6s .2s var(--kx-out) both; }
+  @keyframes camIn { from { opacity: 0; transform: scale(.97); } }
+  @keyframes wipeR { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+</style>
+</head>
+<body class="overlay">
+<div id="root"></div>
+<iframe id="ticker" scrolling="no" style="display:none"></iframe>
+<script src="/js/kx.js"></script>
+<script>
+const id = decodeURIComponent(location.pathname.split('/')[2] || '');
+const SIZES = { s: [400, 225], m: [480, 270], l: [576, 324], xl: [720, 405] };
+const M = 40, PLATE = 72, GAP = 12;
+let lastKey = '';
+
+function render(st) {
+  const p = (st.players || []).find(x => x.id === id);
+  const root = document.getElementById('root');
+  if (!p) { root.innerHTML = ''; return; }
+  const [w, h] = SIZES[p.camSize] || SIZES.m;
+  const pos = p.camPos || 'bl';
+  const right = pos.endsWith('r'), top = pos.startsWith('t');
+  // Le ticker n'apparaît que s'il est aussi allumé dans l'onglet Ticker : sinon on ne lui garde pas de place
+  const showT = p.showTicker && !!st.ticker?.visible;
+  const tk = showT ? 64 : 0;
+  const camX = right ? 1920 - M - w : M;
+  const camY = top ? M : 1080 - M - tk - PLATE - GAP - h;
+  const plateY = p.camVisible ? camY + h + GAP : (top ? M : 1080 - M - tk - PLATE);
+  const side = right ? `right:${M}px` : `left:${M}px`;
+
+  const handle = !p.showSocial ? '' : p.twitch ? KX.icon('twitch', 18) + KX.esc(p.twitch) : p.x ? KX.icon('x', 15) + KX.esc(p.x) : '';
+  const meta = [p.role || 'Joueur', p.game].filter(Boolean).map(KX.esc).join('<i></i>');
+
+  const key = p.pseudo + pos + p.camVisible + p.camSize;
+  root.className = key !== lastKey ? 'enter' : '';
+  lastKey = key;
+
+  root.innerHTML = `
+    ${p.camVisible ? `<div class="cam" style="left:${camX}px;top:${camY}px;width:${w}px;height:${h}px">${KX.frame(w, h)}</div>` : ''}
+    <div class="plate ${right ? 'right' : ''}" style="${side};top:${plateY}px;${p.camVisible ? `width:${w}px` : 'min-width:380px'}">
+      <div class="pl-logo">${KX.logo(st)}</div>
+      <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div>
+      ${handle ? `<div class="pl-handle">${handle}</div>` : ''}
+    </div>
+    ${p.showTag ? `<div class="tag" style="${right ? `left:${M}px` : `right:${M}px`};top:${M}px">
+      <div class="tag-logo">${KX.logo(st)}</div>
+      <div class="tag-txt"><b>${KX.esc(st.settings.teamName)}</b><small>${KX.esc(st.settings.teamSub)}</small></div>
+      ${p.game ? `<span class="kx-tag">${KX.esc(p.game)}</span>` : ''}
+    </div>` : ''}
+  `;
+  const tf = document.getElementById('ticker');
+  if (showT && !tf.src) tf.src = '/ticker?embed=1';
+  tf.style.display = showT ? 'block' : 'none';
+}
+KX.watch(st => [(st.players || []).find(x => x.id === id), st.settings?.logo, st.settings?.teamName, st.settings?.teamSub, !!st.ticker?.visible], render);
+</script>
+</body>
+</html>

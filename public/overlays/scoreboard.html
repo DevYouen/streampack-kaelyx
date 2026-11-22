@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Scoreboard — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  .wrap { transition: opacity .4s, transform .6s var(--kx-out); }
+  .wrap.off { opacity: 0; transform: translateX(40px); }
+
+  /* Classement */
+  .board { position: absolute; right: 40px; top: 40px; width: 460px; filter: var(--kx-shadow); }
+  .b-head { display: flex; align-items: stretch; height: 56px; }
+  .b-ev { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0 18px; background: var(--kx-grad); }
+  .b-ev img { width: 32px; height: 32px; object-fit: contain; }
+  .b-ev b { font: italic 800 28px/1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6px; }
+  .b-game { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; padding: 0 20px; background: var(--kx-white); color: var(--kx-bg); }
+  .b-game small { font: 800 10px/1 var(--f-body); letter-spacing: .2em; }
+  .b-game span { font: 800 24px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .b-cols, .row { display: grid; grid-template-columns: 48px 1fr 64px 76px; align-items: center; }
+  .b-cols { height: 30px; padding: 0 16px 0 0; background: var(--kx-panel); border-bottom: 1px solid var(--kx-line); }
+  .b-cols span { font: 700 11px/1 var(--f-body); letter-spacing: .16em; color: var(--kx-silver); text-transform: uppercase; }
+  .b-cols span:nth-child(n+3) { text-align: right; }
+  .rows { display: flex; flex-direction: column; }
+  .row { height: 46px; padding: 0 16px 0 0; background: var(--kx-panel); border-bottom: 1px solid var(--kx-line); transition: background .3s; }
+  .row:nth-child(even) { background: rgba(42,43,44,.9); }
+  .row .rk { height: 100%; display: grid; place-items: center; font: 800 24px/1 var(--f-title); color: var(--kx-silver); }
+  .row .nm { font: 600 19px/1 var(--f-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 8px; }
+  .row .el { text-align: right; font: 600 18px/1 var(--f-body); color: var(--kx-silver); font-variant-numeric: tabular-nums; }
+  .row .pt { text-align: right; font: 800 28px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .row.top { height: 52px; background: var(--kx-deep); }
+  .row.top .rk { background: var(--kx-violet); color: var(--kx-white); }
+  .row.top .nm { font-size: 21px; font-weight: 700; }
+  .row.top .el { color: var(--kx-white); }
+  .row:nth-child(2) .rk, .row:nth-child(3) .rk { color: var(--kx-white); }
+  .row.flash { animation: flash .9s var(--kx-out); }
+  @keyframes flash { 0% { background: var(--kx-violet); } }
+  .b-foot { height: 4px; background: var(--kx-violet); }
+  .board { --nd: 9s; }
+
+  /* VS */
+  .vs { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); display: flex; align-items: stretch; height: 72px; filter: var(--kx-shadow); }
+  .vs .team { display: flex; align-items: center; padding: 0 36px; min-width: 340px; background: var(--kx-panel); }
+  .vs .team b { font: italic 800 38px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; padding-right: 6px; }
+  .vs .team.a { justify-content: flex-end; clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .vs .team.b { clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); box-shadow: inset 0 -3px 0 var(--kx-silver); }
+  .vs .sc { width: 88px; display: grid; place-items: center; background: var(--kx-deep); }
+  .vs .sc.a { background: var(--kx-violet); }
+  .vs .sc b { font: 800 54px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .vs .mid { width: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--kx-bg); color: var(--kx-silver); box-shadow: inset 0 -3px 0 var(--kx-white); }
+  .vs .mid::before { display: none; }
+  .vs .mid img { width: 34px; height: 34px; object-fit: contain; }
+  .vs .mid small { font: 800 12px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; }
+</style>
+</head>
+<body class="overlay">
+<div class="wrap" id="wrap"></div>
+<script src="/js/kx.js"></script>
+<script>
+let prev = {};
+KX.watch(st => [st.scoreboard, st.settings?.logo], st => {
+  const s = st.scoreboard || {};
+  const wrap = document.getElementById('wrap');
+  wrap.classList.toggle('off', !s.visible);
+  if (s.mode === 'vs') {
+    const v = s.vs || {};
+    wrap.innerHTML = `<div class="vs">
+      <div class="team a kx-neon-line bottom"><b>${KX.esc(v.a)}</b></div><div class="sc a"><b>${Number(v.scoreA) || 0}</b></div>
+      <div class="mid">${KX.logo(st)}<small>${KX.esc(v.label || 'VS')}</small></div>
+      <div class="sc"><b>${Number(v.scoreB) || 0}</b></div><div class="team b kx-neon-line bottom" style="--nl:-2.5s"><b>${KX.esc(v.b)}</b></div></div>`;
+    return;
+  }
+  const rows = (s.rows || []).map((r, i) => ({ ...r, i })).sort((a, b) => (b.points - a.points) || (b.elims - a.elims));
+  wrap.innerHTML = `<div class="board kx-neon-box">
+    <div class="b-head"><div class="b-ev">${KX.logo(st)}<b>${KX.esc(s.event)}</b></div>
+      <div class="b-game"><small>GAME</small><span>${Number(s.game) || 0}/${Number(s.games) || 0}</span></div></div>
+    <div class="b-cols"><span style="text-align:center">#</span><span>Équipe</span><span>Élim</span><span>Pts</span></div>
+    <div class="rows">${rows.map((r, k) => {
+      const changed = prev[r.name] !== undefined && prev[r.name] !== r.points;
+      return `<div class="row ${k === 0 ? 'top' : ''} ${changed ? 'flash' : ''}"><span class="rk">${k + 1}</span>
+        <span class="nm">${KX.esc(r.name)}</span><span class="el">${Number(r.elims) || 0}</span><span class="pt ">${Number(r.points) || 0}</span></div>`;
+    }).join('')}</div>
+    <div class="b-foot"></div></div>`;
+  prev = Object.fromEntries(rows.map(r => [r.name, r.points]));
+});
+</script>
+</body>
+</html>

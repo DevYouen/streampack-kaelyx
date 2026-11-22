@@ -1,0 +1,67 @@
+{
+  "logo": {
+    "type": "image-input",
+    "label": "Logo (vide = logo Kaelyx intégré)",
+    "value": ""
+  },
+  "sound": {
+    "type": "sound-input",
+    "label": "Son d'alerte",
+    "value": ""
+  },
+  "volume": {
+    "type": "slider",
+    "label": "Volume",
+    "value": 60,
+    "min": 0,
+    "max": 100,
+    "step": 1
+  },
+  "duration": {
+    "type": "number",
+    "label": "Durée (secondes)",
+    "value": 6,
+    "min": 2,
+    "max": 20
+  },
+  "currency": {
+    "type": "text",
+    "label": "Devise des dons",
+    "value": "€"
+  },
+  "showMessage": {
+    "type": "checkbox",
+    "label": "Afficher les messages",
+    "value": true
+  },
+  "on_follow": {
+    "type": "checkbox",
+    "label": "Follow",
+    "value": true
+  },
+  "on_sub": {
+    "type": "checkbox",
+    "label": "Sub",
+    "value": true
+  },
+  "on_gift": {
+    "type": "checkbox",
+    "label": "Gift sub",
+    "value": true
+  },
+  "on_bits": {
+    "type": "checkbox",
+    "label": "Bits",
+    "value": true
+  },
+  "on_raid": {
+    "type": "checkbox",
+    "label": "Raid",
+    "value": true
+  },
+  "on_don": {
+    "type": "checkbox",
+    "label": "Don",
+    "value": true
+  }
+}

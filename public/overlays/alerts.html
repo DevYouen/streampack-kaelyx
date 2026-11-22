@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Alertes — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  .stage { position: absolute; left: 0; right: 0; top: 150px; height: 420px; display: flex; justify-content: center; }
+  .alert { position: relative; width: 900px; height: 420px; }
+  .alert svg.slash { position: absolute; left: 50%; top: 50%; width: 760px; height: 420px; margin: -210px 0 0 -380px; overflow: visible; }
+  .alert svg.slash path { fill: none; stroke: var(--kx-violet); stroke-linecap: square; stroke-dasharray: 900; stroke-dashoffset: 900; filter: drop-shadow(0 0 14px #9933CC); }
+  .alert svg.slash path:first-child { stroke: #F3F1F1; }
+  .alert .burst { position: absolute; left: 50%; top: 50%; width: 700px; height: 220px; margin: -110px 0 0 -350px; border-radius: 50%;
+    border: 3px solid var(--kx-silver); border-color: #F3F1F1 rgba(201,204,209,.3) #F3F1F1 rgba(201,204,209,.3); box-shadow: 0 0 30px rgba(153,51,204,.6), inset 0 0 30px rgba(153,51,204,.4); transform: rotate(-18deg) scale(.2); opacity: 0; }
+  .alert .plasma { position: absolute; left: 50%; top: 50%; width: 900px; height: 420px; margin: -210px 0 0 -450px; border-radius: 50%; background: radial-gradient(ellipse, rgba(153,51,204,.55), rgba(86,28,115,.3) 45%, rgba(86,28,115,0) 70%); filter: blur(14px); opacity: 0; }
+  .alert.play .plasma { animation: plasma 1.2s .2s var(--kx-out) forwards; }
+  @keyframes plasma { 0% { opacity: 0; transform: scale(.4); } 100% { opacity: 1; transform: scale(1); } }
+  .alert .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 10px; filter: drop-shadow(0 16px 26px rgba(42,43,44,.65)); }
+  .alert .label { display: flex; align-items: center; gap: 14px; height: 46px; padding: 0 38px; background: var(--kx-plate); box-shadow: var(--kx-lit), inset 0 2px 0 var(--kx-violet); --cut: 16px; }
+  .alert .label img { width: 28px; height: 28px; object-fit: contain; }
+  .alert .label span { font: 700 16px/1 var(--f-body); letter-spacing: .34em; text-transform: uppercase; color: var(--kx-silver); }
+  .alert .name { position: relative; padding: 6px 76px 12px; background: var(--kx-energy); box-shadow: var(--kx-lit), inset 0 4px 0 rgba(243,241,241,.25); --cut: 34px; overflow: hidden; }
+  .alert .name b { font-size: 100px; white-space: nowrap; display: block; padding-right: 10px; }
+  .alert .name::after { content: ''; position: absolute; top: -10%; bottom: -10%; width: 120px; background: linear-gradient(100deg, rgba(243,241,241,0), rgba(243,241,241,.5), rgba(243,241,241,0)); transform: translateX(-200%) skewX(-24deg); }
+  .alert .amount { display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 42px; background: var(--kx-energy-deep); box-shadow: var(--kx-lit); --cut: 18px; font: italic 800 32px/1 var(--f-title); text-transform: uppercase; }
+  .alert .amount .k { width: 10px; height: 10px; background: var(--kx-chrome); transform: rotate(45deg); box-shadow: 0 0 10px var(--kx-violet); }
+  .alert .msg { max-width: 760px; text-align: center; font: 500 24px/1.35 var(--f-body); color: var(--kx-white); background: var(--kx-plate); box-shadow: var(--kx-lit); padding: 12px 30px; --c: 14px; }
+
+  .alert.play svg.slash path { animation: draw .45s var(--kx-out) forwards; }
+  .alert.play svg.slash path:nth-child(2) { animation-delay: .07s; } .alert.play svg.slash path:nth-child(3) { animation-delay: .14s; }
+  .alert.play .burst { animation: burst 1s .25s var(--kx-out) forwards; }
+  .alert.play .label { animation: rise .6s .35s var(--kx-out) both; }
+  .alert.play .name { animation: slice .7s .3s var(--kx-out) both; }
+  .alert.play .name::after { animation: kx-shine 1.6s 1s var(--kx-ease); }
+  .alert.play .amount, .alert.play .msg { animation: rise .6s .55s var(--kx-out) both; }
+  .alert.leave { animation: leave .5s var(--kx-ease) forwards; }
+  @keyframes draw { 0% { stroke-dashoffset: 900; opacity: 1; } 70% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: .25; } }
+  @keyframes burst { 0% { opacity: .9; transform: rotate(-18deg) scale(.2); } 100% { opacity: 0; transform: rotate(-18deg) scale(1.6); } }
+  @keyframes slice { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); transform: translateX(-60px) skewX(-8deg); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+  @keyframes leave { to { opacity: 0; transform: translateY(-30px) scale(.96); filter: blur(4px); } }
+  /* Refonte : plus sobre, plus lisible */
+  .alert .burst, .alert .plasma { display: none; }
+  .alert svg.slash { opacity: .5; }
+  .alert svg.slash path { filter: none; }
+  .alert .name { padding: 10px 64px 14px; box-shadow: none; }
+  .alert .name b { font-size: 110px; }
+  .alert .name::after { display: none; }
+  .alert .label { background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .alert .label span { color: var(--kx-white); letter-spacing: .2em; }
+  .alert .amount { background: var(--kx-white); color: var(--kx-bg); font-size: 34px; }
+  .alert .amount .kx-chrome-text { color: inherit; } /* sinon texte blanc sur fond blanc : le montant était invisible */
+  .alert .amount .k { background: var(--kx-violet); box-shadow: none; }
+  .alert .msg { background: var(--kx-panel); box-shadow: none; }
+  .alert .card { filter: var(--kx-shadow); }
+</style>
+</head>
+<body class="overlay">
+<div class="stage" id="stage"></div>
+<script src="/js/kx.js"></script>
+<script>
+const LABELS = {
+  follow: ['Nouveau follow', () => ''],
+  sub: ['Nouvel abonné', a => a > 1 ? `${a} mois` : 'Bienvenue'],
+  gift: ['Subs offerts', a => `${a || 1} sub${(a || 1) > 1 ? 's' : ''} offert${(a || 1) > 1 ? 's' : ''}`],
+  bits: ['Bits', a => `${a || 0} bits`],
+  raid: ['Raid', a => `${a || 0} viewers`],
+  don: ['Don', a => `${a || 0} €`]
+};
+const queue = []; let busy = false;
+const sound = new Audio('/sounds/alert.mp3'); sound.volume = .6;
+
+KX.on('trigger', t => { if (t.kind === 'alert') { queue.push(t); next(); } });
+
+function next() {
+  if (busy || !queue.length) return;
+  busy = true;
+  const t = queue.shift();
+  const [label, fmt] = LABELS[t.type] || LABELS.follow;
+  const amt = fmt(Number(t.amount) || 0);
+  const st = KX.state || { settings: {} };
+  const dur = Math.max(2, Number(st.settings?.alertDuration) || 6) * 1000;
+  const stage = document.getElementById('stage');
+  stage.innerHTML = `<div class="alert" id="a">
+    <svg class="slash" viewBox="0 0 760 420" aria-hidden="true">
+      <path d="M560 20 L200 400" stroke-width="10"/><path d="M620 60 L300 400" stroke-width="7"/><path d="M670 110 L400 400" stroke-width="5"/>
+    </svg>
+    <div class="plasma"></div><div class="burst"></div>
+    <div class="card">
+      <div class="label blade kx-neon-line bottom" style="--nd:2.2s">${KX.logo(st)}<span>${KX.esc(label)}</span></div>
+      <div class="name blade"><b class="t-title kx-chrome-text">${KX.esc(t.user || 'Viewer')}</b></div>
+      ${amt ? `<div class="amount blade"><i class="k"></i><span class="kx-chrome-text sm">${KX.esc(amt)}</span><i class="k"></i></div>` : ''}
+      ${t.message ? `<div class="msg chamfer">${KX.esc(t.message)}</div>` : ''}
+    </div></div>`;
+  const a = document.getElementById('a');
+  requestAnimationFrame(() => a.classList.add('play'));
+  sound.currentTime = 0; sound.play().catch(() => {});
+  setTimeout(() => { a.classList.add('leave'); }, dur - 500);
+  setTimeout(() => { stage.innerHTML = ''; busy = false; setTimeout(next, 400); }, dur);
+}
+</script>
+</body>
+</html>

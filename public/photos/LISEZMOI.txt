@@ -1,0 +1,4 @@
+Mets ici les photos des joueurs (PNG, JPG ou WEBP).
+Conseil : nomme chaque fichier avec l'identifiant du joueur, ex. pseudo.png.
+Format conseillé : portrait détouré, 900 x 1200 px minimum.
+Ensuite, dans l'admin > Joueurs > champ Photo, choisis le fichier dans la liste.

@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# Données locales : état, sauvegarde et surtout le token Twitch (secret)
+data/

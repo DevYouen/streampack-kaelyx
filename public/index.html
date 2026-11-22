@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streampack Kaelyx Esport</title>
+<link rel="icon" href="/logo/logo.svg">
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  body { background: var(--kx-bg); color: var(--kx-white); font: 16px/1.55 var(--f-body); min-height: 100vh; overflow-x: hidden; }
+  .sky { position: fixed; inset: 0; pointer-events: none; }
+  .sky canvas { width: 100%; height: 100%; }
+  .halo { position: fixed; width: 1100px; height: 1100px; right: -280px; top: -320px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(153,51,204,.45), rgba(86,28,115,.4) 30%, rgba(86,28,115,0) 62%); animation: kx-pulse 7s infinite; }
+  .wrap { position: relative; max-width: 1240px; margin: 0 auto; padding: 48px 28px 90px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 52px; height: 52px; object-fit: contain; }
+  .brand b { font: italic 800 26px/1 var(--f-title); text-transform: uppercase; }
+  .brand small { display: block; font: 600 11px/1 var(--f-body); letter-spacing: .34em; text-transform: uppercase; color: var(--kx-silver); margin-top: 4px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 30px; background: var(--kx-violet); color: var(--kx-white); text-decoration: none;
+    font: 700 14px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .btn.ghost { background: rgba(243,241,241,.07); box-shadow: inset 0 0 0 1px rgba(201,204,209,.3); }
+  .btn:focus-visible { outline: 2px solid var(--kx-white); outline-offset: 3px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: center; padding: 90px 0 70px; }
+  .kick { display: flex; align-items: center; gap: 16px; font: 600 13px/1 var(--f-body); letter-spacing: .32em; text-transform: uppercase; color: var(--kx-silver); }
+  h1 { font: italic 900 clamp(56px, 8vw, 116px)/.92 var(--f-title); text-transform: uppercase; margin: 22px 0 36px; }
+  h1 span { color: var(--kx-violet); }
+  .orbit { position: relative; aspect-ratio: 1; max-width: 460px; justify-self: center; width: 100%; }
+  .orbit img { position: absolute; inset: 14%; width: 72%; height: 72%; object-fit: contain; filter: drop-shadow(0 0 50px rgba(153,51,204,.7)); }
+  .orbit i { position: absolute; inset: 0; border: 2px dashed rgba(153,51,204,.45); border-radius: 50%; animation: kx-spin 60s linear infinite; }
+  h2 { font: italic 800 34px/1 var(--f-title); text-transform: uppercase; margin: 0 0 22px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .tile { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 24px 26px; min-height: 150px; text-decoration: none; color: inherit;
+    background: rgba(243,241,241,.04); border: 1px solid rgba(201,204,209,.16);
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); transition: background .2s, transform .2s; }
+  .tile::before { content: ''; position: absolute; left: 0; top: 0; width: 46px; height: 3px; background: var(--kx-violet); }
+  .tile:hover { background: rgba(86,28,115,.45); transform: translateY(-3px); }
+  .tile:focus-visible { outline: 2px solid var(--kx-white); outline-offset: -2px; }
+  .tile b { font: italic 800 24px/1.05 var(--f-title); text-transform: uppercase; }
+  .tile span { color: var(--kx-silver); font-size: 14px; }
+  .tile code { margin-top: auto; font: 500 12px/1.3 ui-monospace, Menlo, monospace; color: var(--kx-silver); }
+  section + section { margin-top: 56px; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding: 50px 0; } .orbit { max-width: 280px; order: -1; } }
+</style>
+</head>
+<body>
+<div class="halo"></div>
+<div class="sky"><canvas id="stars"></canvas></div>
+<div class="wrap">
+  <header>
+    <div class="brand"><img src="/logo/logo.svg" alt="" class="js-logo"><div><b>Kaelyx</b><small>Esport · Streampack</small></div></div>
+    <a class="btn" href="/admin">Ouvrir l’admin</a>
+  </header>
+
+  <div class="hero">
+    <div>
+      <div class="kick"><span class="claws"><i></i><i></i><i></i></span>Overlays OBS en direct</div>
+      <h1>Stream<br><span>pack</span></h1>
+      <div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn" href="/admin">Console admin</a><a class="btn ghost" href="#overlays">Voir les overlays</a></div>
+    </div>
+    <div class="orbit"><i></i><img src="/logo/logo.svg" alt="" class="js-logo"></div>
+  </div>
+
+  <section id="overlays">
+    <h2>Joueurs</h2>
+    <div class="tiles" id="players"></div>
+  </section>
+  <section>
+    <h2>Scènes</h2>
+    <div class="tiles">
+      <a class="tile" href="/scene/starting"><b>Starting soon</b><span>Compte à rebours, réseaux, à suivre</span><code>/scene/starting</code></a>
+      <a class="tile" href="/scene/brb"><b>BRB</b><span>Écran de pause</span><code>/scene/brb</code></a>
+      <a class="tile" href="/scene/ending"><b>Fin de stream</b><span>Remerciements et prochain live</span><code>/scene/ending</code></a>
+      <a class="tile" href="/scene/tech"><b>Difficultés techniques</b><span>En cas de souci</span><code>/scene/tech</code></a>
+      <a class="tile" href="/scene/chatting"><b>Just chatting</b><span>Grand cadre cam + chat</span><code>/scene/chatting</code></a>
+      <a class="tile" href="/caster"><b>Desk casters</b><span>1 à 3 cams casters</span><code>/caster</code></a>
+      <a class="tile" href="/caster/pip"><b>Casters en jeu</b><span>Petites cams sur le jeu</span><code>/caster/pip</code></a>
+      <a class="tile" href="/cam"><b>Cadre webcam</b><span>Cadre seul, taille réglable</span><code>/cam</code></a>
+      <a class="tile" href="/roster"><b>Roster</b><span>Cartes de tous les joueurs</span><code>/roster</code></a>
+    </div>
+  </section>
+  <section>
+    <h2>Éléments</h2>
+    <div class="tiles">
+      <a class="tile" href="/lowerthird"><b>Lower third</b><span>Bandeau nom</span><code>/lowerthird</code></a>
+      <a class="tile" href="/ticker"><b>Ticker</b><span>Bandeau défilant</span><code>/ticker</code></a>
+      <a class="tile" href="/chat"><b>Chat</b><span>Chat Twitch</span><code>/chat</code></a>
+      <a class="tile" href="/scoreboard"><b>Scoreboard</b><span>Classement ou VS</span><code>/scoreboard</code></a>
+      <a class="tile" href="/alerts"><b>Alertes</b><span>Follow, sub, bits, raid, don</span><code>/alerts</code></a>
+      <a class="tile" href="/stinger?loop"><b>Stinger</b><span>Transition animée (boucle)</span><code>/stinger</code></a>
+    </div>
+  </section>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+KX.starfield(document.getElementById('stars'), 160);
+KX.watch(st => [st.settings?.logo, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game])], st => {
+  document.querySelectorAll('.js-logo').forEach(i => { if (st.settings.logo) { i.onerror = () => { i.onerror = null; i.src = '/logo/logo.svg'; }; i.src = st.settings.logo; } });
+  document.getElementById('players').innerHTML = st.players.map(p => `<a class="tile" href="/p/${encodeURIComponent(p.id)}">
+    <b>${KX.esc(p.pseudo)}</b><span>${KX.esc([p.role, p.game].filter(Boolean).join(' · '))}</span><code>/p/${KX.esc(p.id)}</code></a>`).join('')
+    || '<p style="color:var(--kx-silver)">Crée un joueur dans l’admin.</p>';
+});
+</script>
+</body>
+</html>

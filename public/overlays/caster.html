@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Casters — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  /* Fond du desk (masqué là où passent les webcams) */
+  .bg { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; }
+  .bg.off { display: none; }
+  .halo { position: absolute; width: 1600px; height: 1100px; left: 160px; top: 120px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(153,51,204,.34) 0%, rgba(86,28,115,.26) 34%, rgba(86,28,115,0) 66%); animation: kx-pulse 8s ease-in-out infinite; }
+  .grid-bg { position: absolute; inset: 0; opacity: .5;
+    background-image: linear-gradient(rgba(201,204,209,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,204,209,.05) 1px, transparent 1px);
+    background-size: 80px 80px; -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 55%, #000, transparent); mask-image: radial-gradient(ellipse 80% 70% at 50% 55%, #000, transparent); }
+  .band { position: absolute; width: 140px; height: 1700px; top: -300px; background: var(--kx-grad); transform: rotate(24deg); opacity: .85; }
+  .band.thin { width: 20px; opacity: .5; }
+
+  /* En-tête */
+  .head { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 20px; }
+  .head img { width: 72px; height: 72px; object-fit: contain; }
+  .head h1 { font-size: 72px; margin: 0; padding-right: 10px; }
+
+  /* Score (repris du scoreboard VS) */
+  .score { position: absolute; right: 64px; top: 64px; display: flex; align-items: stretch; height: 60px; filter: var(--kx-shadow); }
+  .score .tm { display: flex; align-items: center; padding: 0 26px; background: var(--kx-panel); font: italic 800 32px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; }
+  .score .tm.a { box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .score .tm.b { box-shadow: inset 0 -3px 0 var(--kx-silver); }
+  .score .sc { width: 64px; display: grid; place-items: center; background: var(--kx-deep); font: 800 42px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .score .sc.a { background: var(--kx-violet); }
+  .score .lb { display: grid; place-items: center; padding: 0 14px; background: var(--kx-bg); font: 800 12px/1 var(--f-body); letter-spacing: .16em; color: var(--kx-silver); text-transform: uppercase; }
+
+  /* Cam + plaque nom */
+  .cam { position: absolute; }
+  .plate { position: absolute; display: flex; height: var(--ph, 72px); filter: var(--kx-shadow); }
+  .plate .lg { width: var(--ph, 72px); flex: none; display: grid; place-items: center; background: var(--kx-grad); }
+  .plate .lg img { width: 60%; height: 60%; object-fit: contain; }
+  .plate .mn { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 20px;
+    background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .plate .mn b { font-size: calc(var(--ph, 72px) * .56); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+  .plate .mn small { font-size: calc(var(--ph, 72px) * .17); white-space: nowrap; }
+  .plate .hd { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 24px 0 18px; background: var(--kx-deep);
+    font: 600 calc(var(--ph, 72px) * .22)/1 var(--f-body); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .plate .mn:last-child { clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+
+  #ticker { position: absolute; left: 0; bottom: 0; width: 1920px; height: 64px; border: 0; }
+
+  .enter .cam { animation: camIn .6s var(--kx-out) both; }
+  .enter .plate { animation: kx-wipe .7s .15s var(--kx-out) both; }
+  .enter .head, .enter .score { animation: kx-rise .7s var(--kx-out) both; }
+  @keyframes camIn { from { opacity: 0; transform: scale(.97); } }
+</style>
+</head>
+<body class="overlay">
+<div class="bg" id="bg">
+  <div class="halo"></div>
+  <div class="grid-bg"></div>
+  <div class="band" style="left:1780px"></div>
+  <div class="band thin" style="left:1730px"></div>
+</div>
+<div id="root"></div>
+<iframe id="ticker" scrolling="no" style="display:none"></iframe>
+<script src="/js/kx.js"></script>
+<script>
+const PIP = location.pathname.replace(/\/$/, '').endsWith('/pip');
+if (PIP) document.getElementById('bg').classList.add('off');
+let lastKey = '';
+
+// Plein écran : place les cams selon leur nombre
+const DESK = {
+  1: { w: 1152, h: 648, gap: 0, y: 210 },
+  2: { w: 860, h: 484, gap: 72, y: 250 },
+  3: { w: 576, h: 324, gap: 32, y: 320 }
+};
+const PIP_SIZES = { s: [320, 180], m: [384, 216], l: [480, 270] };
+
+function plate(st, c, x, y, w, ph) {
+  const handle = c.handle ? `<div class="hd">${KX.icon('twitch', Math.round(ph * .26))}${KX.esc(c.handle)}</div>` : '';
+  return `<div class="plate" style="left:${x}px;top:${y}px;width:${w}px;--ph:${ph}px">
+    <div class="lg">${KX.logo(st)}</div>
+    <div class="mn kx-neon-line bottom"><b class="t-title">${KX.esc(c.name || 'Caster')}</b>${c.role ? `<small class="t-label">${KX.esc(c.role)}</small>` : ''}</div>${handle}</div>`;
+}
+
+function render(st) {
+  const C = st.casters || {};
+  // Chaque caster ajouté dans l'admin a sa cam, même si son pseudo n'est pas encore rempli
+  const list = (C.list || []).slice(0, 3);
+  const n = Math.min(3, Math.max(1, list.length || 2));
+  const items = list.length ? list.map((c, i) => ({ ...c, name: c.name || 'Caster ' + (i + 1) }))
+    : Array.from({ length: n }, (_, i) => ({ name: 'Caster ' + (i + 1), role: 'Caster' }));
+  const root = document.getElementById('root');
+  const key = n + '|' + PIP + '|' + C.pipPos + C.pipSize;
+  root.className = key !== lastKey ? 'enter' : '';
+  lastKey = key;
+
+  let html = '', boxes = [];
+  if (PIP) {
+    const [w, h] = PIP_SIZES[C.pipSize] || PIP_SIZES.m;
+    const ph = 48, gap = 16, M = 40, pos = C.pipPos || 'tr';
+    const total = n * w + (n - 1) * gap;
+    const x0 = pos.endsWith('r') ? 1920 - M - total : M;
+    const y = pos.startsWith('t') ? M : 1080 - M - ph - 10 - h;
+    items.forEach((c, i) => boxes.push({ c, x: x0 + i * (w + gap), y, w, h, ph }));
+  } else {
+    const L = DESK[n];
+    const total = n * L.w + (n - 1) * L.gap;
+    const x0 = Math.round((1920 - total) / 2);
+    items.forEach((c, i) => boxes.push({ c, x: x0 + i * (L.w + L.gap), y: L.y, w: L.w, h: L.h, ph: 72 }));
+    // En-tête et score
+    const v = st.scoreboard?.vs || {};
+    html += `<div class="head">${KX.logo(st)}<div class="claws" style="--h:44px"><i></i><i></i><i></i></div>
+      <div><div class="t-label">${KX.esc(C.kicker)}</div><h1 class="t-title">${KX.esc(C.title)}</h1></div></div>`;
+    if (C.showScore && v.a && v.b) html += `<div class="score"><div class="tm a">${KX.esc(v.a)}</div><div class="sc a">${Number(v.scoreA) || 0}</div>
+      <div class="lb">${KX.esc(v.label || 'VS')}</div><div class="sc">${Number(v.scoreB) || 0}</div><div class="tm b">${KX.esc(v.b)}</div></div>`;
+    KX.holeMask(document.getElementById('bg'), 1920, 1080, boxes.map(b => KX.chamferPts(b.x, b.y, b.w, b.h, 0)));
+  }
+  html += boxes.map(b => `<div class="cam" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${KX.frame(b.w, b.h, PIP ? 18 : undefined)}</div>`
+    + plate(st, b.c, b.x, b.y + b.h + (PIP ? 10 : 14), b.w, b.ph)).join('');
+  root.innerHTML = html;
+
+  const tf = document.getElementById('ticker');
+  const showT = st.ticker?.visible && !PIP;
+  if (showT && !tf.src) tf.src = '/ticker?embed=1';
+  tf.style.display = showT ? 'block' : 'none';
+}
+KX.watch(st => [st.casters, st.scoreboard?.vs, st.settings?.logo, !!st.ticker?.visible], render);
+</script>
+</body>
+</html>

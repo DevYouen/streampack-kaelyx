@@ -1,0 +1,6 @@
+Masques pour donner à la webcam la forme en biais (coins coupés) des cadres Kaelyx.
+
+Dans OBS : clic droit sur la source webcam > Filtres > + > Masque d'image/fusion
+  Type : Masque alpha (canal alpha)
+  Chemin : masque-cam-16x9.png (overlay joueur) ou masque-just-chatting-cam.png
+Place ensuite la webcam exactement dans le cadre violet, sous l'overlay.
