@@ -5,7 +5,34 @@
 <title>POV joueurs — Kaelyx</title>
 <link rel="stylesheet" href="/css/kx.css">
 <style>
-  #players, #deco { position: absolute; inset: 0; }
+  #players, #deco, #bg { position: absolute; inset: 0; }
+
+  /* Fond animé (DA des scènes) : remplit tout ce que les POV ne couvrent pas. Percé là où une source OBS doit apparaître. */
+  #bg { overflow: hidden; background: var(--kx-bg); }
+  #bg.off { display: none; }
+  #bg .halo { position: absolute; width: 1300px; height: 1300px; border-radius: 50%; margin: -650px 0 0 -650px;
+    background: radial-gradient(circle, rgba(153,51,204,.40) 0%, rgba(86,28,115,.30) 30%, rgba(86,28,115,0) 64%); }
+  #bg .halo.a { left: 1500px; top: 300px; animation: povHaloA 26s ease-in-out infinite, kx-pulse 8s ease-in-out infinite; }
+  #bg .halo.b { left: 380px; top: 820px; opacity: .75; animation: povHaloB 32s ease-in-out infinite, kx-pulse 11s ease-in-out infinite; }
+  @keyframes povHaloA { 50% { left: 1180px; top: 640px; } }
+  @keyframes povHaloB { 50% { left: 720px; top: 420px; } }
+  #bg .grid-bg { position: absolute; inset: 0; opacity: .55;
+    background-image: linear-gradient(rgba(201,204,209,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,204,209,.05) 1px, transparent 1px);
+    background-size: 80px 80px; animation: povGrid 40s linear infinite;
+    -webkit-mask-image: radial-gradient(ellipse 80% 85% at 50% 50%, #000, transparent); mask-image: radial-gradient(ellipse 80% 85% at 50% 50%, #000, transparent); }
+  @keyframes povGrid { to { background-position: 80px 80px; } }
+  #bg canvas { position: absolute; inset: 0; opacity: .6; }
+  #bg .band { position: absolute; width: 170px; height: 1800px; top: -360px; background: var(--kx-grad); transform: rotate(24deg); opacity: .85; overflow: hidden; }
+  #bg .band.thin { width: 22px; opacity: .5; }
+  #bg .band::after { content: ''; position: absolute; left: 0; right: 0; height: 260px; top: -300px;
+    background: linear-gradient(transparent, rgba(243,241,241,.55), transparent); animation: povSheen 6s ease-in-out infinite; }
+  #bg .band.thin::after { animation-delay: 1.2s; }
+  #bg .band.l::after { animation-delay: 3s; }
+  @keyframes povSheen { 0%, 35% { top: -300px; } 85%, 100% { top: 1900px; } }
+  #bg .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 115% 95% at 50% 50%, rgba(42,43,44,0) 55%, rgba(42,43,44,.85) 100%); }
+  #bg .mark { position: absolute; left: 50%; top: 50%; width: 560px; height: 560px; margin: -280px 0 0 -280px; opacity: .07; }
+  #bg .mark img { width: 100%; height: 100%; object-fit: contain; animation: povFloat 9s ease-in-out infinite; }
+  @keyframes povFloat { 50% { transform: translateY(-14px) scale(1.02); } }
   #deco { pointer-events: none; }
 
   /* Lecteur Twitch : tourne à 1280 × 720 (Twitch refuse les lecteurs < 400 × 300), réduit à la taille du cadre */
@@ -37,6 +64,15 @@
 </style>
 </head>
 <body class="overlay">
+<div id="bg" class="off">
+  <div class="halo a"></div><div class="halo b"></div>
+  <div class="grid-bg"></div>
+  <canvas id="stars"></canvas>
+  <div class="mark" id="bgMark"></div>
+  <div class="band" style="left:1730px"></div><div class="band thin" style="left:1670px"></div>
+  <div class="band l" style="left:20px;top:-500px"></div><div class="band thin l" style="left:220px;top:-500px"></div>
+  <div class="vignette"></div>
+</div>
 <div id="players"></div>
 <div id="deco"></div>
 <script src="/js/kx.js"></script>
@@ -150,6 +186,18 @@ function render(st) {
     e.el.classList.add('off'); setMuted(e, true);
   }
 
+  // Fond animé : percé (clip-path evenodd) sur les POV « Source OBS » et les cadres Cam, pour laisser voir la capture OBS dessous
+  const bg = document.getElementById('bg');
+  const on = items.length > 0 && layout.bg !== false;
+  bg.classList.toggle('off', !on);
+  if (on) {
+    const holes = items.filter(i => i.kind === 'cam' || (i.kind === 'pov' && bySlot(i.slot)?.povSource === 'obs'))
+      .map(i => `M${i.x} ${i.y}h${i.w}v${i.h}h${-i.w}Z`).join('');
+    bg.style.clipPath = holes ? `path(evenodd, "M0 0H1920V1080H0Z${holes}")` : '';
+    const mark = document.getElementById('bgMark'), logoKey = st.settings?.logo || '';
+    if (mark.dataset.k !== logoKey) { mark.dataset.k = logoKey; mark.innerHTML = KX.logo(st); }
+  }
+
   // 2. Habillage : cadres, plaques, cams, logo (+ repères d'aide hors OBS)
   deco.innerHTML = items.map(i => {
     const box = `left:${i.x}px;top:${i.y}px;width:${i.w}px;height:${i.h}px`;
@@ -175,6 +223,7 @@ function render(st) {
     return '';
   }).join('');
 }
+KX.starfield(document.getElementById('stars'), 110);
 KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo]), st.settings?.logo], render);
 </script>
 </body>

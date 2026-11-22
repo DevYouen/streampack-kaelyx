@@ -48,6 +48,7 @@ TABS.pov = function () {
     <div class="row pov-tools">
       <label class="field" style="min-width:200px"><span>Mise en page</span><select data-pov-edit>${povLayouts().map(l => `<option value="${esc(l.id)}" ${l.id === L.id ? 'selected' : ''}>${esc(l.name)}${l.id === S.pov.live ? ' (direct)' : ''}</option>`).join('')}</select></label>
       ${field('Nom', `pov.layouts.${li}.name`)}
+      ${toggle('Fond animé', `pov.layouts.${li}.bg`)}
       <button type="button" class="btn ghost" data-act="pov-new">Nouvelle</button>
       <button type="button" class="btn ghost" data-act="pov-dup">Dupliquer</button>
       <button type="button" class="btn ghost danger" data-act="pov-del" ${povLayouts().length < 2 ? 'disabled' : ''}>Supprimer</button>

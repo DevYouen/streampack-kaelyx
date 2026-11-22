@@ -49,7 +49,7 @@ const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch
 // POV : 'twitch' (live du joueur : povChannel, sinon champ twitch), 'vdo' (envoi direct VDO.Ninja, identifiant povVdo) ou 'obs' (trou transparent)
 // Élément d'une mise en page POV, en pixels du 1920 × 1080. kind : pov | plate | cam | logo ; slot : n° de POV (0 = principale)
 const POV_ITEM = { id: '', kind: 'pov', slot: 0, x: 0, y: 0, w: 480, h: 270 };
-const POV_LAYOUT = { id: '', name: 'Mise en page', items: [] };
+const POV_LAYOUT = { id: '', name: 'Mise en page', bg: true, items: [] }; // bg : fond animé derrière les POV
 const it = (kind, slot, x, y, w, h) => ({ id: kind + slot + '-' + x + '-' + y, kind, slot, x, y, w, h });
 const POV_PRESETS = [
   { id: 'solo', name: 'Solo', items: [it('pov', 0, 0, 0, 1920, 1080), it('plate', 0, 48, 960, 620, 72), it('logo', 0, 1792, 32, 96, 96)] },
