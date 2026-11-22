@@ -9,7 +9,8 @@
 
   /* Fond animé (DA des scènes) : remplit tout ce que les POV ne couvrent pas. Percé là où une source OBS doit apparaître. */
   #bg { overflow: hidden; background: var(--kx-bg); }
-  #bg.off { display: none; }
+  #bg { transition: opacity .6s ease, visibility 0s; }
+  #bg.off { opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s .6s; }
   #bg .halo { position: absolute; width: 1300px; height: 1300px; border-radius: 50%; margin: -650px 0 0 -650px;
     background: radial-gradient(circle, rgba(153,51,204,.40) 0%, rgba(86,28,115,.30) 30%, rgba(86,28,115,0) 64%); }
   #bg .halo.a { left: 1500px; top: 300px; animation: povHaloA 26s ease-in-out infinite, kx-pulse 8s ease-in-out infinite; }
@@ -35,12 +36,109 @@
   @keyframes povFloat { 50% { transform: translateY(-14px) scale(1.02); } }
   #deco { pointer-events: none; }
 
-  /* Lecteur Twitch : tourne à 1280 × 720 (Twitch refuse les lecteurs < 400 × 300), réduit à la taille du cadre */
-  .pv { position: absolute; overflow: hidden; background: #000; transition: left .45s var(--kx-out), top .45s var(--kx-out), width .45s var(--kx-out), height .45s var(--kx-out); }
-  .pv.off { visibility: hidden; left: -4000px !important; }
-  .pv .inner { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center; }
+  /* ---------- Transitions ---------- */
+  @property --c { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  :root { --pv-ease: cubic-bezier(.77, 0, .18, 1); --pv-t: .75s; }
+
+  /* Lecteur (Twitch ou VDO.Ninja) : tourne à 1280 × 720 (Twitch refuse les lecteurs < 400 × 300), réduit à la taille du cadre.
+     Quand un joueur change de place, il glisse vers sa nouvelle position (le lecteur n'est jamais rechargé). */
+  .pv { position: absolute; overflow: hidden; background: #000;
+    clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+    transition: left var(--pv-t) var(--pv-ease), top var(--pv-t) var(--pv-ease), width var(--pv-t) var(--pv-ease), height var(--pv-t) var(--pv-ease), --c var(--pv-t) var(--pv-ease); }
+  .pv .inner { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center; transition: transform var(--pv-t) var(--pv-ease); }
   .pv .inner iframe { width: 100%; height: 100%; border: 0; display: block; }
-  .pv.framed { clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c)); }
+  .pv.off { visibility: hidden; left: -4000px !important; transition: none; }
+  .pv.noanim, .pv.noanim .inner, .instant .pv, .instant .pv .inner { transition: none !important; }
+  .pv.pop { animation: pvPop .8s var(--kx-out) both; }
+  .pv.leave { animation: pvLeave .4s cubic-bezier(.55, 0, .9, .4) both; }
+  @keyframes pvPop { 0% { opacity: 0; transform: scale(1.08); filter: brightness(2.2) saturate(.4); } 60% { opacity: 1; } 100% { transform: none; filter: none; } }
+  @keyframes pvLeave { to { opacity: 0; transform: scale(.92); filter: brightness(.4); } }
+
+  /* Habillage : entrées / sorties en cascade */
+  .box.enter { animation: boxIn .7s var(--kx-out) both; }
+  .box.enter.k-plate { animation: plateIn .75s var(--kx-out) both; }
+  .box.enter.k-logo { animation: logoIn .9s cubic-bezier(.34, 1.56, .64, 1) both; }
+  .box.leave { animation: boxOut .4s cubic-bezier(.55, 0, .9, .4) both; }
+  .box.leave.k-plate { animation: plateOut .4s cubic-bezier(.55, 0, .9, .4) both; }
+  @keyframes boxIn { from { opacity: 0; transform: scale(1.05); } }
+  @keyframes boxOut { to { opacity: 0; transform: scale(.95); } }
+  @keyframes plateIn { 0% { clip-path: inset(0 100% 0 0); transform: translateX(-40px); } 100% { clip-path: inset(0 -40px -40px 0); transform: none; } }
+  @keyframes plateOut { 0% { clip-path: inset(0 -40px -40px 0); } 100% { clip-path: inset(0 0 0 100%); transform: translateX(40px); } }
+  @keyframes logoIn { from { opacity: 0; transform: scale(.3) rotate(-25deg); } }
+  /* Flash néon sur le cadre quand le joueur d'une POV change */
+  .box.flash::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    box-shadow: inset 0 0 0 4px var(--kx-violet), inset 0 0 80px rgba(153, 51, 204, .65); animation: boxFlash .9s ease-out both; }
+  @keyframes boxFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+  #players, #deco { transition: opacity .35s ease; }
+  .fading #players, .fading #deco { opacity: 0; transition: opacity .28s ease; }
+
+  /* Balayage entre deux mises en page : bande violette oblique qui couvre l'écran pendant le changement */
+  #sweep { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; }
+  #sweep .sw { position: absolute; top: -200px; bottom: -200px; left: 0; width: 2900px; display: none; background: var(--kx-grad);
+    box-shadow: 0 0 80px rgba(153, 51, 204, .7); }
+  #sweep .sw::before { content: ''; position: absolute; top: 0; bottom: 0; right: -80px; width: 26px; background: var(--kx-silver); box-shadow: 0 0 30px rgba(243, 241, 241, .6); }
+  #sweep .sw::after { content: ''; position: absolute; top: 0; bottom: 0; right: 140px; width: 180px; background: var(--kx-deep); opacity: .8; }
+  #sweep .sw.thin { width: 60px; background: var(--kx-white); box-shadow: 0 0 40px var(--kx-violet); }
+  #sweep .sw.thin::before, #sweep .sw.thin::after { display: none; }
+  #sweep .sw-logo { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; transform: skewX(24deg); }
+  #sweep .sw-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .45)); }
+  #sweep.go .sw { display: block; animation: swGo 1.15s cubic-bezier(.77, 0, .18, 1) both; }
+  #sweep.go .sw.thin { animation-delay: .07s; }
+  /* ---------- Animation logo « façon replay de match » ----------
+     0 → 28 % : le cercle s'ouvre depuis le centre (rayons violets qui tournent), le logo arrive en vrille 3D
+     28 → 64 % : écran couvert, le logo et le nom d'équipe sont posés (on change la mise en page à ce moment-là)
+     64 → 100 % : le cercle se referme sur le logo qui repart en vrille : la nouvelle image apparaît */
+  #sting { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; perspective: 1400px; display: none; }
+  #sting.go { display: block; }
+  #sting .st-cover { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; animation: stIris 1.5s both; }
+  @keyframes stIris {
+    0% { clip-path: circle(0% at 50% 50%); animation-timing-function: cubic-bezier(.6, 0, .2, 1); }
+    28% { clip-path: circle(75% at 50% 50%); }
+    64% { clip-path: circle(75% at 50% 50%); animation-timing-function: cubic-bezier(.75, 0, .35, 1); }
+    100% { clip-path: circle(0% at 50% 50%); } }
+  #sting .st-rays { position: absolute; left: 50%; top: 50%; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px;
+    background: repeating-conic-gradient(from 0deg, rgba(153, 51, 204, .34) 0deg 5deg, rgba(86, 28, 115, 0) 5deg 15deg);
+    -webkit-mask-image: radial-gradient(circle, transparent 0, #000 12%, #000 34%, transparent 58%); mask-image: radial-gradient(circle, transparent 0, #000 12%, #000 34%, transparent 58%);
+    animation: kx-spin 4s linear infinite; }
+  #sting .st-halo { position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, rgba(153, 51, 204, .6), rgba(86, 28, 115, .28) 32%, rgba(42, 43, 44, 0) 62%); }
+  #sting .st-grid { position: absolute; inset: 0; opacity: .5;
+    background-image: linear-gradient(rgba(201, 204, 209, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(201, 204, 209, .06) 1px, transparent 1px);
+    background-size: 60px 60px; background-position: center; }
+  #sting .st-ring { position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px 0 0 -100px; border-radius: 50%; opacity: 0;
+    border: 6px solid var(--kx-violet); box-shadow: 0 0 40px var(--kx-violet), inset 0 0 30px var(--kx-violet); }
+  #sting .st-ring.a { animation: stRingOut 1.5s both; }
+  #sting .st-ring.b { border-width: 3px; border-color: var(--kx-white); box-shadow: 0 0 30px rgba(243, 241, 241, .7); animation: stRingOut 1.5s .05s both; }
+  #sting .st-ring.c { animation: stRingIn 1.5s both; }
+  @keyframes stRingOut { 0% { transform: scale(0); opacity: 1; animation-timing-function: cubic-bezier(.6, 0, .2, 1); } 28% { transform: scale(12.5); opacity: .9; } 34%, 100% { transform: scale(12.5); opacity: 0; } }
+  @keyframes stRingIn { 0%, 63% { transform: scale(12); opacity: 0; } 64% { transform: scale(12); opacity: .9; animation-timing-function: cubic-bezier(.75, 0, .35, 1); } 100% { transform: scale(0); opacity: 1; } }
+  #sting .st-shard { position: absolute; top: -320px; height: 1720px; width: 140px; left: 0; background: var(--kx-grad); opacity: 0;
+    animation: stShard .58s cubic-bezier(.65, 0, .25, 1) both; box-shadow: 0 0 50px rgba(153, 51, 204, .6); }
+  #sting .st-shard.s1 { animation-delay: .36s; }
+  #sting .st-shard.s2 { width: 18px; background: var(--kx-white); animation-delay: .41s; }
+  #sting .st-shard.s3 { width: 300px; background: var(--kx-deep); animation-delay: .32s; }
+  @keyframes stShard { 0% { opacity: 0; transform: translateX(-700px) skewX(-24deg); } 1% { opacity: 1; transform: translateX(-700px) skewX(-24deg); } 100% { opacity: 1; transform: translateX(2700px) skewX(-24deg); } }
+  #sting .st-flash { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at 50% 46%, rgba(243, 241, 241, .9), rgba(243, 241, 241, 0) 55%); animation: stFlash 1.5s both; }
+  @keyframes stFlash { 0%, 25% { opacity: 0; } 30% { opacity: .8; } 44%, 93% { opacity: 0; } 97% { opacity: .55; } 100% { opacity: 0; } }
+  #sting .st-logo { position: absolute; left: 50%; top: 50%; width: 900px; margin: -290px 0 0 -450px; display: flex; flex-direction: column; align-items: center; gap: 22px; transform-style: preserve-3d; }
+  #sting .st-spin { width: 400px; height: 400px; animation: stLogo 1.5s both;
+    filter: drop-shadow(0 22px 50px rgba(0, 0, 0, .6)) drop-shadow(0 0 46px rgba(153, 51, 204, .65)); }
+  #sting .st-spin img { width: 100%; height: 100%; object-fit: contain; }
+  @keyframes stLogo {
+    0% { transform: scale(.05) rotateY(-720deg) rotateZ(-30deg); opacity: 0; animation-timing-function: cubic-bezier(.15, .75, .25, 1); }
+    10% { opacity: 1; }
+    32% { transform: scale(1.16) rotateY(0) rotateZ(0); opacity: 1; animation-timing-function: ease-out; }
+    42% { transform: scale(1); opacity: 1; }
+    62% { transform: scale(1.03); opacity: 1; animation-timing-function: cubic-bezier(.6, -.3, .7, .2); }
+    72% { transform: scale(1.12); opacity: 1; animation-timing-function: cubic-bezier(.7, 0, .9, .4); }
+    92% { opacity: 1; }
+    100% { transform: scale(0) rotateY(540deg) rotateZ(25deg); opacity: 0; } }
+  #sting .st-name { font: italic 800 70px/1 var(--f-title); text-transform: uppercase; color: var(--kx-white); white-space: nowrap;
+    text-shadow: 0 0 30px rgba(153, 51, 204, .85), 0 6px 20px rgba(0, 0, 0, .5); animation: stName 1.5s both; }
+  #sting .st-name small { display: block; margin-top: 10px; font: 700 18px/1 var(--f-body); letter-spacing: .5em; color: var(--kx-silver); text-align: center; text-shadow: none; }
+  @keyframes stName { 0%, 30% { opacity: 0; transform: translateY(24px); letter-spacing: .5em; } 44% { opacity: 1; transform: none; letter-spacing: .1em; }
+    62% { opacity: 1; transform: none; letter-spacing: .12em; } 70%, 100% { opacity: 0; transform: translateY(-14px); letter-spacing: .2em; } }
+
+  @keyframes swGo { from { transform: translateX(-3400px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
 
   .box { position: absolute; }
   .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px;
@@ -75,6 +173,14 @@
 </div>
 <div id="players"></div>
 <div id="deco"></div>
+<div id="sting">
+  <div class="st-cover"><div class="st-halo"></div><div class="st-grid"></div><div class="st-rays"></div></div>
+  <div class="st-shard s3"></div><div class="st-shard s1"></div><div class="st-shard s2"></div>
+  <div class="st-ring a"></div><div class="st-ring b"></div><div class="st-ring c"></div>
+  <div class="st-flash"></div>
+  <div class="st-logo"><div class="st-spin" id="stLogo"></div><div class="st-name" id="stName"></div></div>
+</div>
+<div id="sweep"><div class="sw thin"></div><div class="sw"><div class="sw-logo" id="swLogo"></div></div></div>
 <script src="/js/kx.js"></script>
 <script>
 /* Une seule source OBS « /pov » : la mise en page en direct (Admin > POV) et les joueurs affectés aux emplacements.
@@ -151,39 +257,109 @@ function setMuted(e, muted) {
   e.muted = muted; applyMute(e);
 }
 
+const decoEls = new Map();   // clé élément -> { el, geo, content, html, pid }
+let rendered = null;        // mise en page affichée ('-' si rien), null avant le premier rendu
+let lastSt = null, holding = false;
+const later = (fn, ms) => setTimeout(fn, ms);
+const nextFrame = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
+
+// Point d'entrée : décide de la transition (balayage, fondu ou aucune) quand la mise en page en direct change
 function render(st) {
+  lastSt = st;
+  if (holding) return; // une transition est en cours : elle appliquera le dernier état au bon moment
+  const pv = st.pov || {};
+  const layout = (pv.layouts || []).find(l => l.id === (FORCE || pv.live)) || (pv.layouts || [])[0];
+  const sig = pv.visible !== false && layout ? layout.id : '-';
+  const mode = pv.transition || 'logo';
+  if (rendered !== null && rendered !== '-' && sig !== '-' && sig !== rendered && mode !== 'none') {
+    holding = true;
+    if (mode === 'logo') {
+      playSting(st);
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: .55 }); }, 620); // écran couvert par le cercle : on change tout
+    } else if (mode === 'sweep') {
+      const sw = document.getElementById('sweep');
+      document.getElementById('swLogo').innerHTML = KX.logo(st);
+      sw.classList.remove('go'); void sw.offsetWidth; sw.classList.add('go');
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: .3 }); }, 560); // écran couvert : on change tout d'un coup
+      later(() => sw.classList.remove('go'), 1300);
+    } else { // fondu
+      document.body.classList.add('fading');
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: .05 }); document.body.classList.remove('fading'); }, 300);
+    }
+    return;
+  }
+  apply(st, { delay: rendered === null ? .15 : 0 });
+}
+
+// Animation logo façon replay (aussi déclenchable à la main depuis Admin > POV)
+let stingT = null;
+function playSting(st) {
+  const s = st || lastSt || {};
+  const el = document.getElementById('sting');
+  document.getElementById('stLogo').innerHTML = KX.logo(s);
+  document.getElementById('stName').innerHTML = `${KX.esc(s.settings?.teamName || 'KAELYX')}<small>${KX.esc(s.settings?.teamSub || '')}</small>`;
+  el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 1600);
+}
+KX.on('trigger', t => { if (t && t.kind === 'pov-sting') playSting(); });
+
+function leave(el) {
+  el.classList.remove('enter', 'flash'); el.classList.add('leave');
+  later(() => el.remove(), 420);
+}
+
+function apply(st, { instant = false, delay = 0 } = {}) {
   const pv = st.pov || {};
   const layout = (pv.layouts || []).find(l => l.id === (FORCE || pv.live)) || (pv.layouts || [])[0];
   const deco = document.getElementById('deco');
   const players = st.players || [];
   const bySlot = s => players.find(p => p.id === (pv.slots || [])[s]);
   const items = pv.visible === false || !layout ? [] : layout.items;
+  rendered = pv.visible !== false && layout ? layout.id : '-';
+  if (instant) { document.body.classList.add('instant'); nextFrame(() => document.body.classList.remove('instant')); }
 
-  // 1. Lecteurs (Twitch ou VDO.Ninja) : placés sur leur POV, les autres joueurs encore affectés restent prêts (cachés, muets)
+  // 1. Lecteurs : glissent vers leur POV ; apparition « pop », disparition animée ; les joueurs encore affectés restent prêts
   const g = ++gen;
   const placed = new Set();
   const wanted = new Set((pv.slots || []).filter(Boolean));
-  for (const i of items.filter(i => i.kind === 'pov')) {
+  items.filter(i => i.kind === 'pov').forEach((i, n) => {
     const p = bySlot(i.slot);
-    if (!p || placed.has(p.id)) continue;
+    if (!p || placed.has(p.id)) return;
     const src = sourceOf(p);
-    if (!src) continue;
+    if (!src) return;
     placed.add(p.id);
     ensurePlayer(p, src).then(e => {
       if (g !== gen) return;
-      const s = Math.max(i.w / 1280, i.h / 720);
+      const wasHidden = e.el.classList.contains('off') || e.el.classList.contains('leave');
+      clearTimeout(e.hideT);
+      if (wasHidden) e.el.classList.add('noanim');
+      e.el.classList.remove('off', 'leave');
       Object.assign(e.el.style, { left: i.x + 'px', top: i.y + 'px', width: i.w + 'px', height: i.h + 'px', zIndex: isFull(i) ? 1 : 2 });
-      e.el.style.setProperty('--c', cut(i) + 'px');
-      e.inner.style.transform = `translate(-50%, -50%) scale(${s})`;
-      e.el.classList.toggle('framed', !isFull(i));
-      e.el.classList.remove('off');
+      e.el.style.setProperty('--c', (isFull(i) ? 0 : cut(i)) + 'px');
+      e.inner.style.transform = `translate(-50%, -50%) scale(${Math.max(i.w / 1280, i.h / 720)})`;
+      if (wasHidden) {
+        void e.el.offsetWidth;
+        e.el.classList.remove('noanim', 'pop');
+        e.el.style.animationDelay = (delay + n * .08) + 's';
+        void e.el.offsetWidth; e.el.classList.add('pop');
+      }
       setMuted(e, pv.audio === 'none' || (pv.audio === 'main' && i.slot !== 0));
     });
-  }
+  });
   for (const [id, e] of pool) {
     if (placed.has(id)) continue;
-    if (!wanted.has(id)) { e.el.remove(); pool.delete(id); continue; } // plus affecté : on libère le lecteur
-    e.el.classList.add('off'); setMuted(e, true);
+    if (!wanted.has(id)) { // plus affecté : sortie animée puis on libère le lecteur
+      pool.delete(id);
+      if (instant) e.el.remove(); else { e.el.classList.add('leave'); later(() => e.el.remove(), 420); }
+      continue;
+    }
+    setMuted(e, true);
+    if (e.el.classList.contains('off') || e.el.classList.contains('leave')) continue;
+    if (instant) e.el.classList.add('off');
+    else {
+      e.el.classList.remove('pop'); e.el.style.animationDelay = '0s'; e.el.classList.add('leave');
+      e.hideT = later(() => { e.el.classList.remove('leave'); e.el.classList.add('off'); }, 420);
+    }
   }
 
   // Fond animé : percé (clip-path evenodd) sur les POV « Source OBS » et les cadres Cam, pour laisser voir la capture OBS dessous
@@ -198,30 +374,59 @@ function render(st) {
     if (mark.dataset.k !== logoKey) { mark.dataset.k = logoKey; mark.innerHTML = KX.logo(st); }
   }
 
-  // 2. Habillage : cadres, plaques, cams, logo (+ repères d'aide hors OBS)
-  deco.innerHTML = items.map(i => {
-    const box = `left:${i.x}px;top:${i.y}px;width:${i.w}px;height:${i.h}px`;
-    const p = bySlot(i.slot);
-    if (i.kind === 'pov') {
-      const frame = isFull(i) ? '' : KX.frame(i.w, i.h, cut(i));
-      let hint = '';
-      if (SHOW_HINTS && !p) hint = `<div class="hint empty"><div><b>POV ${i.slot + 1}</b>aucun joueur</div></div>`;
-      else if (SHOW_HINTS && p && p.povSource === 'obs') hint = `<div class="hint"><div><b>${KX.esc(p.pseudo)}</b>source OBS · ${i.x}, ${i.y} · ${i.w} × ${i.h}</div></div>`;
-      else if (SHOW_HINTS && p && p.povSource === 'twitch' && !channelOf(p)) hint = `<div class="hint empty"><div><b>${KX.esc(p.pseudo)}</b>chaîne Twitch manquante</div></div>`;
-      return `<div class="box" style="${box};z-index:${isFull(i) ? 1 : 3}">${frame}${hint}</div>`;
+  // 2. Habillage : un élément par entrée de la mise en page, gardé tant que son contenu ne change pas
+  //    (pas de clignotement pendant l'édition), remplacé avec une sortie / entrée animée sinon.
+  const next = new Map();
+  items.forEach((i, n) => {
+    const d = decoOf(i, bySlot(i.slot), st);
+    if (!d) return;
+    const key = layout.id + ':' + i.id;
+    const geo = [i.x, i.y, i.w, i.h].join();
+    const cur = decoEls.get(key);
+    if (cur && cur.content === d.content) {
+      if (cur.geo !== geo || cur.html !== d.html) { cur.el.style.cssText = d.style; cur.el.innerHTML = d.html; cur.geo = geo; cur.html = d.html; }
+      if (i.kind === 'pov' && cur.pid !== d.pid && !instant) { cur.el.classList.remove('flash'); void cur.el.offsetWidth; cur.el.classList.add('flash'); }
+      cur.pid = d.pid;
+      next.set(key, cur);
+      return;
     }
-    if (i.kind === 'plate') {
-      if (!p) return SHOW_HINTS ? `<div class="box" style="${box};z-index:4"><div class="hint empty" style="font-size:14px">Plaque POV ${i.slot + 1}</div></div>` : '';
-      const k = i.h / 72;
-      const meta = [p.role || 'Joueur', p.game].filter(Boolean).map(KX.esc).join('<i></i>');
-      return `<div class="box" style="${box};z-index:4"><div class="plate ${i.h < 56 ? 'slim' : ''}" style="width:${i.w / k}px;transform:scale(${k})">
-        <div class="pl-logo">${KX.logo(st)}</div>
-        <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div></div></div>`;
-    }
-    if (i.kind === 'cam') return `<div class="box" style="${box};z-index:3">${KX.frame(i.w, i.h)}${SHOW_HINTS ? `<div class="hint"><div><b>Cam</b>source OBS · ${i.x}, ${i.y}</div></div>` : ''}</div>`;
-    if (i.kind === 'logo') return `<div class="box logo-box" style="${box};z-index:5">${KX.logo(st)}</div>`;
-    return '';
-  }).join('');
+    if (cur) leave(cur.el);
+    const el = document.createElement('div');
+    el.className = `box k-${i.kind} ${d.cls || ''} enter`;
+    el.style.cssText = d.style;
+    el.style.animationDelay = (delay + (cur ? .22 : 0) + n * .06) + 's'; // la nouvelle plaque entre pendant que l'ancienne sort
+    el.innerHTML = d.html;
+    deco.appendChild(el);
+    next.set(key, { el, geo, content: d.content, html: d.html, pid: d.pid });
+  });
+  for (const [k, c] of decoEls) if (!next.has(k)) { if (instant) c.el.remove(); else leave(c.el); }
+  decoEls.clear();
+  for (const [k, v] of next) decoEls.set(k, v);
+}
+
+// Contenu d'un élément d'habillage. « content » décide s'il faut le rejouer en animation quand il change.
+function decoOf(i, p, st) {
+  const z = i.kind === 'pov' ? (isFull(i) ? 1 : 3) : i.kind === 'plate' ? 4 : i.kind === 'logo' ? 5 : 3;
+  const style = `left:${i.x}px;top:${i.y}px;width:${i.w}px;height:${i.h}px;z-index:${z}`;
+  if (i.kind === 'pov') {
+    let hint = '', hintKey = '';
+    if (SHOW_HINTS && !p) { hint = `<div class="hint empty"><div><b>POV ${i.slot + 1}</b>aucun joueur</div></div>`; hintKey = 'empty'; }
+    else if (SHOW_HINTS && p.povSource === 'obs') { hint = `<div class="hint"><div><b>${KX.esc(p.pseudo)}</b>source OBS · ${i.x}, ${i.y} · ${i.w} × ${i.h}</div></div>`; hintKey = 'obs' + p.id; }
+    else if (SHOW_HINTS && p.povSource === 'twitch' && !channelOf(p)) { hint = `<div class="hint empty"><div><b>${KX.esc(p.pseudo)}</b>chaîne Twitch manquante</div></div>`; hintKey = 'nochan' + p.id; }
+    return { style, html: (isFull(i) ? '' : KX.frame(i.w, i.h, cut(i))) + hint, content: 'pov' + isFull(i) + hintKey, pid: p?.id || '' };
+  }
+  if (i.kind === 'plate') {
+    if (!p) return SHOW_HINTS ? { style, html: `<div class="hint empty" style="font-size:14px">Plaque POV ${i.slot + 1}</div>`, content: 'empty' } : null;
+    const k = i.h / 72;
+    const meta = [p.role || 'Joueur', p.game].filter(Boolean).map(KX.esc).join('<i></i>');
+    const html = `<div class="plate ${i.h < 56 ? 'slim' : ''}" style="width:${i.w / k}px;transform:scale(${k})">
+      <div class="pl-logo">${KX.logo(st)}</div>
+      <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div></div>`;
+    return { style, html, content: [p.id, p.pseudo, p.role, p.game, st.settings?.logo].join('|') };
+  }
+  if (i.kind === 'cam') return { style, html: KX.frame(i.w, i.h) + (SHOW_HINTS ? `<div class="hint"><div><b>Cam</b>source OBS · ${i.x}, ${i.y}</div></div>` : ''), content: 'cam' };
+  if (i.kind === 'logo') return { style, cls: 'logo-box', html: KX.logo(st), content: 'logo' + (st.settings?.logo || '') };
+  return null;
 }
 KX.starfield(document.getElementById('stars'), 110);
 KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo]), st.settings?.logo], render);

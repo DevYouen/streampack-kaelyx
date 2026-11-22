@@ -41,7 +41,10 @@ TABS.pov = function () {
     <div class="grid" style="margin-top:16px">
       ${Array.from({ length: slots }, (_, s) => field(s ? `POV ${s + 1} (petite)` : 'POV 1 (principale)', `pov.slots.${s}`, { options: opts, rerender: true })).join('')}
       ${field('Son', 'pov.audio', { options: [['main', 'POV principale seulement'], ['none', 'Tout coupé'], ['all', 'Toutes les POV']] })}
-    </div></div>
+      ${field('Transition entre mises en page', 'pov.transition', { options: [['logo', 'Logo (style replay)'], ['sweep', 'Bande oblique'], ['fade', 'Fondu'], ['none', 'Aucune']] })}
+    </div>
+    <div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="pov-sting">Jouer l’animation logo</button>
+      <span class="pov-sub" style="margin:0">Par exemple avant un replay ou un moment fort.</span></div></div>
 
   <div class="card"><div class="card-head"><h3 class="grow">Éditeur de mise en page</h3>
       ${isLive ? '<span class="pov-live">● En direct : les changements sont visibles tout de suite</span>' : `<button type="button" class="btn" data-act="pov-live" data-id="${esc(L.id)}">Mettre en direct</button>`}</div>
@@ -215,6 +218,7 @@ document.addEventListener('change', e => {
 
 /* ---------- Actions ---------- */
 Object.assign(ACTIONS, {
+  'pov-sting': () => { trigger({ kind: 'pov-sting' }); setPreview('/pov'); },
   'pov-msg': d => { const p = S.players[+d.i]; if (p) povCopy(povMessage(p), `Message copié : colle-le à ${p.pseudo} (Discord…)`); },
   'pov-link': d => { const p = S.players[+d.i]; if (p) povCopy(povPushUrl(p), 'Lien copié'); },
   'pov-reset': d => {

@@ -41,7 +41,7 @@ const DEFAULTS = {
   // Cadre webcam seul (/cam) : la source OBS fait la taille du cadre
   camframe: { w: 640, h: 360, name: '', sub: '' },
   // POV joueurs (/pov) : mises en page libres (éditeur glisser-déposer) + joueurs affectés aux emplacements
-  pov: { visible: true, live: 'duo', audio: 'main', slots: [], layouts: [] }
+  pov: { visible: true, live: 'duo', audio: 'main', transition: 'logo', slots: [], layouts: [] }
 };
 const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch: '', x: '',
   camVisible: true, camPos: 'bl', camSize: 'm', showTag: true, showTicker: false, showSocial: true,
@@ -97,6 +97,7 @@ function normalize(s) {
   if (!pv.layouts.some(l => l.id === pv.live)) pv.live = pv.layouts[0]?.id || '';
   pv.slots = pv.slots.map(s => String(s ?? '')).slice(0, 8);
   if (!['main', 'none', 'all'].includes(pv.audio)) pv.audio = 'main';
+  if (!['logo', 'sweep', 'fade', 'none'].includes(pv.transition)) pv.transition = 'logo';
   for (const p of out.players) {
     if (!['twitch', 'vdo', 'obs'].includes(p.povSource)) p.povSource = 'twitch';
     // Identifiant VDO.Ninja propre au joueur, impossible à deviner (quiconque le connaît peut voir son écran)
