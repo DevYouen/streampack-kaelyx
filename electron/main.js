@@ -204,8 +204,87 @@ app.on('second-instance', showWindow);
 app.on('window-all-closed', () => {}); // on reste près de l'horloge
 app.on('before-quit', () => { quitting = true; try { server && server.close(); } catch {} });
 
+// --- Lancement façon Discord : fenêtre « Recherche de mises à jour… » avant d'ouvrir l'application -----------
+// Le caster n'est pas encore en stream : si une version existe, on la télécharge et on l'installe tout de suite
+// (relance automatique). Sans mise à jour, sans internet ou en cas d'erreur, l'application s'ouvre normalement.
+function splashHtml() {
+  let logo = '';
+  try { logo = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(__dirname, '..', 'public', 'logo', 'logo.svg')).toString('base64'); }
+  catch { try { logo = 'data:image/png;base64,' + fs.readFileSync(ICON).toString('base64'); } catch {} }
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+  html,body{margin:0;height:100%;overflow:hidden;user-select:none;-webkit-app-region:drag}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:600 14px/1.3 'Segoe UI',system-ui,sans-serif;color:#F3F1F1;
+    background:radial-gradient(420px 300px at 50% 30%,rgba(153,51,204,.45),rgba(86,28,115,.2) 50%,transparent 75%),#2A2B2C}
+  body::before{content:'';position:absolute;inset:0;border:1px solid rgba(201,204,209,.18);pointer-events:none}
+  img{width:120px;height:120px;animation:float 2.4s ease-in-out infinite;filter:drop-shadow(0 0 24px rgba(153,51,204,.6))}
+  @keyframes float{50%{transform:translateY(-6px) scale(1.03)}}
+  h1{margin:0;font:italic 800 22px/1 'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+  #s{color:#C9CCD1;min-height:18px;text-align:center;padding:0 20px}
+  .bar{width:220px;height:6px;background:rgba(243,241,241,.1);overflow:hidden;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)}
+  .bar i{display:block;height:100%;width:30%;background:linear-gradient(90deg,#561C73,#9933CC);box-shadow:0 0 10px #9933CC;animation:indet 1.1s ease-in-out infinite}
+  .bar.det i{animation:none;transition:width .3s}
+  @keyframes indet{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+  #k{display:none;-webkit-app-region:no-drag;background:none;border:0;color:#C9CCD1;font:600 12px 'Segoe UI',sans-serif;text-decoration:underline;cursor:pointer}
+  </style></head><body><img src="${logo}" alt=""><h1>Streampack Kaelyx</h1><div id="s">Recherche de mises à jour…</div>
+  <div class="bar" id="b"><i id="p"></i></div><button id="k" onclick="document.title='skip'">Lancer sans mettre à jour</button></body></html>`;
+}
+
+function updateAtLaunch() {
+  if (!app.isPackaged) return Promise.resolve(); // pas de mises à jour en mode développement
+  return new Promise(done => {
+    const splash = new BrowserWindow({ width: 360, height: 400, frame: false, resizable: false, show: false, center: true,
+      backgroundColor: '#2A2B2C', icon: icon(), skipTaskbar: false, title: APP_NAME, webPreferences: { sandbox: true, contextIsolation: true } });
+    splash.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(splashHtml()));
+    splash.once('ready-to-show', () => splash.show());
+    const say = (text, percent) => splash.isDestroyed() ? null : splash.webContents.executeJavaScript(
+      `document.getElementById('s').textContent=${JSON.stringify(text)};` +
+      (percent === undefined ? '' : `document.getElementById('b').classList.add('det');document.getElementById('p').style.width='${percent}%';`)).catch(() => {});
+
+    let finished = false, installing = false;
+    const timers = [];
+    const off = () => {
+      autoUpdater.removeListener('update-available', onAvail);
+      autoUpdater.removeListener('update-not-available', onNone);
+      autoUpdater.removeListener('download-progress', onProgress);
+      autoUpdater.removeListener('update-downloaded', onReady);
+      autoUpdater.removeListener('error', onError);
+      timers.forEach(clearTimeout);
+    };
+    const finish = () => { if (finished || installing) return; finished = true; off(); if (!splash.isDestroyed()) splash.destroy(); done(); };
+    const onNone = () => { say('À jour ✓'); timers.push(setTimeout(finish, 450)); };
+    const onError = () => finish(); // hors ligne, GitHub injoignable… : on lance quand même
+    const onAvail = info => {
+      clearTimeout(checkTimeout);
+      say(`Téléchargement de la version ${info.version}…`, 0);
+      // Connexion lente : après 20 s on propose de lancer quand même (la mise à jour s'installera à la fermeture)
+      timers.push(setTimeout(() => !splash.isDestroyed() && splash.webContents.executeJavaScript(`document.getElementById('k').style.display='block'`).catch(() => {}), 20000));
+    };
+    const onProgress = p => say(`Téléchargement de la mise à jour… ${Math.round(p.percent || 0)} %`, Math.round(p.percent || 0));
+    const onReady = info => {
+      installing = true; off();
+      say(`Installation de la version ${info.version}…`, 100);
+      quitting = true;
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 900); // installation silencieuse puis relance
+    };
+    autoUpdater.autoDownload = true;
+    autoUpdater.on('update-available', onAvail);
+    autoUpdater.on('update-not-available', onNone);
+    autoUpdater.on('download-progress', onProgress);
+    autoUpdater.on('update-downloaded', onReady);
+    autoUpdater.on('error', onError);
+    splash.on('page-title-updated', (e, title) => { if (title === 'skip') finish(); });
+    splash.on('closed', () => { if (!installing) finish(); });
+    // Pas de réponse en 10 s (réseau capricieux) : on lance l'application
+    const checkTimeout = setTimeout(finish, 10000);
+    timers.push(checkTimeout);
+    autoUpdater.checkForUpdates().catch(onError);
+  });
+}
+
 app.whenReady().then(async () => {
   app.setAppUserModelId('fr.kaelyx.streampack'); // notifications Windows
+  await updateAtLaunch();
+  if (quitting) return; // une mise à jour s'installe : l'application va redémarrer
   prepareUserDir();
   await offerImport();
   try { await startServer(); }

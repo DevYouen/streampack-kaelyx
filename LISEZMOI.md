@@ -7,7 +7,7 @@ Overlays OBS aux couleurs de Kaelyx, avec une console admin pour tout modifier e
 2. L'application s'ouvre sur l'admin. Au premier lancement, elle propose de reprendre les réglages de l'ancien pack : choisis son fichier `data\state.json`.
 3. Fermer la fenêtre ne coupe pas les overlays : l'application reste près de l'horloge (icône K). Pour quitter : clic droit sur l'icône > *Quitter*.
 
-**Mises à jour :** automatiques. L'application télécharge les nouvelles versions en fond et les installe quand tu la fermes (jamais en plein stream). Tes réglages, photos et URL OBS ne changent pas.
+**Mises à jour :** comme Discord, l'application cherche une nouvelle version à chaque lancement (petite fenêtre « Recherche de mises à jour… »). Si elle en trouve une, elle la télécharge, l'installe et se relance toute seule. Sans internet, elle s'ouvre normalement. Pendant l'utilisation, elle vérifie aussi toutes les 30 min et propose d'installer (jamais de redémarrage forcé en plein stream). Tes réglages, photos et URL OBS ne changent pas.
 
 **Ton dossier :** `Documents\Streampack Kaelyx` (clic droit sur l'icône > *Dossier photos, masques et stinger*) :
 - `photos\` : photos des joueurs ;
