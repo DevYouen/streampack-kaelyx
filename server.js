@@ -39,10 +39,29 @@ const DEFAULTS = {
   // Desk caster : 1 à 3 casters, plein écran (/caster) ou petites cams sur le jeu (/caster/pip)
   casters: { kicker: 'Desk', title: 'Analyse', showScore: true, pipPos: 'tr', pipSize: 'm', list: [] },
   // Cadre webcam seul (/cam) : la source OBS fait la taille du cadre
-  camframe: { w: 640, h: 360, name: '', sub: '' }
+  camframe: { w: 640, h: 360, name: '', sub: '' },
+  // POV joueurs (/pov) : mises en page libres (éditeur glisser-déposer) + joueurs affectés aux emplacements
+  pov: { visible: true, live: 'duo', audio: 'main', slots: [], layouts: [] }
 };
 const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch: '', x: '',
-  camVisible: true, camPos: 'bl', camSize: 'm', showTag: true, showTicker: false, showSocial: true };
+  camVisible: true, camPos: 'bl', camSize: 'm', showTag: true, showTicker: false, showSocial: true,
+  povSource: 'twitch', povChannel: '' }; // POV : live Twitch du joueur (povChannel, sinon champ twitch) ou source OBS
+// Élément d'une mise en page POV, en pixels du 1920 × 1080. kind : pov | plate | cam | logo ; slot : n° de POV (0 = principale)
+const POV_ITEM = { id: '', kind: 'pov', slot: 0, x: 0, y: 0, w: 480, h: 270 };
+const POV_LAYOUT = { id: '', name: 'Mise en page', items: [] };
+const it = (kind, slot, x, y, w, h) => ({ id: kind + slot + '-' + x + '-' + y, kind, slot, x, y, w, h });
+const POV_PRESETS = [
+  { id: 'solo', name: 'Solo', items: [it('pov', 0, 0, 0, 1920, 1080), it('plate', 0, 48, 960, 620, 72), it('logo', 0, 1792, 32, 96, 96)] },
+  { id: 'duo', name: 'Duo (grande + petite)', items: [it('pov', 0, 0, 0, 1920, 1080), it('pov', 1, 1392, 48, 480, 270),
+    it('plate', 1, 1392, 318, 480, 48), it('plate', 0, 48, 960, 620, 72), it('logo', 0, 48, 48, 96, 96)] },
+  { id: 'cote', name: 'Côte à côte', items: [it('pov', 0, 0, 270, 960, 540), it('pov', 1, 960, 270, 960, 540),
+    it('plate', 0, 24, 834, 560, 64), it('plate', 1, 1336, 834, 560, 64), it('logo', 0, 912, 120, 96, 96)] },
+  { id: 'quatuor', name: 'Quatuor (2 × 2)', items: [it('pov', 0, 0, 0, 960, 540), it('pov', 1, 960, 0, 960, 540),
+    it('pov', 2, 0, 540, 960, 540), it('pov', 3, 960, 540, 960, 540),
+    it('plate', 0, 16, 468, 460, 56), it('plate', 1, 976, 468, 460, 56), it('plate', 2, 16, 1008, 460, 56), it('plate', 3, 976, 1008, 460, 56),
+    it('logo', 0, 912, 492, 96, 96)] }
+];
+const clampN = (v, a, b) => Math.min(b, Math.max(a, Math.round(Number(v) || 0)));
 const ROW = { name: '', elims: 0, points: 0 };
 const CASTER = { name: '', handle: '', role: 'Caster' };
 
@@ -60,6 +79,24 @@ function normalize(s) {
   out.scoreboard.rows = out.scoreboard.rows.filter(isObj).map(r => fill(ROW, r));
   out.casters.list = out.casters.list.filter(isObj).map(c => fill(CASTER, c)).slice(0, 3);
   out.ticker.items = out.ticker.items.map(x => String(x ?? ''));
+  const pv = out.pov;
+  if (!pv.layouts.length) pv.layouts = JSON.parse(JSON.stringify(POV_PRESETS));
+  pv.layouts = pv.layouts.filter(isObj).map(l => {
+    const L = fill(POV_LAYOUT, l);
+    L.items = L.items.filter(isObj).map(i => {
+      const I = fill(POV_ITEM, i);
+      if (!['pov', 'plate', 'cam', 'logo'].includes(I.kind)) I.kind = 'pov';
+      I.slot = clampN(I.slot, 0, 7);
+      I.w = clampN(I.w, 16, 1920); I.h = clampN(I.h, 16, 1080);
+      I.x = clampN(I.x, -I.w + 16, 1920 - 16); I.y = clampN(I.y, -I.h + 16, 1080 - 16);
+      return I;
+    }).slice(0, 40);
+    return L;
+  }).filter(l => l.id).slice(0, 30);
+  if (!pv.layouts.some(l => l.id === pv.live)) pv.live = pv.layouts[0]?.id || '';
+  pv.slots = pv.slots.map(s => String(s ?? '')).slice(0, 8);
+  if (!['main', 'none', 'all'].includes(pv.audio)) pv.audio = 'main';
+  for (const p of out.players) if (p.povSource !== 'obs') p.povSource = 'twitch';
   return out;
 }
 
@@ -146,6 +183,7 @@ const ROUTES = [
   [/^\/stinger\/?$/, 'overlays/stinger.html'],
   [/^\/roster\/?$/, 'overlays/roster.html'],
   [/^\/cam\/?$/, 'overlays/cam.html'],
+  [/^\/pov\/?$/, 'overlays/pov.html'],
   [/^\/caster(\/pip)?\/?$/, 'overlays/caster.html'],
   [/^\/chat\/?$/, 'overlays/chat.html'],
   [/^\/twitch-auth\/?$/, 'twitch-auth.html']

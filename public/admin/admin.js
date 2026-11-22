@@ -130,7 +130,7 @@ function adopt(remote) {
 }
 // Re-rendre sans casser une saisie en cours : on attend que le champ perde le focus
 let renderPending = false;
-const editing = () => { const a = document.activeElement; return !!(a && a.closest('#main') && a.matches('input, textarea, select')); };
+const editing = () => { if (typeof povDrag !== 'undefined' && povDrag) return true; const a = document.activeElement; return !!(a && a.closest('#main') && a.matches('input, textarea, select')); };
 function renderSoon() { if (editing()) renderPending = true; else renderTab(); }
 document.addEventListener('focusout', () => setTimeout(() => { if (renderPending && !editing()) { renderPending = false; renderTab(); } }, 0));
 
@@ -410,7 +410,7 @@ const TABS = {
       ...S.players.map(p => ['Joueur · ' + p.pseudo, '/p/' + p.id]),
       ['Starting soon', '/scene/starting'], ['BRB', '/scene/brb'], ['Fin de stream', '/scene/ending'], ['Difficultés techniques', '/scene/tech'], ['Just chatting', '/scene/chatting'],
       ['Lower third', '/lowerthird'], ['Ticker', '/ticker'], ['Chat', '/chat'], ['Scoreboard', '/scoreboard'], ['Alertes', '/alerts'], ['Stinger', '/stinger'],
-      ['Casters (desk)', '/caster'], ['Casters (petites cams)', '/caster/pip'], ['Cadre webcam', '/cam'],
+      ['POV joueurs', '/pov'], ['Casters (desk)', '/caster'], ['Casters (petites cams)', '/caster/pip'], ['Cadre webcam', '/cam'],
       ['Roster', '/roster'], ['Roster Fortnite', '/roster?game=Fortnite'], ['Roster LoL', '/roster?game=League of Legends']
     ];
     return head('Pour OBS', 'Liens OBS', '') + `
@@ -447,7 +447,7 @@ const TABS = {
 };
 
 const DEFAULT_PV = { players: () => S.players[0] ? '/p/' + S.players[0].id : '/roster', scenes: () => '/scene/starting', lowerthird: () => '/lowerthird',
-  ticker: () => '/ticker', casters: () => '/caster', scoreboard: () => '/scoreboard', alerts: () => '/alerts', links: () => pvPath || '/roster', settings: () => '/scene/starting', twitch: () => '/chat' };
+  ticker: () => '/ticker', casters: () => '/caster', pov: () => '/pov', scoreboard: () => '/scoreboard', alerts: () => '/alerts', links: () => pvPath || '/roster', settings: () => '/scene/starting', twitch: () => '/chat' };
 
 function renderTab() {
   const y = scrollY;

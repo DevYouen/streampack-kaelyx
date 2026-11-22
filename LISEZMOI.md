@@ -36,6 +36,7 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 | Alertes (Twitch + tests depuis l'admin) | `/alerts` |
 | Chat Twitch (source navigateur ~500 × 800) | `/chat` |
 | Stinger (déclenché depuis l'admin) | `/stinger` |
+| POV joueurs : grande POV, petites POV, plaques (réglages : Admin > POV) | `/pov` (ou `/pov?layout=<id>` pour forcer une mise en page) |
 | Desk casters, 1 à 3 cams (réglages : Admin > Cam & casters) | `/caster` |
 | Casters en petites cams sur le jeu | `/caster/pip` |
 | Cadre webcam seul (source OBS de la taille réglée, 640 × 360 par défaut) | `/cam` (ou `/cam?player=<pseudo>`, `/cam?w=480&h=270&name=Nom`) |
@@ -68,6 +69,14 @@ Une lumière fait le tour des cadres violets (webcams, chat, roster), glisse sur
 ## Palette (stricte)
 `#2A2B2C` fond · `#9933CC` violet · `#561C73` violet profond · `#F3F1F1` texte · `#C9CCD1` argent
 Polices : Barlow Condensed (titres) et Inter (textes), chargées depuis Google Fonts.
+
+## POV joueurs
+Une seule **Source navigateur** OBS : `/pov` en **1920 × 1080**, avec *Contrôler l'audio via OBS* coché pour régler le son des POV.
+- **En direct** (Admin > POV) : choisis la mise en page (Solo, Duo, Côte à côte, Quatuor, ou les tiennes), puis clique sur un joueur pour le mettre en grand. L'ancienne POV principale passe en petite. Le lecteur n'est pas rechargé quand un joueur change de place.
+- **Éditeur** : glisse les éléments (POV, plaques, cam, logo) dans l'écran 16:9 et tire un coin pour les redimensionner. Aimantation aux bords, au centre et aux autres éléments. Les plaques collées à une POV la suivent. Crée, duplique ou renomme autant de mises en page que tu veux.
+- **Sources** : *Live Twitch* affiche le stream du joueur (sa chaîne, ou celle de sa fiche joueur). *Source OBS* laisse un trou transparent : l'aperçu indique sa position et sa taille pour y placer ta capture, NDI ou VDO.Ninja sous la source `/pov`.
+- **Son** : POV principale seulement (par défaut), tout coupé, ou toutes les POV.
+- Les repères gris (« aucun joueur », « source OBS… ») n'apparaissent que dans l'aperçu et le navigateur, jamais dans OBS.
 
 ## Mot de passe de l'admin
 L'admin demande un mot de passe (donné par le mainteneur du pack). Il est retenu **30 jours** sur chaque appareil : fenêtre de l'application, dock OBS, navigateur, téléphone.
