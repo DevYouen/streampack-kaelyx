@@ -209,3 +209,9 @@ body:has(.login) { overflow: hidden; }
 .pov-props { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .pov-src { align-items: end; padding: 10px 0; border-top: 1px solid var(--line); }
 .pov-name { min-height: 44px; display: flex; align-items: center; font-size: 16px; }
+.pov-help { margin: 0 0 8px; padding-left: 18px; color: var(--kx-silver); font-size: 13px; line-height: 1.6; }
+.pov-help b { color: var(--kx-white); }
+.pov-link { margin: 4px 0 6px; display: flex; flex-direction: column; gap: 10px; }
+.pov-link code { font: 500 12px/1.4 ui-monospace, Menlo, monospace; color: var(--kx-silver); word-break: break-all; }
+.pov-src { padding: 12px 0; border-top: 1px solid var(--line); }
+.pov-src .grid { align-items: end; }

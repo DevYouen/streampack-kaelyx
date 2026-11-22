@@ -75,14 +75,41 @@ TABS.pov = function () {
   </div>
 
   <div class="card"><div class="card-head"><h3>Sources des POV</h3></div>
-    <p class="pov-sub" style="margin-top:0">Live Twitch : le pack affiche le stream du joueur. Source OBS : le pack laisse un trou transparent (position affichée dans l’aperçu) où tu places ta capture, NDI ou VDO.Ninja.</p>
-    ${S.players.length ? S.players.map((p, i) => `<div class="grid pov-src">
-      <div class="field"><span>Joueur</span><b class="pov-name">${esc(p.pseudo)}</b></div>
-      ${field('Source', `players.${i}.povSource`, { options: [['twitch', 'Live Twitch'], ['obs', 'Source OBS']], rerender: true })}
-      ${p.povSource === 'obs' ? '' : field('Chaîne Twitch', `players.${i}.povChannel`, { ph: p.twitch || 'nom de la chaîne' })}
+    <ul class="pov-help">
+      <li><b>Live Twitch</b> : le joueur streame comme d’habitude, rien à faire de son côté. Tu écris juste sa chaîne. Quelques secondes de décalage.</li>
+      <li><b>Envoi direct</b> : le joueur ne streame pas. Il ouvre son lien personnel et sa POV arrive ici en direct, sans décalage. Envoie-lui le message avec le bouton.</li>
+      <li><b>Source OBS</b> : tu places toi-même une capture dans OBS sous <code>/pov</code> (position indiquée dans l’aperçu).</li>
+    </ul>
+    ${S.players.length ? S.players.map((p, i) => `<div class="pov-src">
+      <div class="grid">
+        <div class="field"><span>Joueur</span><b class="pov-name">${esc(p.pseudo)}</b></div>
+        ${field('Source', `players.${i}.povSource`, { options: [['twitch', 'Live Twitch'], ['vdo', 'Envoi direct (lien joueur)'], ['obs', 'Source OBS']], rerender: true })}
+        ${p.povSource === 'twitch' ? field('Chaîne Twitch', `players.${i}.povChannel`, { ph: p.twitch || 'nom de la chaîne' }) : ''}
+      </div>
+      ${p.povSource === 'vdo' ? `<div class="pov-link"><code>${esc(povPushUrl(p))}</code>
+        <div class="row"><button type="button" class="btn" data-act="pov-msg" data-i="${i}">Copier le message pour ${esc(p.pseudo)}</button>
+        <button type="button" class="btn ghost" data-act="pov-link" data-i="${i}">Copier le lien seul</button>
+        <button type="button" class="btn ghost" data-act="pov-reset" data-i="${i}">Nouveau lien</button></div></div>` : ''}
     </div>`).join('') : '<p class="pov-sub">Aucun joueur pour l’instant.</p>'}
   </div>`;
 };
+
+/* ---------- Envoi direct (VDO.Ninja) : lien et message pour le joueur ---------- */
+const povPushUrl = (p, screen) => `https://vdo.ninja/?push=${encodeURIComponent(p.povVdo)}&${screen ? 'screenshare' : 'webcam'}&quality=0&label=${encodeURIComponent(p.pseudo)}`;
+function povMessage(p) {
+  return `Salut ${p.pseudo} ! Pour envoyer ta POV au cast Kaelyx :
+1. Dans OBS ou Streamlabs, clique sur « Démarrer la caméra virtuelle ».
+2. Ouvre ce lien dans Chrome : ${povPushUrl(p)}
+3. Choisis la caméra virtuelle (OBS Virtual Camera), puis clique sur « Start ». Laisse l'onglet ouvert pendant tout le match.
+
+Pas d'OBS ni de Streamlabs ? Ouvre plutôt ce lien et partage ton écran de jeu : ${povPushUrl(p, true)}
+Ne partage ce lien avec personne d'autre.`;
+}
+async function povCopy(text, msg) {
+  try { await navigator.clipboard.writeText(text); }
+  catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+  toast(msg);
+}
 
 // Met à jour le canevas sans tout re-rendre (saisie au clavier, glissement)
 function povSync() {
@@ -187,6 +214,14 @@ document.addEventListener('change', e => {
 
 /* ---------- Actions ---------- */
 Object.assign(ACTIONS, {
+  'pov-msg': d => { const p = S.players[+d.i]; if (p) povCopy(povMessage(p), `Message copié : colle-le à ${p.pseudo} (Discord…)`); },
+  'pov-link': d => { const p = S.players[+d.i]; if (p) povCopy(povPushUrl(p), 'Lien copié'); },
+  'pov-reset': d => {
+    const p = S.players[+d.i]; if (!p) return;
+    if (!confirm(`Créer un nouveau lien pour ${p.pseudo} ? L'ancien ne marchera plus : il faudra lui renvoyer le message.`)) return;
+    p.povVdo = ''; save(true); // le serveur génère un nouvel identifiant
+    setTimeout(renderTab, 600);
+  },
   'pov-live': d => { S.pov.live = d.id; povEdit = d.id; save(true); renderTab(); setPreview('/pov'); toast('Mise en page en direct : ' + (povLive()?.name || '')); },
   'pov-main': d => {
     const s = S.pov.slots, at = s.indexOf(d.id);

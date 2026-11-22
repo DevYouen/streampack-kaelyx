@@ -74,7 +74,10 @@ Polices : Barlow Condensed (titres) et Inter (textes), chargées depuis Google F
 Une seule **Source navigateur** OBS : `/pov` en **1920 × 1080**, avec *Contrôler l'audio via OBS* coché pour régler le son des POV.
 - **En direct** (Admin > POV) : choisis la mise en page (Solo, Duo, Côte à côte, Quatuor, ou les tiennes), puis clique sur un joueur pour le mettre en grand. L'ancienne POV principale passe en petite. Le lecteur n'est pas rechargé quand un joueur change de place.
 - **Éditeur** : glisse les éléments (POV, plaques, cam, logo) dans l'écran 16:9 et tire un coin pour les redimensionner. Aimantation aux bords, au centre et aux autres éléments. Les plaques collées à une POV la suivent. Crée, duplique ou renomme autant de mises en page que tu veux.
-- **Sources** : *Live Twitch* affiche le stream du joueur (sa chaîne, ou celle de sa fiche joueur). *Source OBS* laisse un trou transparent : l'aperçu indique sa position et sa taille pour y placer ta capture, NDI ou VDO.Ninja sous la source `/pov`.
+- **Sources** (Admin > POV > Sources des POV), au choix pour chaque joueur :
+  - *Live Twitch* : le joueur streame comme d'habitude, il n'a rien à faire. Tu écris juste sa chaîne. Quelques secondes de décalage.
+  - *Envoi direct* : le joueur ne streame pas. Clique sur **Copier le message pour…** et envoie-le-lui (Discord…). Il démarre la caméra virtuelle d'OBS ou de Streamlabs, ouvre son lien personnel dans Chrome, choisit la caméra virtuelle et clique sur *Start*. Sa POV s'affiche toute seule, sans décalage, et sans rien à ajouter dans ton OBS. Le lien est personnel : en cas de fuite, **Nouveau lien** en crée un autre.
+  - *Source OBS* : le pack laisse un trou transparent dont l'aperçu indique la position et la taille, pour y placer ta propre capture sous la source `/pov`.
 - **Son** : POV principale seulement (par défaut), tout coupé, ou toutes les POV.
 - Les repères gris (« aucun joueur », « source OBS… ») n'apparaissent que dans l'aperçu et le navigateur, jamais dans OBS.
 

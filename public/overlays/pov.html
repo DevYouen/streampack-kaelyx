@@ -65,32 +65,54 @@ const channelOf = p => (p.povChannel || p.twitch || '').trim().replace(/^@/, '')
 const isFull = i => i.x <= 0 && i.y <= 0 && i.x + i.w >= 1920 && i.y + i.h >= 1080;
 const cut = i => Math.round(Math.min(i.w, i.h) * 0.07);
 
-// Lecteur Twitch d'un joueur : créé une fois, puis seulement déplacé (pas de rechargement quand il change de place)
-async function ensurePlayer(p, channel) {
+// Source vidéo d'un joueur : { type: 'twitch' | 'vdo', id } — null si rien à afficher (source OBS, chaîne vide)
+function sourceOf(p) {
+  if (p.povSource === 'vdo') return p.povVdo ? { type: 'vdo', id: p.povVdo } : null;
+  if (p.povSource === 'obs') return null;
+  const c = channelOf(p);
+  return c ? { type: 'twitch', id: c } : null;
+}
+// Lecteur d'un joueur : créé une fois, puis seulement déplacé (pas de rechargement quand il change de place)
+async function ensurePlayer(p, src) {
+  const key = src.type + ':' + src.id;
   let e = pool.get(p.id);
-  if (e && e.channel === channel) return e;
+  if (e && e.key === key) return e;
   if (e) { e.el.remove(); pool.delete(p.id); }
   const el = document.createElement('div');
   el.className = 'pv off';
-  const inner = document.createElement('div'); inner.className = 'inner'; inner.id = 'tw-' + p.id + '-' + Date.now();
+  const inner = document.createElement('div'); inner.className = 'inner'; inner.id = 'pv-' + p.id + '-' + Date.now();
   el.appendChild(inner);
   document.getElementById('players').appendChild(el);
-  e = { el, inner, channel, player: null, muted: true };
+  e = { el, inner, key, type: src.type, player: null, frame: null, muted: true };
   pool.set(p.id, e);
+  if (src.type === 'vdo') {
+    // VDO.Ninja : flux direct envoyé par le joueur (lien généré dans Admin > POV), sans interface
+    const f = document.createElement('iframe');
+    f.allow = 'autoplay; fullscreen';
+    f.src = `https://vdo.ninja/?view=${encodeURIComponent(src.id)}&cleanoutput&noheader&autoplay`;
+    f.onload = () => applyMute(e);
+    inner.appendChild(f); e.frame = f;
+    return e;
+  }
   await loadTwitch();
   if (pool.get(p.id) !== e) return e; // remplacé entre-temps
   if (window.Twitch?.Player) {
-    e.player = new Twitch.Player(inner.id, { channel, width: '100%', height: '100%', parent: [location.hostname], autoplay: true, muted: true });
-    e.player.addEventListener(Twitch.Player.READY, () => { try { e.player.setMuted(e.muted); if (!e.muted) e.player.setVolume(1); } catch {} });
+    e.player = new Twitch.Player(inner.id, { channel: src.id, width: '100%', height: '100%', parent: [location.hostname], autoplay: true, muted: true });
+    e.player.addEventListener(Twitch.Player.READY, () => applyMute(e));
   } else {
-    inner.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${location.hostname}&muted=true&autoplay=true" allow="autoplay; fullscreen"></iframe>`;
+    inner.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(src.id)}&parent=${location.hostname}&muted=true&autoplay=true" allow="autoplay; fullscreen"></iframe>`;
   }
   return e;
 }
+function applyMute(e) {
+  try {
+    if (e.type === 'vdo') e.frame?.contentWindow?.postMessage({ mute: e.muted }, '*'); // API iframe de VDO.Ninja
+    else { e.player?.setMuted(e.muted); if (!e.muted) e.player?.setVolume(1); }
+  } catch {}
+}
 function setMuted(e, muted) {
   if (e.muted === muted) return;
-  e.muted = muted;
-  try { e.player?.setMuted(muted); if (!muted) e.player?.setVolume(1); } catch {}
+  e.muted = muted; applyMute(e);
 }
 
 function render(st) {
@@ -101,20 +123,21 @@ function render(st) {
   const bySlot = s => players.find(p => p.id === (pv.slots || [])[s]);
   const items = pv.visible === false || !layout ? [] : layout.items;
 
-  // 1. Lecteurs Twitch : placés sur leur POV, les autres joueurs encore affectés restent prêts (cachés, muets)
+  // 1. Lecteurs (Twitch ou VDO.Ninja) : placés sur leur POV, les autres joueurs encore affectés restent prêts (cachés, muets)
   const g = ++gen;
   const placed = new Set();
   const wanted = new Set((pv.slots || []).filter(Boolean));
   for (const i of items.filter(i => i.kind === 'pov')) {
     const p = bySlot(i.slot);
-    if (!p || p.povSource === 'obs' || placed.has(p.id)) continue;
-    const channel = channelOf(p);
-    if (!channel) continue;
+    if (!p || placed.has(p.id)) continue;
+    const src = sourceOf(p);
+    if (!src) continue;
     placed.add(p.id);
-    ensurePlayer(p, channel).then(e => {
+    ensurePlayer(p, src).then(e => {
       if (g !== gen) return;
       const s = Math.max(i.w / 1280, i.h / 720);
-      Object.assign(e.el.style, { left: i.x + 'px', top: i.y + 'px', width: i.w + 'px', height: i.h + 'px', zIndex: isFull(i) ? 1 : 2, '--c': cut(i) + 'px' });
+      Object.assign(e.el.style, { left: i.x + 'px', top: i.y + 'px', width: i.w + 'px', height: i.h + 'px', zIndex: isFull(i) ? 1 : 2 });
+      e.el.style.setProperty('--c', cut(i) + 'px');
       e.inner.style.transform = `translate(-50%, -50%) scale(${s})`;
       e.el.classList.toggle('framed', !isFull(i));
       e.el.classList.remove('off');
@@ -136,7 +159,7 @@ function render(st) {
       let hint = '';
       if (SHOW_HINTS && !p) hint = `<div class="hint empty"><div><b>POV ${i.slot + 1}</b>aucun joueur</div></div>`;
       else if (SHOW_HINTS && p && p.povSource === 'obs') hint = `<div class="hint"><div><b>${KX.esc(p.pseudo)}</b>source OBS · ${i.x}, ${i.y} · ${i.w} × ${i.h}</div></div>`;
-      else if (SHOW_HINTS && p && !channelOf(p)) hint = `<div class="hint empty"><div><b>${KX.esc(p.pseudo)}</b>chaîne Twitch manquante</div></div>`;
+      else if (SHOW_HINTS && p && p.povSource === 'twitch' && !channelOf(p)) hint = `<div class="hint empty"><div><b>${KX.esc(p.pseudo)}</b>chaîne Twitch manquante</div></div>`;
       return `<div class="box" style="${box};z-index:${isFull(i) ? 1 : 3}">${frame}${hint}</div>`;
     }
     if (i.kind === 'plate') {
@@ -152,7 +175,7 @@ function render(st) {
     return '';
   }).join('');
 }
-KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel]), st.settings?.logo], render);
+KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo]), st.settings?.logo], render);
 </script>
 </body>
 </html>
