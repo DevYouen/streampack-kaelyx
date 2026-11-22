@@ -84,19 +84,19 @@
   #sweep .sw-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .45)); }
   #sweep.go .sw { display: block; animation: swGo 1.15s cubic-bezier(.77, 0, .18, 1) both; }
   #sweep.go .sw.thin { animation-delay: .07s; }
-  /* ---------- Transition logo « broadcast » (≈ 1,9 s) ----------
-     Trois volets obliques (violet profond, dégradé, anthracite) entrent en cascade, l'écran est couvert ~0,75 → 1,15 s
-     (la mise en page change à 0,85 s), le logo sort du flou, un reflet passe sur sa forme, puis les volets repartent
+  /* ---------- Transition logo « broadcast » (≈ 3 s) ----------
+     Trois volets obliques (violet profond, dégradé, anthracite) entrent en cascade, l'écran est couvert ~0,95 → 1,9 s
+     (la mise en page change à 1,2 s), le logo sort du flou, un reflet passe sur sa forme, puis les volets repartent
      en cascade inverse (le dernier arrivé part le premier) et révèlent la nouvelle image. */
   #sting { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; display: none; --in: cubic-bezier(.83, 0, .17, 1); }
   #sting.go { display: block; }
   #sting .pl { position: absolute; top: -200px; bottom: -200px; left: 0; width: 2800px; transform: translateX(-3300px) skewX(-24deg); will-change: transform; }
   #sting .pl::after { content: ''; position: absolute; top: 0; bottom: 0; right: -2px; width: 5px; }
-  #sting .pl.p3 { background: var(--kx-deep); animation: plIn .62s var(--in) 0s both, plOut .6s var(--in) 1.27s forwards; }
+  #sting .pl.p3 { background: var(--kx-deep); animation: plIn .8s var(--in) 0s both, plOut .75s var(--in) 2.05s forwards; }
   #sting .pl.p3::after { background: var(--kx-violet); box-shadow: 0 0 30px var(--kx-violet); }
-  #sting .pl.p2 { background: var(--kx-grad); animation: plIn .62s var(--in) .07s both, plOut .6s var(--in) 1.2s forwards; }
+  #sting .pl.p2 { background: var(--kx-grad); animation: plIn .8s var(--in) .1s both, plOut .75s var(--in) 1.97s forwards; }
   #sting .pl.p2::after { background: var(--kx-white); box-shadow: 0 0 34px rgba(243, 241, 241, .9); }
-  #sting .pl.p1 { background: var(--kx-bg); overflow: hidden; animation: plIn .62s var(--in) .14s both, plOut .6s var(--in) 1.13s forwards; }
+  #sting .pl.p1 { background: var(--kx-bg); overflow: hidden; animation: plIn .8s var(--in) .2s both, plOut .75s var(--in) 1.89s forwards; }
   #sting .pl.p1::after { background: var(--kx-silver); box-shadow: 0 0 24px rgba(201, 204, 209, .7); }
   @keyframes plIn { from { transform: translateX(-3300px) skewX(-24deg); } to { transform: translateX(-440px) skewX(-24deg); } }
   @keyframes plOut { from { transform: translateX(-440px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
@@ -118,7 +118,7 @@
   /* Logo, lignes et nom (posés sur le volet principal) */
   #sting .ctr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
   #sting .lg { position: absolute; width: 300px; height: 300px; left: -150px; top: -230px;
-    animation: lgIn .7s cubic-bezier(.16, 1, .3, 1) .5s both, lgOut .42s cubic-bezier(.7, 0, .84, 0) 1.1s forwards; }
+    animation: lgIn .9s cubic-bezier(.16, 1, .3, 1) .85s both, lgOut .5s cubic-bezier(.7, 0, .84, 0) 1.72s forwards; }
   #sting .lg img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .55)) drop-shadow(0 0 30px rgba(153, 51, 204, .55)); }
   @keyframes lgIn { from { opacity: 0; transform: translateX(-70px) scale(.8); filter: blur(16px); } to { opacity: 1; transform: none; filter: blur(0); } }
   @keyframes lgOut { to { opacity: 0; transform: translateX(300px) scale(1.08); filter: blur(12px); } }
@@ -126,22 +126,22 @@
   #sting .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
     -webkit-mask-position: center; mask-position: center;
     background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .95) 50%, transparent 62%) no-repeat; background-size: 300% 100%;
-    animation: glint .75s cubic-bezier(.45, 0, .2, 1) .82s both; }
+    animation: glint .9s cubic-bezier(.45, 0, .2, 1) 1.3s both; }
   @keyframes glint { from { background-position: 120% 0; } to { background-position: -20% 0; } }
   #sting .ln { position: absolute; top: -81px; height: 2px; width: 470px; background: linear-gradient(90deg, rgba(201, 204, 209, 0), var(--kx-silver)); }
   #sting .ln::after { content: ''; position: absolute; top: -4px; width: 10px; height: 10px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 12px var(--kx-violet); }
-  #sting .ln.l { right: 190px; transform-origin: right; animation: lnIn .55s cubic-bezier(.16, 1, .3, 1) .68s both, fadeOut .3s ease-in 1.08s forwards; }
+  #sting .ln.l { right: 190px; transform-origin: right; animation: lnIn .7s cubic-bezier(.16, 1, .3, 1) 1.05s both, fadeOut .35s ease-in 1.68s forwards; }
   #sting .ln.l::after { right: -5px; }
   #sting .ln.r { left: 190px; transform-origin: left; background: linear-gradient(-90deg, rgba(201, 204, 209, 0), var(--kx-silver));
-    animation: lnIn .55s cubic-bezier(.16, 1, .3, 1) .68s both, fadeOut .3s ease-in 1.08s forwards; }
+    animation: lnIn .7s cubic-bezier(.16, 1, .3, 1) 1.05s both, fadeOut .35s ease-in 1.68s forwards; }
   #sting .ln.r::after { left: -5px; }
   @keyframes lnIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes fadeOut { to { opacity: 0; } }
   #sting .nm { position: absolute; left: -600px; width: 1200px; top: 100px; text-align: center; }
   #sting .nm b { display: block; font: italic 800 84px/1 var(--f-title); text-transform: uppercase; color: var(--kx-white); white-space: nowrap; padding-right: 10px;
-    text-shadow: 0 8px 30px rgba(0, 0, 0, .45); animation: nmIn .6s cubic-bezier(.16, 1, .3, 1) .74s both, nmOut .32s ease-in 1.07s forwards; }
+    text-shadow: 0 8px 30px rgba(0, 0, 0, .45); animation: nmIn .7s cubic-bezier(.16, 1, .3, 1) 1.12s both, nmOut .38s ease-in 1.66s forwards; }
   #sting .nm small { display: block; margin-top: 14px; font: 700 18px/1 var(--f-body); letter-spacing: .55em; padding-left: .55em; color: var(--kx-silver); text-transform: uppercase;
-    animation: subIn .55s cubic-bezier(.16, 1, .3, 1) .88s both, fadeOut .3s ease-in 1.05s forwards; }
+    animation: subIn .6s cubic-bezier(.16, 1, .3, 1) 1.3s both, fadeOut .35s ease-in 1.64s forwards; }
   @keyframes nmIn { from { clip-path: inset(0 50% 0 50%); letter-spacing: .35em; opacity: 0; } to { clip-path: inset(-20px -40px); letter-spacing: .06em; opacity: 1; } }
   @keyframes nmOut { to { opacity: 0; transform: translateX(160px); filter: blur(8px); } }
   @keyframes subIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -183,9 +183,10 @@
 <div id="deco"></div>
 <div id="sting">
   <div class="pl p3"></div><div class="pl p2"></div><div class="pl p1"><div class="mat"></div></div>
-  <div class="sk" style="top:180px;animation-delay:.02s"></div><div class="sk v" style="top:410px;animation-delay:.09s"></div>
-  <div class="sk" style="top:705px;animation-delay:.15s;width:520px"></div><div class="sk v" style="top:930px;animation-delay:.05s"></div>
-  <div class="sk" style="top:300px;animation-delay:1.14s"></div><div class="sk v" style="top:820px;animation-delay:1.2s"></div>
+  <div class="sk" style="top:180px;animation-delay:.05s"></div><div class="sk v" style="top:410px;animation-delay:.16s"></div>
+  <div class="sk" style="top:705px;animation-delay:.26s;width:520px"></div><div class="sk v" style="top:930px;animation-delay:.1s"></div>
+  <div class="sk" style="top:300px;animation-delay:1.92s"></div><div class="sk v" style="top:820px;animation-delay:2s"></div>
+  <div class="sk" style="top:560px;animation-delay:2.08s;width:520px"></div>
   <div class="ctr">
     <div class="ln l"></div><div class="ln r"></div>
     <div class="lg"><span id="stLogo"></span><div class="glint" id="stGlint"></div></div>
@@ -271,6 +272,12 @@ function setMuted(e, muted) {
 
 const decoEls = new Map();   // clé élément -> { el, geo, content, html, pid }
 let rendered = null;        // mise en page affichée ('-' si rien), null avant le premier rendu
+let renderedSlots = '';     // joueurs affichés sur les POV de cette mise en page
+// Joueurs réellement visibles dans la mise en page (les emplacements au-delà ne comptent pas)
+const slotsKey = (pv, layout) => {
+  const n = Math.max(0, ...((layout && layout.items) || []).filter(i => i.kind === 'pov' || i.kind === 'plate').map(i => i.slot + 1));
+  return JSON.stringify((pv.slots || []).slice(0, n).map(x => x || ''));
+};
 let lastSt = null, holding = false;
 const later = (fn, ms) => setTimeout(fn, ms);
 const nextFrame = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
@@ -283,11 +290,13 @@ function render(st) {
   const layout = (pv.layouts || []).find(l => l.id === (FORCE || pv.live)) || (pv.layouts || [])[0];
   const sig = pv.visible !== false && layout ? layout.id : '-';
   const mode = pv.transition || 'logo';
-  if (rendered !== null && rendered !== '-' && sig !== '-' && sig !== rendered && mode !== 'none') {
+  // Clic sur un joueur (« Mettre en grand ») : même animation logo, la mise en page reste la même
+  const swap = mode === 'logo' && rendered !== null && rendered !== '-' && sig === rendered && slotsKey(pv, layout) !== renderedSlots;
+  if (swap || (rendered !== null && rendered !== '-' && sig !== '-' && sig !== rendered && mode !== 'none')) {
     holding = true;
     if (mode === 'logo') {
       playSting(st);
-      later(() => { holding = false; apply(lastSt, { instant: true, delay: .45 }); }, 850); // écran couvert par les volets : on change tout
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: 1 }); }, 1200); // écran couvert par les volets : on change tout
     } else if (mode === 'sweep') {
       const sw = document.getElementById('sweep');
       document.getElementById('swLogo').innerHTML = KX.logo(st);
@@ -314,7 +323,7 @@ function playSting(st) {
   gl.style.webkitMaskImage = gl.style.maskImage = `url("${src.replace(/"/g, '')}")`;
   document.getElementById('stName').innerHTML = `<b>${KX.esc(s.settings?.teamName || 'KAELYX')}</b>${s.settings?.teamSub ? `<small>${KX.esc(s.settings.teamSub)}</small>` : ''}`;
   el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
-  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 1950);
+  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 3000);
 }
 KX.on('trigger', t => { if (t && t.kind === 'pov-sting') playSting(); });
 
@@ -331,6 +340,7 @@ function apply(st, { instant = false, delay = 0 } = {}) {
   const bySlot = s => players.find(p => p.id === (pv.slots || [])[s]);
   const items = pv.visible === false || !layout ? [] : layout.items;
   rendered = pv.visible !== false && layout ? layout.id : '-';
+  renderedSlots = slotsKey(pv, layout);
   if (instant) { document.body.classList.add('instant'); nextFrame(() => document.body.classList.remove('instant')); }
 
   // 1. Lecteurs : glissent vers leur POV ; apparition « pop », disparition animée ; les joueurs encore affectés restent prêts
