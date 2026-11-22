@@ -238,7 +238,7 @@ async function ensurePlayer(p, src) {
   const inner = document.createElement('div'); inner.className = 'inner'; inner.id = 'pv-' + p.id + '-' + Date.now();
   el.appendChild(inner);
   document.getElementById('players').appendChild(el);
-  e = { el, inner, key, type: src.type, player: null, frame: null, muted: true };
+  e = { el, inner, key, type: src.type, player: null, frame: null, muted: true, volume: 1 };
   pool.set(p.id, e);
   if (src.type === 'vdo') {
     // VDO.Ninja : flux direct envoyé par le joueur (lien généré dans Admin > POV), sans interface
@@ -259,15 +259,17 @@ async function ensurePlayer(p, src) {
   }
   return e;
 }
+// Son d'une POV : coupé ou non, et volume du joueur (Admin > POV > Volumes)
 function applyMute(e) {
+  const off = e.muted || e.volume <= 0;
   try {
-    if (e.type === 'vdo') e.frame?.contentWindow?.postMessage({ mute: e.muted }, '*'); // API iframe de VDO.Ninja
-    else { e.player?.setMuted(e.muted); if (!e.muted) e.player?.setVolume(1); }
+    if (e.type === 'vdo') { const w = e.frame?.contentWindow; w?.postMessage({ mute: off }, '*'); if (!off) w?.postMessage({ volume: e.volume }, '*'); } // API iframe de VDO.Ninja
+    else { e.player?.setMuted(off); if (!off) e.player?.setVolume(e.volume); }
   } catch {}
 }
-function setMuted(e, muted) {
-  if (e.muted === muted) return;
-  e.muted = muted; applyMute(e);
+function setMuted(e, muted, volume = e.volume) {
+  if (e.muted === muted && e.volume === volume) return;
+  e.muted = muted; e.volume = volume; applyMute(e);
 }
 
 const decoEls = new Map();   // clé élément -> { el, geo, content, html, pid }
@@ -368,7 +370,7 @@ function apply(st, { instant = false, delay = 0 } = {}) {
         e.el.style.animationDelay = (delay + n * .08) + 's';
         void e.el.offsetWidth; e.el.classList.add('pop');
       }
-      setMuted(e, pv.audio === 'none' || (pv.audio === 'main' && i.slot !== 0));
+      setMuted(e, pv.audio === 'none' || (pv.audio === 'main' && i.slot !== 0) || !!p.povMute, Math.max(0, Math.min(100, Number(p.povVolume ?? 100))) / 100);
     });
   });
   for (const [id, e] of pool) {
@@ -454,7 +456,7 @@ function decoOf(i, p, st) {
   return null;
 }
 KX.starfield(document.getElementById('stars'), 110);
-KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo]), st.settings?.logo], render);
+KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo, p.povVolume, p.povMute]), st.settings?.logo], render);
 </script>
 </body>
 </html>

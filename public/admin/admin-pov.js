@@ -38,6 +38,7 @@ TABS.pov = function () {
     <div class="pov-chips">${S.players.length ? S.players.map(p =>
       `<button type="button" class="btn ${S.pov.slots[0] === p.id ? '' : 'deep'}" data-act="pov-main" data-id="${esc(p.id)}">${esc(p.pseudo)}${S.pov.slots.indexOf(p.id) > 0 && S.pov.slots.indexOf(p.id) < slots ? ` <small>· POV ${S.pov.slots.indexOf(p.id) + 1}</small>` : ''}</button>`).join('')
       : '<span class="pov-sub">Ajoute d’abord des joueurs dans l’onglet Joueurs.</span>'}</div>
+    ${S.players.length ? `<p class="pov-sub">Volume des POV :</p><div class="pov-vols">${S.players.map((p, i) => povVolRow(p, i)).join('')}</div>` : ''}
     <div class="grid" style="margin-top:16px">
       ${Array.from({ length: slots }, (_, s) => field(s ? `POV ${s + 1} (petite)` : 'POV 1 (principale)', `pov.slots.${s}`, { options: opts, rerender: true })).join('')}
       ${field('Son', 'pov.audio', { options: [['main', 'POV principale seulement'], ['none', 'Tout coupé'], ['all', 'Toutes les POV']] })}
@@ -97,6 +98,32 @@ TABS.pov = function () {
     </div>`).join('') : '<p class="pov-sub">Aucun joueur pour l’instant.</p>'}
   </div>`;
 };
+
+/* ---------- Volumes : un curseur par joueur, appliqué à sa POV quand elle est audible ---------- */
+const POV_SVG = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const POV_ICON_SOUND = POV_SVG('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>');
+const POV_ICON_MUTE = POV_SVG('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>');
+function povAudible(p) {
+  const at = S.pov.slots.indexOf(p.id);
+  if (at < 0 || at >= povSlotCount(povLive()) || S.pov.audio === 'none' || p.povMute || !p.povVolume) return false;
+  return S.pov.audio === 'all' || at === 0;
+}
+function povVolRow(p, i) {
+  const v = Number(p.povVolume ?? 100), on = povAudible(p);
+  return `<div class="pov-vol ${p.povMute ? 'muted' : ''}">
+    <b class="pov-vol-name">${esc(p.pseudo)}</b>
+    <span class="pov-vol-state ${on ? 'on' : ''}">${on ? 'en écoute' : p.povMute ? 'coupé' : 'muet ici'}</span>
+    <button type="button" class="btn ghost sq" data-act="pov-mute" data-i="${i}" aria-pressed="${p.povMute ? 'true' : 'false'}" aria-label="${p.povMute ? 'Remettre le son de' : 'Couper le son de'} ${esc(p.pseudo)}">${p.povMute ? POV_ICON_MUTE : POV_ICON_SOUND}</button>
+    <input type="range" min="0" max="100" step="1" value="${v}" data-b="players.${i}.povVolume" data-num aria-label="Volume de ${esc(p.pseudo)}" style="--v:${v}%">
+    <output class="pov-vol-val">${v} %</output>
+  </div>`;
+}
+// Le pourcentage et le remplissage du curseur suivent la souris (l'enregistrement passe par le gestionnaire commun data-b)
+document.addEventListener('input', e => {
+  const r = e.target.closest?.('.pov-vol input[type=range]'); if (!r) return;
+  r.style.setProperty('--v', r.value + '%');
+  const out = r.parentElement.querySelector('.pov-vol-val'); if (out) out.textContent = r.value + ' %';
+});
 
 /* ---------- Envoi direct (VDO.Ninja) : lien et message pour le joueur ---------- */
 const povPushUrl = (p, screen) => `https://vdo.ninja/?push=${encodeURIComponent(p.povVdo)}&${screen ? 'screenshare' : 'webcam'}&quality=0&label=${encodeURIComponent(p.pseudo)}`;
@@ -218,6 +245,7 @@ document.addEventListener('change', e => {
 
 /* ---------- Actions ---------- */
 Object.assign(ACTIONS, {
+  'pov-mute': d => { const p = S.players[+d.i]; if (!p) return; p.povMute = !p.povMute; save(true); renderTab(); },
   'pov-sting': () => { trigger({ kind: 'pov-sting' }); setPreview('/pov'); },
   'pov-msg': d => { const p = S.players[+d.i]; if (p) povCopy(povMessage(p), `Message copié : colle-le à ${p.pseudo} (Discord…)`); },
   'pov-link': d => { const p = S.players[+d.i]; if (p) povCopy(povPushUrl(p), 'Lien copié'); },

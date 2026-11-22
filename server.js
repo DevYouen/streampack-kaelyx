@@ -45,7 +45,7 @@ const DEFAULTS = {
 };
 const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch: '', x: '',
   camVisible: true, camPos: 'bl', camSize: 'm', showTag: true, showTicker: false, showSocial: true,
-  povSource: 'twitch', povChannel: '', povVdo: '' };
+  povSource: 'twitch', povChannel: '', povVdo: '', povVolume: 100, povMute: false }; // volume par défaut de la POV (0 à 100) et coupure
 // POV : 'twitch' (live du joueur : povChannel, sinon champ twitch), 'vdo' (envoi direct VDO.Ninja, identifiant povVdo) ou 'obs' (trou transparent)
 // Élément d'une mise en page POV, en pixels du 1920 × 1080. kind : pov | plate | cam | logo ; slot : n° de POV (0 = principale)
 const POV_ITEM = { id: '', kind: 'pov', slot: 0, x: 0, y: 0, w: 480, h: 270 };
@@ -100,6 +100,7 @@ function normalize(s) {
   if (!['logo', 'sweep', 'fade', 'none'].includes(pv.transition)) pv.transition = 'logo';
   for (const p of out.players) {
     if (!['twitch', 'vdo', 'obs'].includes(p.povSource)) p.povSource = 'twitch';
+    p.povVolume = clampN(p.povVolume, 0, 100);
     // Identifiant VDO.Ninja propre au joueur, impossible à deviner (quiconque le connaît peut voir son écran)
     if (!/^[a-z0-9]{12,40}$/.test(p.povVdo)) p.povVdo = 'kx' + crypto.randomBytes(9).toString('hex');
   }
