@@ -55,7 +55,7 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none;
 .grid .wide { grid-column: 1 / -1; }
 .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .field > span { font: 600 11px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase; color: var(--kx-silver); }
-input[type=text], input[type=number], input[type=datetime-local], select, textarea {
+input[type=text], input[type=password], input[type=number], input[type=datetime-local], select, textarea {
   width: 100%; min-height: 44px; padding: 10px 12px; background: rgba(42,43,44,.9); color: var(--kx-white);
   border: 1px solid var(--line-2); border-radius: 0; font: 500 15px/1.3 var(--f-body); outline: none; }
 textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
@@ -153,3 +153,19 @@ ol.steps { margin: 0; padding-left: 20px; color: var(--kx-silver); } ol.steps li
   .preview { grid-column: 1; }
   .sec-head h1 { font-size: 34px; }
 }
+
+/* Écran de connexion (mot de passe admin) */
+.login { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: var(--kx-bg); }
+.login::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(900px 600px at 85% -10%, rgba(86,28,115,.55), transparent 70%), radial-gradient(700px 500px at -10% 110%, rgba(86,28,115,.35), transparent 70%); }
+.login-card { position: relative; width: min(400px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 32px 28px;
+  background: var(--surface); border: 1px solid var(--line); }
+.login-card::before { content: ''; position: absolute; left: 0; top: 0; width: 46px; height: 3px; background: var(--kx-violet); }
+.login-card img { width: 64px; height: 64px; object-fit: contain; }
+.login-card h1 { margin: 0; font: italic 800 34px/1 var(--f-title); text-transform: uppercase; }
+.login-card p { margin: 0; color: var(--kx-silver); font-size: 14px; }
+.login-card .login-err { min-height: 1.4em; color: var(--kx-white); }
+.login-card .login-err:empty { min-height: 0; }
+.login-card .btn { justify-content: center; }
+.login-card .btn:disabled { opacity: .55; cursor: not-allowed; }
+body:has(.login) { overflow: hidden; }

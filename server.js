@@ -15,8 +15,7 @@ const USER_DIR = process.env.KX_USER_DIR || ''; // dossier perso : photos/ et so
 try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const DATA = path.join(DATA_DIR, 'state.json');
 const BACKUP = path.join(DATA_DIR, 'state.backup.json');
-// Mot de passe facultatif pour l'admin (conseillé avec HOST=0.0.0.0) : ADMIN_TOKEN=monmotdepasse node server.js
-const TOKEN = process.env.ADMIN_TOKEN || '';
+const crypto = require('crypto');
 
 // Valeurs par défaut : complètent un état incomplet (vieux fichier, import partiel) pour que les overlays ne plantent pas
 const SCENE = { kicker: '', title: '', subtitle: '', endAt: 0, next: '' };
@@ -63,6 +62,56 @@ function normalize(s) {
   out.ticker.items = out.ticker.items.map(x => String(x ?? ''));
   return out;
 }
+
+/* ---------- Mot de passe admin ----------
+   Seule l'empreinte scrypt est stockée (le code est public) : le mot de passe lui-même n'apparaît nulle part.
+   Mot de passe par défaut : donné par le mainteneur. Chaque caster peut le changer dans Admin > Réglages
+   (enregistré dans data/auth.json, qui contient aussi les sessions ouvertes). */
+const DEFAULT_HASH = 'scrypt$16384$8$1$2rD/O0x7t+mL++SJ5RSDFQ==$M5W/1N3vRTiG90lkCpF/ScpQW3LKip3MMVm735z2oiM=';
+const AUTH = path.join(DATA_DIR, 'auth.json');
+const SESSION_DAYS = 30;
+let auth = { hash: '', sessions: {} };
+try { auth = { ...auth, ...JSON.parse(fs.readFileSync(AUTH, 'utf8')) }; } catch {}
+const saveAuth = () => { try { fs.writeFileSync(AUTH, JSON.stringify(auth, null, 2)); } catch (e) { console.error('  auth.json :', e.message); } };
+const sha = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+
+function scrypt(pass, salt, N = 16384, r = 8, p = 1) {
+  return new Promise((ok, ko) => crypto.scrypt(String(pass), salt, 32, { N, r, p, maxmem: 64 * 1024 * 1024 }, (e, k) => e ? ko(e) : ok(k)));
+}
+async function hashPassword(pass) {
+  const salt = crypto.randomBytes(16);
+  return `scrypt$16384$8$1$${salt.toString('base64')}$${(await scrypt(pass, salt)).toString('base64')}`;
+}
+async function checkPassword(pass) {
+  const [, N, r, p, salt, hash] = (auth.hash || DEFAULT_HASH).split('$');
+  const want = Buffer.from(hash, 'base64');
+  const got = await scrypt(pass, Buffer.from(salt, 'base64'), +N, +r, +p);
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+function newSession() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const now = Date.now();
+  for (const [k, exp] of Object.entries(auth.sessions)) if (exp < now) delete auth.sessions[k]; // ménage
+  auth.sessions[sha(token)] = now + SESSION_DAYS * 864e5;
+  saveAuth();
+  return token;
+}
+function loggedIn(req) {
+  const t = req.headers['x-kx-token'];
+  if (!t || typeof t !== 'string') return false;
+  const exp = auth.sessions[sha(t)];
+  return !!exp && exp > Date.now();
+}
+// Anti-forçage : après 5 essais ratés, attente qui double (1 min, 2 min… jusqu'à 15 min), par adresse
+const fails = new Map();
+function blockedFor(ip) { const f = fails.get(ip); return f && f.until > Date.now() ? Math.ceil((f.until - Date.now()) / 1000) : 0; }
+function failed(ip) {
+  const f = fails.get(ip) || { n: 0, until: 0 };
+  f.n++;
+  if (f.n >= 5) f.until = Date.now() + Math.min(60e3 * 2 ** (f.n - 5), 15 * 60e3);
+  fails.set(ip, f);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
 let state;
 try {
@@ -168,6 +217,12 @@ async function handle(req, res) {
   try { url = new URL(req.url, 'http://localhost'); p = decodeURIComponent(url.pathname); } catch { return send(res, 400, { error: 'bad url' }); }
   if (p.includes('\0')) return send(res, 400, { error: 'bad url' });
 
+  // Anti « DNS rebinding » : un site web ne peut pas se faire passer pour localhost afin de lire ou piloter le pack
+  if (HOST === '127.0.0.1' || HOST === 'localhost') {
+    const h = String(req.headers.host || '').replace(/:\d+$/, '').toLowerCase();
+    if (h !== 'localhost' && h !== '127.0.0.1' && h !== '[::1]') return send(res, 403, 'Interdit', 'text/plain');
+  }
+
   // Flux temps réel (Server-Sent Events)
   if (p === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
@@ -185,8 +240,38 @@ async function handle(req, res) {
     catch { return send(res, 400, { error: 'json invalide' }); }
   }
 
-  if (req.method === 'POST' && TOKEN && req.headers['x-kx-token'] !== TOKEN)
-    return send(res, 401, { error: 'mot de passe admin manquant ou incorrect' });
+  // --- Connexion à l'admin ---
+  if (p === '/api/auth' && req.method === 'GET') return send(res, 200, { ok: loggedIn(req) });
+  if (p === '/api/login' && req.method === 'POST') {
+    const ip = req.socket.remoteAddress || '?';
+    const left = blockedFor(ip);
+    if (left) return send(res, 429, { error: `Trop d'essais. Réessaie dans ${left} s.`, wait: left });
+    let b; try { b = await readBody(req); } catch { return send(res, 400, { error: 'json invalide' }); }
+    const pass = typeof b.password === 'string' ? b.password.trim() : '';
+    if (pass && pass.length <= 200 && await checkPassword(pass)) { fails.delete(ip); return send(res, 200, { token: newSession() }); }
+    failed(ip); await wait(600); // ralentit les essais en rafale
+    const w = blockedFor(ip);
+    return send(res, w ? 429 : 401, { error: w ? `Trop d'essais. Réessaie dans ${w} s.` : 'Mot de passe incorrect.', wait: w });
+  }
+
+  // Tout le reste qui modifie quelque chose exige une session ouverte (les overlays, eux, ne font que lire)
+  if (req.method !== 'GET' && req.method !== 'HEAD' && !loggedIn(req))
+    return send(res, 401, { error: 'connexion requise' });
+
+  if (p === '/api/logout' && req.method === 'POST') {
+    delete auth.sessions[sha(req.headers['x-kx-token'])]; saveAuth();
+    return send(res, 200, { ok: true });
+  }
+  if (p === '/api/password' && req.method === 'POST') {
+    let b; try { b = await readBody(req); } catch { return send(res, 400, { error: 'json invalide' }); }
+    const cur = typeof b.current === 'string' ? b.current.trim() : '';
+    const next = typeof b.next === 'string' ? b.next.trim() : '';
+    if (!(await checkPassword(cur))) { await wait(600); return send(res, 403, { error: 'Mot de passe actuel incorrect.' }); }
+    if (next.length < 10 || next.length > 200) return send(res, 400, { error: 'Le nouveau mot de passe doit faire au moins 10 caractères.' });
+    auth.hash = await hashPassword(next);
+    auth.sessions = {}; // déconnecte tous les autres appareils
+    return send(res, 200, { token: newSession() });
+  }
 
   if (p === '/api/state') {
     if (req.method === 'GET') return send(res, 200, state);
@@ -257,13 +342,12 @@ module.exports.close = () => {
 
 server.listen(PORT, HOST, () => {
   console.log('\n  KAELYX STREAMPACK');
-  const q = TOKEN ? '?token=' + encodeURIComponent(TOKEN) : '';
+  const q = '';
   console.log(`  Admin   : http://localhost:${PORT}/admin${q}`);
   console.log(`  Accueil : http://localhost:${PORT}/`);
   if (HOST === '0.0.0.0') {
     for (const ifs of Object.values(os.networkInterfaces())) for (const i of ifs || [])
       if (i.family === 'IPv4' && !i.internal) console.log(`  Réseau  : http://${i.address}:${PORT}/admin${q}`);
-    if (!TOKEN) console.log('  Attention : admin sans mot de passe. Lance avec ADMIN_TOKEN=... pour le protéger.');
   }
   console.log('\n  Laisse cette fenêtre ouverte pendant le stream.\n');
   twitch.configure();

@@ -13,23 +13,55 @@ const origin = location.origin;
 const clone = o => o === undefined ? o : JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-/* ---------- Mot de passe admin (si le serveur est lancé avec ADMIN_TOKEN) ---------- */
+/* ---------- Connexion à l'admin (mot de passe) ----------
+   Le serveur renvoie un jeton de session (30 jours), gardé dans ce navigateur. Les overlays n'en ont pas besoin. */
 const store = {
   get: k => { try { return localStorage.getItem(k); } catch { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  del: k => { try { localStorage.removeItem(k); } catch {} }
 };
-(() => {
-  const q = new URLSearchParams(location.search);
-  if (!q.has('token')) return;
-  store.set('kx-token', q.get('token')); q.delete('token');
-  const rest = q.toString();
-  history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
-})();
 const headers = () => ({ 'Content-Type': 'application/json', 'X-Kx-Token': store.get('kx-token') || '' });
-function askToken() {
-  const t = prompt('Mot de passe admin (ADMIN_TOKEN) :');
-  if (t === null) return false;
-  store.set('kx-token', t); return true;
+let loginWait = null;
+// Affiche l'écran de connexion ; se résout une fois connecté (un seul écran même si plusieurs envois échouent)
+function needLogin() {
+  if (loginWait) return loginWait;
+  store.del('kx-token');
+  loginWait = new Promise(done => {
+    const box = document.createElement('div');
+    box.className = 'login'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'loginTitle');
+    box.innerHTML = `<form class="login-card" novalidate>
+      <img src="/logo/logo.svg" alt="">
+      <h1 id="loginTitle">Admin Kaelyx</h1>
+      <p>Entre le mot de passe du streampack. Il est retenu 30 jours sur cet appareil.</p>
+      <label class="field"><span>Mot de passe</span><input type="password" name="password" autocomplete="current-password" required></label>
+      <p class="login-err" role="alert"></p>
+      <button type="submit" class="btn">Se connecter</button>
+    </form>`;
+    document.body.appendChild(box);
+    const form = box.querySelector('form'), input = form.password, err = box.querySelector('.login-err'), btn = form.querySelector('button');
+    setTimeout(() => input.focus(), 0);
+    let timer;
+    const lock = s => {
+      clearInterval(timer); btn.disabled = true;
+      const tick = () => { if (s <= 0) { clearInterval(timer); btn.disabled = false; btn.textContent = 'Se connecter'; return; } btn.textContent = `Patiente ${s--} s`; };
+      tick(); timer = setInterval(tick, 1000);
+    };
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!input.value.trim() || btn.disabled) return;
+      btn.disabled = true; err.textContent = '';
+      try {
+        const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: input.value }) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.token) { store.set('kx-token', d.token); box.remove(); loginWait = null; return done(true); }
+        err.textContent = d.error || 'Connexion impossible.';
+        input.select();
+        if (d.wait) return lock(d.wait);
+      } catch { err.textContent = 'Serveur injoignable.'; }
+      btn.disabled = false;
+    });
+  });
+  return loginWait;
 }
 
 /* Fusion à trois : garde les changements faits ici ET ceux faits sur un autre admin depuis "b" */
@@ -75,7 +107,7 @@ async function push() {
       adopt(await r.json()); again = true;
     } else if (r.status === 401) {
       status('auth');
-      if (askToken()) again = true;
+      inflight = false; await needLogin(); return push(); // les modifications faites entre-temps sont gardées
     } else if (r.ok) {
       const { rev, state } = await r.json();
       if (rev >= base.rev) {
@@ -105,7 +137,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (renderPending
 async function trigger(payload) {
   try {
     const r = await fetch('/api/trigger', { method: 'POST', headers: headers(), body: JSON.stringify(payload) });
-    if (r.status === 401) { status('auth'); if (askToken()) return trigger(payload); }
+    if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return trigger(payload); }
   } catch { toast('Serveur injoignable'); }
 }
 function status(kind) {
@@ -400,7 +432,16 @@ const TABS = {
     </div></div>
     <div class="card"><div class="card-head"><h3>Sauvegarde</h3></div>
       <div class="row"><button type="button" class="btn deep" data-act="export">Exporter (JSON)</button>
-      <label class="btn ghost" style="cursor:pointer">Importer<input type="file" accept="application/json" data-import hidden></label></div></div>`;
+      <label class="btn ghost" style="cursor:pointer">Importer<input type="file" accept="application/json" data-import hidden></label></div></div>
+    <div class="card"><div class="card-head"><h3>Sécurité</h3></div>
+      <form data-form="password" autocomplete="off"><div class="grid">
+        <label class="field"><span>Mot de passe actuel</span><input type="password" name="current" autocomplete="current-password" required></label>
+        <label class="field"><span>Nouveau (10 caractères min.)</span><input type="password" name="next" autocomplete="new-password" minlength="10" required></label>
+        <label class="field"><span>Confirme le nouveau</span><input type="password" name="confirm" autocomplete="new-password" minlength="10" required></label>
+      </div>
+      <p class="hint" style="margin:12px 0 0;color:var(--kx-silver)">Changer le mot de passe déconnecte tous les autres appareils (dock OBS, téléphone…).</p>
+      <div class="row" style="margin-top:14px"><button type="submit" class="btn deep">Changer le mot de passe</button>
+        <button type="button" class="btn ghost" data-act="logout">Se déconnecter</button></div></form></div>`;
   }
 };
 
@@ -517,7 +558,7 @@ const ACTIONS = {
     try {
       await push(); // le Client ID doit être enregistré avant
       const r = await fetch('/api/twitch/state', { method: 'POST', headers: headers() });
-      if (r.status === 401) { win?.close(); status('auth'); if (askToken()) ACTIONS['tw-connect'](); return; }
+      if (r.status === 401) { win?.close(); status('auth'); await needLogin(); status('ok'); toast('Connecté : reclique sur « Connecter Twitch »'); return; }
       const { state } = await r.json();
       const u = new URL('https://id.twitch.tv/oauth2/authorize');
       u.search = new URLSearchParams({ client_id: S.settings.twitch.clientId.trim(), redirect_uri: `http://localhost:${location.port || 80}/twitch-auth`,
@@ -528,8 +569,12 @@ const ACTIONS = {
   'tw-logout': async () => {
     if (!confirm('Déconnecter le compte Twitch ? Les follows ne s’afficheront plus.')) return;
     const r = await fetch('/api/twitch/logout', { method: 'POST', headers: headers() });
-    if (r.status === 401) { status('auth'); if (askToken()) ACTIONS['tw-logout'](); return; }
+    if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return ACTIONS['tw-logout'](); }
     tw = await r.json(); renderTab();
+  },
+  logout: async () => {
+    try { await fetch('/api/logout', { method: 'POST', headers: headers() }); } catch {}
+    store.del('kx-token'); location.reload();
   },
   export: () => {
     const a = document.createElement('a');
@@ -570,6 +615,7 @@ document.addEventListener('submit', e => {
     save(true); toast(`Overlay de ${pseudo} créé : /p/${id}`);
     pvPath = ''; setPreview('/p/' + id); renderTab();
   }
+  if (f.dataset.form === 'password') changePassword(f, data);
   if (f.dataset.form === 'alert') { trigger({ kind: 'alert', type: data.type, user: data.user, amount: Number(data.amount) || 0, message: data.message }); setPreview('/alerts'); }
 });
 
@@ -585,8 +631,26 @@ document.addEventListener('change', async e => {
   } catch { toast('Fichier invalide'); }
 });
 
+async function changePassword(form, data) {
+  if (data.next.trim().length < 10) return toast('Le nouveau mot de passe doit faire au moins 10 caractères');
+  if (data.next !== data.confirm) return toast('Les deux nouveaux mots de passe ne sont pas identiques');
+  try {
+    const r = await fetch('/api/password', { method: 'POST', headers: headers(), body: JSON.stringify({ current: data.current, next: data.next }) });
+    if (r.status === 401) { await needLogin(); return toast('Reconnecté : recommence le changement'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return toast(d.error || 'Changement impossible');
+    store.set('kx-token', d.token); form.reset();
+    toast('Mot de passe changé. Les autres appareils devront se reconnecter.');
+  } catch { toast('Serveur injoignable'); }
+}
+
 /* ---------- Démarrage ---------- */
 async function boot() {
+  // Pas (ou plus) connecté : écran de mot de passe avant tout
+  try {
+    const a = await (await fetch('/api/auth', { headers: headers() })).json();
+    if (!a.ok) await needLogin();
+  } catch { status('err'); return setTimeout(boot, 1500); }
   try {
     S = await (await fetch('/api/state')).json();
     base = clone(S);

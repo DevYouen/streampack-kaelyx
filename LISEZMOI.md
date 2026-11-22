@@ -43,7 +43,7 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 
 ## Tes fichiers
 - **Photos joueurs** : `public/photos/` (ex. `pseudo.png`), puis choisis-les dans Admin > Joueurs.
-- **Logo** : le logo officiel est fourni en SVG dans `public/logo/`. Par défaut, `logo.svg` (chrome) est utilisé partout, car c'est le plus lisible sur les fonds anthracite et violet. Variantes unies : `kaelyx-logo-blanc.svg`, `-argent`, `-violet` et `-anthracite` (pour fond clair). Pour changer, indique le chemin dans Admin > Réglages.
+- **Logo** : le logo officiel est fourni en SVG dans `public/logo/`. Par défaut, `logo.svg` (blanc, identique à `kaelyx-logo-blanc.svg`) est utilisé partout. Variantes : `kaelyx-logo-chrome.svg`, `-argent`, `-violet` et `-anthracite` (pour fond clair). Pour changer, indique le chemin dans Admin > Réglages.
 - **Stinger** : `stinger/kaelyx-stinger.webm` est le rendu de `/stinger` avec le logo chrome et le nom d'équipe (VP9 avec transparence, 1920×1080, 60 i/s, 2,5 s). Point de coupure OBS : **1200 ms**. L'ancienne version courte est dans `_sauvegarde-avant-refonte/`.
 - **Son d'alerte** : `public/sounds/alert.mp3`.
 - Toutes les données sont dans `data/state.json` (sauvegarde/import aussi dans Admin > Réglages).
@@ -69,12 +69,16 @@ Une lumière fait le tour des cadres violets (webcams, chat, roster), glisse sur
 `#2A2B2C` fond · `#9933CC` violet · `#561C73` violet profond · `#F3F1F1` texte · `#C9CCD1` argent
 Polices : Barlow Condensed (titres) et Inter (textes), chargées depuis Google Fonts.
 
-## Piloter depuis un téléphone
-Lance avec `HOST=0.0.0.0 ADMIN_TOKEN=tonmotdepasse node server.js` (même Wi-Fi).
-La fenêtre noire affiche l'adresse à ouvrir sur le téléphone (avec `?token=...`). Le mot de passe est ensuite retenu par le navigateur.
-Sans `ADMIN_TOKEN`, n'importe qui sur le réseau peut modifier tes overlays. Les overlays OBS, eux, n'ont jamais besoin du mot de passe.
+## Mot de passe de l'admin
+L'admin demande un mot de passe (donné par le mainteneur du pack). Il est retenu **30 jours** sur chaque appareil : fenêtre de l'application, dock OBS, navigateur, téléphone.
+- **Les overlays OBS n'ont jamais besoin du mot de passe.**
+- Pour le changer : Admin > Réglages > **Sécurité**. Les autres appareils sont alors déconnectés.
+- Après 5 essais ratés, il faut attendre (1 min, puis de plus en plus longtemps).
+- Mot de passe oublié : ferme l'application, supprime `auth.json` dans `%APPDATA%\Streampack Kaelyx\data`, puis relance. Le mot de passe d'origine redevient valable.
 
-Sous Windows (PowerShell) : `$env:HOST="0.0.0.0"; $env:ADMIN_TOKEN="tonmotdepasse"; node server.js`
+## Piloter depuis un téléphone (version sans application)
+Lance `node server.js` avec `HOST=0.0.0.0` (même Wi-Fi). La fenêtre noire affiche l'adresse à ouvrir sur le téléphone, qui demandera le mot de passe.
+Sous Windows (PowerShell) : `$env:HOST="0.0.0.0"; node server.js`
 
 ## Plusieurs admins en même temps
 Tu peux ouvrir l'admin dans le dock OBS et sur ton téléphone en même temps : les changements de l'un apparaissent dans l'autre, et rien n'est écrasé.
