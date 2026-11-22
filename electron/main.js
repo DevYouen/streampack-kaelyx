@@ -20,7 +20,7 @@ const USER_DIR = path.join(app.getPath('documents'), APP_NAME + (DEV ? ' (dev)' 
 // Fichiers livrés avec l'application (hors asar pour pouvoir les copier)
 const RES = app.isPackaged ? process.resourcesPath : path.join(__dirname, '..');
 
-let win, tray, server, quitting = false, updateReady = null;
+let win, tray, server, quitting = false;
 const ICON = path.join(__dirname, 'icon.png');
 const icon = () => fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : nativeImage.createEmpty();
 
@@ -101,9 +101,10 @@ function createWindow() {
   win.loadURL(adminUrl());
   // Connexion Twitch : l'admin ouvre une petite fenêtre (about:blank -> id.twitch.tv -> localhost/twitch-auth)
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url === 'about:blank' || url.startsWith('http://localhost:') || url.startsWith('https://id.twitch.tv/'))
+    // Seule la connexion Twitch s'ouvre dans une petite fenêtre de l'application (elle a besoin de window.opener)
+    if (url === 'about:blank' || url.startsWith('https://id.twitch.tv/'))
       return { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, icon: icon() } };
-    shell.openExternal(url); // liens OBS, aperçus d'overlay… : navigateur par défaut
+    shell.openExternal(url); // « Ouvrir dans un onglet », liens OBS… : navigateur habituel
     return { action: 'deny' };
   });
   // Fermer la fenêtre ne coupe pas les overlays : l'application reste près de l'horloge
@@ -121,49 +122,81 @@ function showWindow() { if (!win) createWindow(); win.show(); win.focus(); }
 
 function refreshTray() {
   if (!tray) return;
+  const ready = upd.state === 'ready';
   const items = [
     { label: 'Ouvrir l\'admin', click: showWindow },
     { label: 'Ouvrir l\'admin dans le navigateur', click: () => shell.openExternal(adminUrl()) },
     { label: 'Dossier photos, masques et stinger', click: () => shell.openPath(USER_DIR) },
     { type: 'separator' },
-    updateReady
-      ? { label: `Redémarrer pour installer la version ${updateReady}`, click: () => { quitting = true; autoUpdater.quitAndInstall(); } }
-      : { label: 'Rechercher une mise à jour', enabled: app.isPackaged, click: () => checkUpdates(true) },
+    ready
+      ? { label: `Installer la version ${upd.next} maintenant`, click: installUpdate }
+      : { label: upd.state === 'downloading' ? `Téléchargement de la mise à jour… ${upd.percent} %` : 'Rechercher une mise à jour',
+          enabled: app.isPackaged && upd.state !== 'downloading' && upd.state !== 'checking', click: () => checkUpdates(true) },
     { label: `Version ${app.getVersion()}`, enabled: false },
     { type: 'separator' },
     { label: 'Quitter (coupe les overlays)', click: () => { quitting = true; app.quit(); } }
   ];
   tray.setContextMenu(Menu.buildFromTemplate(items));
-  tray.setToolTip(updateReady ? `${APP_NAME} : mise à jour ${updateReady} prête` : APP_NAME);
+  tray.setToolTip(ready ? `${APP_NAME} : mise à jour ${upd.next} prête` : APP_NAME);
 }
 
 // --- Mises à jour automatiques ---------------------------------------------
-// Téléchargées en fond, installées à la fermeture de l'application : jamais de redémarrage en plein stream.
-let manualCheck = false;
+// Recherche au lancement puis toutes les 30 min. Dès qu'une version est téléchargée, on propose de l'installer
+// tout de suite (fenêtre + bandeau dans l'admin + Réglages). Sinon elle s'installe à la fermeture de l'application.
+// L'état est partagé avec l'admin via le serveur (/api/update + événement « update »), y compris dans le dock OBS.
+const upd = { supported: app.isPackaged, current: app.getVersion(), state: 'idle', next: '', percent: 0, error: '', checkedAt: 0 };
+let manualCheck = false, asked = '';
+function setUpd(patch) {
+  Object.assign(upd, patch);
+  refreshTray();
+  try { server && server.broadcast('update', upd); } catch {}
+}
 function checkUpdates(manual = false) {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged) { setUpd({ state: 'error', error: 'Mises à jour indisponibles en mode développement.' }); return; }
+  if (upd.state === 'checking' || upd.state === 'downloading' || upd.state === 'ready') return;
   manualCheck = manual;
-  autoUpdater.checkForUpdates().catch(() => {});
+  setUpd({ state: 'checking', error: '' });
+  autoUpdater.checkForUpdates().catch(err => setUpd({ state: 'error', error: String(err && err.message || err) }));
+}
+function installUpdate() {
+  if (upd.state !== 'ready') return;
+  quitting = true;
+  try { server && server.close(); } catch {}
+  // Installation silencieuse puis relance automatique : ~10 s de coupure des overlays
+  setImmediate(() => autoUpdater.quitAndInstall(true, true));
+}
+async function askInstall() {
+  if (asked === upd.next) return; // une seule fenêtre par version
+  asked = upd.next;
+  const { response } = await dialog.showMessageBox(win && win.isVisible() ? win : null, {
+    type: 'info', title: APP_NAME, buttons: ['Installer maintenant', 'Plus tard'], defaultId: 0, cancelId: 1,
+    message: `La version ${upd.next} est prête.`,
+    detail: 'L\'application redémarre toute seule (environ 10 secondes de coupure des overlays).\n\n« Plus tard » : elle s\'installera quand tu fermeras l\'application, ou depuis Admin > Réglages.'
+  });
+  if (response === 0) installUpdate();
 }
 function setupUpdates() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', info => setUpd({ state: 'downloading', next: info.version, percent: 0 }));
+  autoUpdater.on('download-progress', p => {
+    const percent = Math.round(p.percent || 0);
+    if (percent !== upd.percent) setUpd({ state: 'downloading', percent });
+  });
   autoUpdater.on('update-not-available', () => {
+    setUpd({ state: 'none', checkedAt: Date.now() });
     if (manualCheck) dialog.showMessageBox({ type: 'info', title: APP_NAME, message: 'Tu as déjà la dernière version (' + app.getVersion() + ').' });
   });
   autoUpdater.on('error', err => {
-    if (manualCheck) dialog.showMessageBox({ type: 'warning', title: APP_NAME, message: 'Impossible de vérifier les mises à jour.', detail: String(err && err.message || err) });
+    setUpd({ state: 'error', error: String(err && err.message || err).split('\n')[0], checkedAt: Date.now() });
   });
   autoUpdater.on('update-downloaded', info => {
-    updateReady = info.version; refreshTray();
-    if (Notification.isSupported()) {
-      const n = new Notification({ title: 'Mise à jour prête', body: `La version ${info.version} s'installera quand tu fermeras l'application. Clique pour redémarrer maintenant.`, icon: icon() });
-      n.on('click', () => { quitting = true; autoUpdater.quitAndInstall(); });
-      n.show();
-    }
+    setUpd({ state: 'ready', next: info.version, percent: 100, checkedAt: Date.now() });
+    askInstall();
   });
+  server.setUpdater({ status: () => upd, check: manual => checkUpdates(manual), install: installUpdate });
   checkUpdates();
-  setInterval(checkUpdates, 4 * 60 * 60 * 1000); // toutes les 4 h, pour les longues sessions
+  setInterval(() => { if (upd.state !== 'ready') checkUpdates(); }, 30 * 60 * 1000);
 }
 
 // --- Démarrage -----------------------------------------------------------

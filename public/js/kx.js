@@ -1,6 +1,6 @@
 /* KAELYX — client temps réel partagé par tous les overlays */
 const KX = (() => {
-  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [] };
+  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [] };
   let state = null;
 
   function on(ev, fn) {
@@ -25,7 +25,7 @@ const KX = (() => {
     es.onopen = () => listeners.open.forEach(f => safe(f));
     es.onerror = () => listeners.error.forEach(f => safe(f));
     es.addEventListener('state', e => { state = JSON.parse(e.data); listeners.state.forEach(f => safe(f, state)); });
-    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch'])
+    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update'])
       es.addEventListener(ev, e => { const d = JSON.parse(e.data); listeners[ev].forEach(f => safe(f, d)); });
   }
 
@@ -139,4 +139,19 @@ const KX = (() => {
   connect();
   watch(st => st.settings?.neon, applyNeon);
   return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, get state() { return state; } };
+})();
+
+/* Overlay ouvert directement dans un navigateur (pas dans OBS, ni dans l'aperçu de l'admin) :
+   on réduit le 1920 × 1080 pour qu'il tienne dans la fenêtre, centré sur un damier (zones transparentes visibles). */
+(() => {
+  const fit = () => {
+    const b = document.body;
+    if (!b || !b.classList.contains('overlay') || window.obsstudio || window.top !== window) return false;
+    document.documentElement.classList.add('kx-viewer');
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    document.documentElement.style.setProperty('--kx-fit', String(s));
+    return true;
+  };
+  const start = () => { if (fit()) addEventListener('resize', fit); };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();

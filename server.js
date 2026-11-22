@@ -124,6 +124,7 @@ try {
 }
 state.rev = Date.now(); // numéro de version (croissant même après redémarrage) : empêche deux admins de s'écraser
 const clients = new Set();
+let updater = null; // { status(), check(manual), install() } quand le serveur tourne dans l'application de bureau
 const twitch = require('./twitch')({ dataDir: DATA_DIR, broadcast: (e, d) => broadcast(e, d), getConfig: () => state.settings.twitch });
 
 const MIME = {
@@ -294,6 +295,14 @@ async function handle(req, res) {
     catch { return send(res, 400, { error: 'json invalide' }); }
   }
 
+  // Mises à jour de l'application de bureau (fournies par electron/main.js ; absentes avec « node server.js »)
+  if (p === '/api/update' && req.method === 'GET') return send(res, 200, updater ? updater.status() : { supported: false });
+  if (p === '/api/update/check' && req.method === 'POST') { if (updater) updater.check(true); return send(res, 200, updater ? updater.status() : { supported: false }); }
+  if (p === '/api/update/install' && req.method === 'POST') {
+    if (!updater || updater.status().state !== 'ready') return send(res, 409, { error: 'aucune mise à jour prête' });
+    send(res, 200, { ok: true }); return updater.install();
+  }
+
   if (p === '/api/photos') return send(res, 200, listPhotos());
   if (p === '/api/twitch' && req.method === 'GET') return send(res, 200, { status: twitch.status(), recent: twitch.recent() });
   if (p === '/api/twitch/state' && req.method === 'POST') return send(res, 200, { state: twitch.newState() });
@@ -332,6 +341,8 @@ process.on('unhandledRejection', err => console.error('  Erreur inattendue :', e
 // Utilisé par l'application de bureau (electron/main.js) : événements 'ready' et 'error', close() avant de quitter
 module.exports = new (require('events'))();
 module.exports.port = PORT;
+module.exports.broadcast = broadcast;
+module.exports.setUpdater = u => { updater = u; };
 module.exports.close = () => {
   clearTimeout(saveTimer);
   const { rev, ...data } = state;

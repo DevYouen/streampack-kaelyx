@@ -433,6 +433,7 @@ const TABS = {
     <div class="card"><div class="card-head"><h3>Sauvegarde</h3></div>
       <div class="row"><button type="button" class="btn deep" data-act="export">Exporter (JSON)</button>
       <label class="btn ghost" style="cursor:pointer">Importer<input type="file" accept="application/json" data-import hidden></label></div></div>
+    ${updateCard()}
     <div class="card"><div class="card-head"><h3>Sécurité</h3></div>
       <form data-form="password" autocomplete="off"><div class="grid">
         <label class="field"><span>Mot de passe actuel</span><input type="password" name="current" autocomplete="current-password" required></label>
@@ -572,6 +573,17 @@ const ACTIONS = {
     if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return ACTIONS['tw-logout'](); }
     tw = await r.json(); renderTab();
   },
+  'upd-check': async () => {
+    try { const r = await updatePost('/api/update/check'); if (r.ok) showUpdate(await r.json()); } catch { toast('Serveur injoignable'); }
+  },
+  'upd-install': async () => {
+    if (!confirm(`Installer la version ${upd.next} maintenant ? Les overlays seront coupés environ 10 secondes.`)) return;
+    try {
+      const r = await updatePost('/api/update/install');
+      if (!r.ok) return toast('Aucune mise à jour prête');
+      toast('Installation… l’application redémarre toute seule');
+    } catch { toast('Serveur injoignable'); }
+  },
   logout: async () => {
     try { await fetch('/api/logout', { method: 'POST', headers: headers() }); } catch {}
     store.del('kx-token'); location.reload();
@@ -631,6 +643,39 @@ document.addEventListener('change', async e => {
   } catch { toast('Fichier invalide'); }
 });
 
+/* ---------- Mises à jour de l'application (état envoyé en direct par le serveur) ---------- */
+let upd = { supported: false };
+function updateCard() {
+  const u = upd, cur = esc(u.current || '');
+  const at = u.checkedAt ? ' · vérifié à ' + new Date(u.checkedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const checkBtn = (label = 'Rechercher maintenant') => `<button type="button" class="btn deep" data-act="upd-check">${label}</button>`;
+  let body;
+  if (!u.supported) body = `<p class="upd-text">Les mises à jour automatiques fonctionnent dans l'application de bureau.${u.error ? ' ' + esc(u.error) : ''}</p>`;
+  else if (u.state === 'checking') body = `<p class="upd-text">Recherche d'une nouvelle version…</p><div class="row">${checkBtn('Recherche…').replace('<button', '<button disabled')}</div>`;
+  else if (u.state === 'downloading') body = `<p class="upd-text">Téléchargement de la version <b>${esc(u.next)}</b>… ${u.percent || 0} %</p>
+      <div class="upd-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${u.percent || 0}"><i style="width:${u.percent || 0}%"></i></div>`;
+  else if (u.state === 'ready') body = `<p class="upd-text">La version <b>${esc(u.next)}</b> est prête. L'application redémarre toute seule (environ 10 s de coupure des overlays).</p>
+      <div class="row"><button type="button" class="btn" data-act="upd-install">Installer maintenant</button></div>`;
+  else if (u.state === 'error') body = `<p class="upd-text">Vérification impossible : ${esc(u.error || 'erreur inconnue')}${at}</p><div class="row">${checkBtn('Réessayer')}</div>`;
+  else body = `<p class="upd-text">${u.state === 'none' ? 'Tu as la dernière version.' : 'Recherche automatique au lancement puis toutes les 30 min.'}${at}</p><div class="row">${checkBtn()}</div>`;
+  return `<div class="card" id="updCard"><div class="card-head"><h3>Application</h3><code>Version ${cur || '—'}</code></div>${body}</div>`;
+}
+function showUpdate(u) {
+  upd = u || { supported: false };
+  if (tab === 'settings') { const c = $('#updCard'); if (c) c.outerHTML = updateCard(); }
+  // Bandeau visible dans tous les onglets dès qu'une version est prête
+  let bar = $('#updBanner');
+  if (upd.state === 'ready') {
+    if (!bar) { bar = document.createElement('div'); bar.id = 'updBanner'; bar.className = 'upd-banner'; bar.setAttribute('role', 'status'); document.body.appendChild(bar); }
+    bar.innerHTML = `<span>Mise à jour <b>${esc(upd.next)}</b> prête</span><button type="button" class="btn" data-act="upd-install">Installer maintenant</button>`;
+  } else if (bar) bar.remove();
+}
+async function updatePost(url) {
+  const r = await fetch(url, { method: 'POST', headers: headers() });
+  if (r.status === 401) { await needLogin(); return updatePost(url); }
+  return r;
+}
+
 async function changePassword(form, data) {
   if (data.next.trim().length < 10) return toast('Le nouveau mot de passe doit faire au moins 10 caractères');
   if (data.next !== data.confirm) return toast('Les deux nouveaux mots de passe ne sont pas identiques');
@@ -663,6 +708,9 @@ async function boot() {
   KX.on('error', () => status('err'));
   KX.on('state', st => adopt(clone(st)));
   KX.on('twitch', s => { tw = s; if (tab === 'twitch') renderSoon(); });
+  KX.on('update', showUpdate);
+  KX.on('open', () => fetch('/api/update').then(r => r.json()).then(showUpdate).catch(() => {})); // après un redémarrage
+  fetch('/api/update').then(r => r.json()).then(showUpdate).catch(() => {});
   fetch('/api/twitch').then(r => r.json()).then(d => { tw = d.status; if (tab === 'twitch') renderSoon(); }).catch(() => {});
   if (!TABS[tab]) tab = 'players';
   setPreview(DEFAULT_PV[tab]());
