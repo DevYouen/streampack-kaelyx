@@ -84,59 +84,67 @@
   #sweep .sw-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .45)); }
   #sweep.go .sw { display: block; animation: swGo 1.15s cubic-bezier(.77, 0, .18, 1) both; }
   #sweep.go .sw.thin { animation-delay: .07s; }
-  /* ---------- Animation logo « façon replay de match » ----------
-     0 → 28 % : le cercle s'ouvre depuis le centre (rayons violets qui tournent), le logo arrive en vrille 3D
-     28 → 64 % : écran couvert, le logo et le nom d'équipe sont posés (on change la mise en page à ce moment-là)
-     64 → 100 % : le cercle se referme sur le logo qui repart en vrille : la nouvelle image apparaît */
-  #sting { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; perspective: 1400px; display: none; }
+  /* ---------- Transition logo « broadcast » (≈ 1,9 s) ----------
+     Trois volets obliques (violet profond, dégradé, anthracite) entrent en cascade, l'écran est couvert ~0,75 → 1,15 s
+     (la mise en page change à 0,85 s), le logo sort du flou, un reflet passe sur sa forme, puis les volets repartent
+     en cascade inverse (le dernier arrivé part le premier) et révèlent la nouvelle image. */
+  #sting { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; display: none; --in: cubic-bezier(.83, 0, .17, 1); }
   #sting.go { display: block; }
-  #sting .st-cover { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; animation: stIris 1.5s both; }
-  @keyframes stIris {
-    0% { clip-path: circle(0% at 50% 50%); animation-timing-function: cubic-bezier(.6, 0, .2, 1); }
-    28% { clip-path: circle(75% at 50% 50%); }
-    64% { clip-path: circle(75% at 50% 50%); animation-timing-function: cubic-bezier(.75, 0, .35, 1); }
-    100% { clip-path: circle(0% at 50% 50%); } }
-  #sting .st-rays { position: absolute; left: 50%; top: 50%; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px;
-    background: repeating-conic-gradient(from 0deg, rgba(153, 51, 204, .34) 0deg 5deg, rgba(86, 28, 115, 0) 5deg 15deg);
-    -webkit-mask-image: radial-gradient(circle, transparent 0, #000 12%, #000 34%, transparent 58%); mask-image: radial-gradient(circle, transparent 0, #000 12%, #000 34%, transparent 58%);
-    animation: kx-spin 4s linear infinite; }
-  #sting .st-halo { position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, rgba(153, 51, 204, .6), rgba(86, 28, 115, .28) 32%, rgba(42, 43, 44, 0) 62%); }
-  #sting .st-grid { position: absolute; inset: 0; opacity: .5;
-    background-image: linear-gradient(rgba(201, 204, 209, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(201, 204, 209, .06) 1px, transparent 1px);
-    background-size: 60px 60px; background-position: center; }
-  #sting .st-ring { position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px 0 0 -100px; border-radius: 50%; opacity: 0;
-    border: 6px solid var(--kx-violet); box-shadow: 0 0 40px var(--kx-violet), inset 0 0 30px var(--kx-violet); }
-  #sting .st-ring.a { animation: stRingOut 1.5s both; }
-  #sting .st-ring.b { border-width: 3px; border-color: var(--kx-white); box-shadow: 0 0 30px rgba(243, 241, 241, .7); animation: stRingOut 1.5s .05s both; }
-  #sting .st-ring.c { animation: stRingIn 1.5s both; }
-  @keyframes stRingOut { 0% { transform: scale(0); opacity: 1; animation-timing-function: cubic-bezier(.6, 0, .2, 1); } 28% { transform: scale(12.5); opacity: .9; } 34%, 100% { transform: scale(12.5); opacity: 0; } }
-  @keyframes stRingIn { 0%, 63% { transform: scale(12); opacity: 0; } 64% { transform: scale(12); opacity: .9; animation-timing-function: cubic-bezier(.75, 0, .35, 1); } 100% { transform: scale(0); opacity: 1; } }
-  #sting .st-shard { position: absolute; top: -320px; height: 1720px; width: 140px; left: 0; background: var(--kx-grad); opacity: 0;
-    animation: stShard .58s cubic-bezier(.65, 0, .25, 1) both; box-shadow: 0 0 50px rgba(153, 51, 204, .6); }
-  #sting .st-shard.s1 { animation-delay: .36s; }
-  #sting .st-shard.s2 { width: 18px; background: var(--kx-white); animation-delay: .41s; }
-  #sting .st-shard.s3 { width: 300px; background: var(--kx-deep); animation-delay: .32s; }
-  @keyframes stShard { 0% { opacity: 0; transform: translateX(-700px) skewX(-24deg); } 1% { opacity: 1; transform: translateX(-700px) skewX(-24deg); } 100% { opacity: 1; transform: translateX(2700px) skewX(-24deg); } }
-  #sting .st-flash { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at 50% 46%, rgba(243, 241, 241, .9), rgba(243, 241, 241, 0) 55%); animation: stFlash 1.5s both; }
-  @keyframes stFlash { 0%, 25% { opacity: 0; } 30% { opacity: .8; } 44%, 93% { opacity: 0; } 97% { opacity: .55; } 100% { opacity: 0; } }
-  #sting .st-logo { position: absolute; left: 50%; top: 50%; width: 900px; margin: -290px 0 0 -450px; display: flex; flex-direction: column; align-items: center; gap: 22px; transform-style: preserve-3d; }
-  #sting .st-spin { width: 400px; height: 400px; animation: stLogo 1.5s both;
-    filter: drop-shadow(0 22px 50px rgba(0, 0, 0, .6)) drop-shadow(0 0 46px rgba(153, 51, 204, .65)); }
-  #sting .st-spin img { width: 100%; height: 100%; object-fit: contain; }
-  @keyframes stLogo {
-    0% { transform: scale(.05) rotateY(-720deg) rotateZ(-30deg); opacity: 0; animation-timing-function: cubic-bezier(.15, .75, .25, 1); }
-    10% { opacity: 1; }
-    32% { transform: scale(1.16) rotateY(0) rotateZ(0); opacity: 1; animation-timing-function: ease-out; }
-    42% { transform: scale(1); opacity: 1; }
-    62% { transform: scale(1.03); opacity: 1; animation-timing-function: cubic-bezier(.6, -.3, .7, .2); }
-    72% { transform: scale(1.12); opacity: 1; animation-timing-function: cubic-bezier(.7, 0, .9, .4); }
-    92% { opacity: 1; }
-    100% { transform: scale(0) rotateY(540deg) rotateZ(25deg); opacity: 0; } }
-  #sting .st-name { font: italic 800 70px/1 var(--f-title); text-transform: uppercase; color: var(--kx-white); white-space: nowrap;
-    text-shadow: 0 0 30px rgba(153, 51, 204, .85), 0 6px 20px rgba(0, 0, 0, .5); animation: stName 1.5s both; }
-  #sting .st-name small { display: block; margin-top: 10px; font: 700 18px/1 var(--f-body); letter-spacing: .5em; color: var(--kx-silver); text-align: center; text-shadow: none; }
-  @keyframes stName { 0%, 30% { opacity: 0; transform: translateY(24px); letter-spacing: .5em; } 44% { opacity: 1; transform: none; letter-spacing: .1em; }
-    62% { opacity: 1; transform: none; letter-spacing: .12em; } 70%, 100% { opacity: 0; transform: translateY(-14px); letter-spacing: .2em; } }
+  #sting .pl { position: absolute; top: -200px; bottom: -200px; left: 0; width: 2800px; transform: translateX(-3300px) skewX(-24deg); will-change: transform; }
+  #sting .pl::after { content: ''; position: absolute; top: 0; bottom: 0; right: -2px; width: 5px; }
+  #sting .pl.p3 { background: var(--kx-deep); animation: plIn .62s var(--in) 0s both, plOut .6s var(--in) 1.27s forwards; }
+  #sting .pl.p3::after { background: var(--kx-violet); box-shadow: 0 0 30px var(--kx-violet); }
+  #sting .pl.p2 { background: var(--kx-grad); animation: plIn .62s var(--in) .07s both, plOut .6s var(--in) 1.2s forwards; }
+  #sting .pl.p2::after { background: var(--kx-white); box-shadow: 0 0 34px rgba(243, 241, 241, .9); }
+  #sting .pl.p1 { background: var(--kx-bg); overflow: hidden; animation: plIn .62s var(--in) .14s both, plOut .6s var(--in) 1.13s forwards; }
+  #sting .pl.p1::after { background: var(--kx-silver); box-shadow: 0 0 24px rgba(201, 204, 209, .7); }
+  @keyframes plIn { from { transform: translateX(-3300px) skewX(-24deg); } to { transform: translateX(-440px) skewX(-24deg); } }
+  @keyframes plOut { from { transform: translateX(-440px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
+  /* Matière du volet principal : halo violet, grille fine, hachures — contre-inclinée pour rester droite */
+  #sting .p1 .mat { position: absolute; inset: 0 -400px; transform: skewX(24deg);
+    background:
+      radial-gradient(ellipse 900px 520px at 50% 50%, rgba(153, 51, 204, .38), rgba(86, 28, 115, .16) 45%, rgba(42, 43, 44, 0) 72%),
+      repeating-linear-gradient(-66deg, rgba(243, 241, 241, .025) 0 2px, transparent 2px 26px),
+      linear-gradient(rgba(201, 204, 209, .045) 1px, transparent 1px) 0 0 / 64px 64px,
+      linear-gradient(90deg, rgba(201, 204, 209, .045) 1px, transparent 1px) 0 0 / 64px 64px; }
+
+  /* Traînées de vitesse */
+  #sting .sk { position: absolute; left: 0; height: 3px; width: 700px; opacity: 0; border-radius: 3px;
+    background: linear-gradient(90deg, rgba(243, 241, 241, 0), rgba(243, 241, 241, .95) 70%, #fff); box-shadow: 0 0 14px rgba(243, 241, 241, .6);
+    animation: skGo .5s cubic-bezier(.5, 0, .3, 1) both; }
+  #sting .sk.v { background: linear-gradient(90deg, rgba(153, 51, 204, 0), var(--kx-violet) 70%, #e3b6ff); box-shadow: 0 0 18px var(--kx-violet); height: 4px; }
+  @keyframes skGo { 0% { opacity: 1; transform: translateX(-900px); } 100% { opacity: 1; transform: translateX(2600px); } }
+
+  /* Logo, lignes et nom (posés sur le volet principal) */
+  #sting .ctr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+  #sting .lg { position: absolute; width: 300px; height: 300px; left: -150px; top: -230px;
+    animation: lgIn .7s cubic-bezier(.16, 1, .3, 1) .5s both, lgOut .42s cubic-bezier(.7, 0, .84, 0) 1.1s forwards; }
+  #sting .lg img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .55)) drop-shadow(0 0 30px rgba(153, 51, 204, .55)); }
+  @keyframes lgIn { from { opacity: 0; transform: translateX(-70px) scale(.8); filter: blur(16px); } to { opacity: 1; transform: none; filter: blur(0); } }
+  @keyframes lgOut { to { opacity: 0; transform: translateX(300px) scale(1.08); filter: blur(12px); } }
+  /* Reflet : bande lumineuse qui ne s'affiche que sur la forme du logo (masque = le logo lui-même) */
+  #sting .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-position: center; mask-position: center;
+    background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .95) 50%, transparent 62%) no-repeat; background-size: 300% 100%;
+    animation: glint .75s cubic-bezier(.45, 0, .2, 1) .82s both; }
+  @keyframes glint { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+  #sting .ln { position: absolute; top: -81px; height: 2px; width: 470px; background: linear-gradient(90deg, rgba(201, 204, 209, 0), var(--kx-silver)); }
+  #sting .ln::after { content: ''; position: absolute; top: -4px; width: 10px; height: 10px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 12px var(--kx-violet); }
+  #sting .ln.l { right: 190px; transform-origin: right; animation: lnIn .55s cubic-bezier(.16, 1, .3, 1) .68s both, fadeOut .3s ease-in 1.08s forwards; }
+  #sting .ln.l::after { right: -5px; }
+  #sting .ln.r { left: 190px; transform-origin: left; background: linear-gradient(-90deg, rgba(201, 204, 209, 0), var(--kx-silver));
+    animation: lnIn .55s cubic-bezier(.16, 1, .3, 1) .68s both, fadeOut .3s ease-in 1.08s forwards; }
+  #sting .ln.r::after { left: -5px; }
+  @keyframes lnIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; } }
+  #sting .nm { position: absolute; left: -600px; width: 1200px; top: 100px; text-align: center; }
+  #sting .nm b { display: block; font: italic 800 84px/1 var(--f-title); text-transform: uppercase; color: var(--kx-white); white-space: nowrap; padding-right: 10px;
+    text-shadow: 0 8px 30px rgba(0, 0, 0, .45); animation: nmIn .6s cubic-bezier(.16, 1, .3, 1) .74s both, nmOut .32s ease-in 1.07s forwards; }
+  #sting .nm small { display: block; margin-top: 14px; font: 700 18px/1 var(--f-body); letter-spacing: .55em; padding-left: .55em; color: var(--kx-silver); text-transform: uppercase;
+    animation: subIn .55s cubic-bezier(.16, 1, .3, 1) .88s both, fadeOut .3s ease-in 1.05s forwards; }
+  @keyframes nmIn { from { clip-path: inset(0 50% 0 50%); letter-spacing: .35em; opacity: 0; } to { clip-path: inset(-20px -40px); letter-spacing: .06em; opacity: 1; } }
+  @keyframes nmOut { to { opacity: 0; transform: translateX(160px); filter: blur(8px); } }
+  @keyframes subIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @keyframes swGo { from { transform: translateX(-3400px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
 
@@ -174,11 +182,15 @@
 <div id="players"></div>
 <div id="deco"></div>
 <div id="sting">
-  <div class="st-cover"><div class="st-halo"></div><div class="st-grid"></div><div class="st-rays"></div></div>
-  <div class="st-shard s3"></div><div class="st-shard s1"></div><div class="st-shard s2"></div>
-  <div class="st-ring a"></div><div class="st-ring b"></div><div class="st-ring c"></div>
-  <div class="st-flash"></div>
-  <div class="st-logo"><div class="st-spin" id="stLogo"></div><div class="st-name" id="stName"></div></div>
+  <div class="pl p3"></div><div class="pl p2"></div><div class="pl p1"><div class="mat"></div></div>
+  <div class="sk" style="top:180px;animation-delay:.02s"></div><div class="sk v" style="top:410px;animation-delay:.09s"></div>
+  <div class="sk" style="top:705px;animation-delay:.15s;width:520px"></div><div class="sk v" style="top:930px;animation-delay:.05s"></div>
+  <div class="sk" style="top:300px;animation-delay:1.14s"></div><div class="sk v" style="top:820px;animation-delay:1.2s"></div>
+  <div class="ctr">
+    <div class="ln l"></div><div class="ln r"></div>
+    <div class="lg"><span id="stLogo"></span><div class="glint" id="stGlint"></div></div>
+    <div class="nm" id="stName"></div>
+  </div>
 </div>
 <div id="sweep"><div class="sw thin"></div><div class="sw"><div class="sw-logo" id="swLogo"></div></div></div>
 <script src="/js/kx.js"></script>
@@ -275,7 +287,7 @@ function render(st) {
     holding = true;
     if (mode === 'logo') {
       playSting(st);
-      later(() => { holding = false; apply(lastSt, { instant: true, delay: .55 }); }, 620); // écran couvert par le cercle : on change tout
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: .45 }); }, 850); // écran couvert par les volets : on change tout
     } else if (mode === 'sweep') {
       const sw = document.getElementById('sweep');
       document.getElementById('swLogo').innerHTML = KX.logo(st);
@@ -291,15 +303,18 @@ function render(st) {
   apply(st, { delay: rendered === null ? .15 : 0 });
 }
 
-// Animation logo façon replay (aussi déclenchable à la main depuis Admin > POV)
+// Transition logo « broadcast » (aussi déclenchable à la main depuis Admin > POV)
 let stingT = null;
 function playSting(st) {
   const s = st || lastSt || {};
   const el = document.getElementById('sting');
+  const src = s.settings?.logo || '/logo/logo.svg';
   document.getElementById('stLogo').innerHTML = KX.logo(s);
-  document.getElementById('stName').innerHTML = `${KX.esc(s.settings?.teamName || 'KAELYX')}<small>${KX.esc(s.settings?.teamSub || '')}</small>`;
+  const gl = document.getElementById('stGlint');
+  gl.style.webkitMaskImage = gl.style.maskImage = `url("${src.replace(/"/g, '')}")`;
+  document.getElementById('stName').innerHTML = `<b>${KX.esc(s.settings?.teamName || 'KAELYX')}</b>${s.settings?.teamSub ? `<small>${KX.esc(s.settings.teamSub)}</small>` : ''}`;
   el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
-  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 1600);
+  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 1950);
 }
 KX.on('trigger', t => { if (t && t.kind === 'pov-sting') playSting(); });
 

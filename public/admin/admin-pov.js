@@ -41,7 +41,7 @@ TABS.pov = function () {
     <div class="grid" style="margin-top:16px">
       ${Array.from({ length: slots }, (_, s) => field(s ? `POV ${s + 1} (petite)` : 'POV 1 (principale)', `pov.slots.${s}`, { options: opts, rerender: true })).join('')}
       ${field('Son', 'pov.audio', { options: [['main', 'POV principale seulement'], ['none', 'Tout coupé'], ['all', 'Toutes les POV']] })}
-      ${field('Transition entre mises en page', 'pov.transition', { options: [['logo', 'Logo (style replay)'], ['sweep', 'Bande oblique'], ['fade', 'Fondu'], ['none', 'Aucune']] })}
+      ${field('Transition entre mises en page', 'pov.transition', { options: [['logo', 'Logo Kaelyx (broadcast)'], ['sweep', 'Bande oblique'], ['fade', 'Fondu'], ['none', 'Aucune']] })}
     </div>
     <div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="pov-sting">Jouer l’animation logo</button>
       <span class="pov-sub" style="margin:0">Par exemple avant un replay ou un moment fort.</span></div></div>
