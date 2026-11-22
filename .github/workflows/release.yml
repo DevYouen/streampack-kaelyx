@@ -17,6 +17,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # La release est créée d'abord (en brouillon) : sinon electron-builder envoie ses fichiers en parallèle
+      # et peut créer deux releases avec le même tag, ce qui casse le lien de téléchargement.
+      - run: gh release create ${{ github.ref_name }} --draft --title ${{ github.ref_name }} --notes "Mise à jour automatique."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Publiée seulement quand tous les fichiers sont là : les applications ne voient jamais une version incomplète
+      - run: gh release edit ${{ github.ref_name }} --draft=false --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
