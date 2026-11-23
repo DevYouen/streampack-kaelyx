@@ -34,6 +34,15 @@
   #bg .mark { position: absolute; left: 50%; top: 50%; width: 560px; height: 560px; margin: -280px 0 0 -280px; opacity: .07; }
   #bg .mark img { width: 100%; height: 100%; object-fit: contain; animation: povFloat 9s ease-in-out infinite; }
   @keyframes povFloat { 50% { transform: translateY(-14px) scale(1.02); } }
+  #bg .band.hair { width: 4px; opacity: .45; background: var(--kx-silver); }
+  #bg .ghost { position: absolute; left: 0; bottom: 14px; display: flex; white-space: nowrap; animation: povGhost 100s linear infinite; }
+  #bg .ghost span { font: italic 900 240px/1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; padding-right: 80px; color: transparent; -webkit-text-stroke: 2px rgba(201,204,209,.07); }
+  @keyframes povGhost { to { transform: translateX(-50%); } }
+  #bg .dial { position: absolute; left: 50%; top: 50%; width: 760px; height: 760px; margin: -380px 0 0 -380px; overflow: visible; opacity: .8; animation: kx-spin 120s linear infinite reverse; }
+  #bg .dial circle { fill: none; }
+  #bg .corner { position: absolute; width: 46px; height: 46px; border: 0 solid rgba(201,204,209,.35); }
+  #bg .corner.tl { left: 36px; top: 36px; border-width: 2px 0 0 2px; } #bg .corner.tr { right: 36px; top: 36px; border-width: 2px 2px 0 0; }
+  #bg .corner.bl { left: 36px; bottom: 36px; border-width: 0 0 2px 2px; } #bg .corner.br { right: 36px; bottom: 36px; border-width: 0 2px 2px 0; }
   #deco { pointer-events: none; }
 
   /* ---------- Transitions ---------- */
@@ -51,102 +60,28 @@
   .pv.noanim, .pv.noanim .inner, .instant .pv, .instant .pv .inner { transition: none !important; }
   .pv.pop { animation: pvPop .8s var(--kx-out) both; }
   .pv.leave { animation: pvLeave .4s cubic-bezier(.55, 0, .9, .4) both; }
-  @keyframes pvPop { 0% { opacity: 0; transform: scale(1.08); filter: brightness(2.2) saturate(.4); } 60% { opacity: 1; } 100% { transform: none; filter: none; } }
-  @keyframes pvLeave { to { opacity: 0; transform: scale(.92); filter: brightness(.4); } }
+  @keyframes pvPop { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+  @keyframes pvLeave { to { opacity: 0; transform: scale(.98); } }
 
   /* Habillage : entrées / sorties en cascade */
   .box.enter { animation: boxIn .7s var(--kx-out) both; }
   .box.enter.k-plate { animation: plateIn .75s var(--kx-out) both; }
-  .box.enter.k-logo { animation: logoIn .9s cubic-bezier(.34, 1.56, .64, 1) both; }
+  .box.enter.k-logo { animation: logoIn .7s var(--kx-out) both; }
   .box.leave { animation: boxOut .4s cubic-bezier(.55, 0, .9, .4) both; }
   .box.leave.k-plate { animation: plateOut .4s cubic-bezier(.55, 0, .9, .4) both; }
   @keyframes boxIn { from { opacity: 0; transform: scale(1.05); } }
   @keyframes boxOut { to { opacity: 0; transform: scale(.95); } }
   @keyframes plateIn { 0% { clip-path: inset(0 100% 0 0); transform: translateX(-40px); } 100% { clip-path: inset(0 -40px -40px 0); transform: none; } }
   @keyframes plateOut { 0% { clip-path: inset(0 -40px -40px 0); } 100% { clip-path: inset(0 0 0 100%); transform: translateX(40px); } }
-  @keyframes logoIn { from { opacity: 0; transform: scale(.3) rotate(-25deg); } }
+  @keyframes logoIn { from { opacity: 0; transform: translateY(14px); } }
   /* Flash néon sur le cadre quand le joueur d'une POV change */
   .box.flash::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-    box-shadow: inset 0 0 0 4px var(--kx-violet), inset 0 0 80px rgba(153, 51, 204, .65); animation: boxFlash .9s ease-out both; }
-  @keyframes boxFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+    box-shadow: inset 0 0 0 3px #F3F1F1; animation: boxFlash .5s ease-out both; }
+  @keyframes boxFlash { 0% { opacity: 0; } 20% { opacity: .9; } 100% { opacity: 0; } }
   #players, #deco { transition: opacity .35s ease; }
   .fading #players, .fading #deco { opacity: 0; transition: opacity .28s ease; }
 
-  /* Balayage entre deux mises en page : bande violette oblique qui couvre l'écran pendant le changement */
-  #sweep { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; }
-  #sweep .sw { position: absolute; top: -200px; bottom: -200px; left: 0; width: 2900px; display: none; background: var(--kx-grad);
-    box-shadow: 0 0 80px rgba(153, 51, 204, .7); }
-  #sweep .sw::before { content: ''; position: absolute; top: 0; bottom: 0; right: -80px; width: 26px; background: var(--kx-silver); box-shadow: 0 0 30px rgba(243, 241, 241, .6); }
-  #sweep .sw::after { content: ''; position: absolute; top: 0; bottom: 0; right: 140px; width: 180px; background: var(--kx-deep); opacity: .8; }
-  #sweep .sw.thin { width: 60px; background: var(--kx-white); box-shadow: 0 0 40px var(--kx-violet); }
-  #sweep .sw.thin::before, #sweep .sw.thin::after { display: none; }
-  #sweep .sw-logo { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; transform: skewX(24deg); }
-  #sweep .sw-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .45)); }
-  #sweep.go .sw { display: block; animation: swGo 1.15s cubic-bezier(.77, 0, .18, 1) both; }
-  #sweep.go .sw.thin { animation-delay: .07s; }
-  /* ---------- Transition logo « broadcast » (≈ 3 s) ----------
-     Trois volets obliques (violet profond, dégradé, anthracite) entrent en cascade, l'écran est couvert ~0,95 → 1,9 s
-     (la mise en page change à 1,2 s), le logo sort du flou, un reflet passe sur sa forme, puis les volets repartent
-     en cascade inverse (le dernier arrivé part le premier) et révèlent la nouvelle image. */
-  #sting { position: absolute; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; display: none; --in: cubic-bezier(.83, 0, .17, 1); }
-  #sting.go { display: block; }
-  #sting .pl { position: absolute; top: -200px; bottom: -200px; left: 0; width: 2800px; transform: translateX(-3300px) skewX(-24deg); will-change: transform; }
-  #sting .pl::after { content: ''; position: absolute; top: 0; bottom: 0; right: -2px; width: 5px; }
-  #sting .pl.p3 { background: var(--kx-deep); animation: plIn .8s var(--in) 0s both, plOut .75s var(--in) 2.05s forwards; }
-  #sting .pl.p3::after { background: var(--kx-violet); box-shadow: 0 0 30px var(--kx-violet); }
-  #sting .pl.p2 { background: var(--kx-grad); animation: plIn .8s var(--in) .1s both, plOut .75s var(--in) 1.97s forwards; }
-  #sting .pl.p2::after { background: var(--kx-white); box-shadow: 0 0 34px rgba(243, 241, 241, .9); }
-  #sting .pl.p1 { background: var(--kx-bg); overflow: hidden; animation: plIn .8s var(--in) .2s both, plOut .75s var(--in) 1.89s forwards; }
-  #sting .pl.p1::after { background: var(--kx-silver); box-shadow: 0 0 24px rgba(201, 204, 209, .7); }
-  @keyframes plIn { from { transform: translateX(-3300px) skewX(-24deg); } to { transform: translateX(-440px) skewX(-24deg); } }
-  @keyframes plOut { from { transform: translateX(-440px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
-  /* Matière du volet principal : halo violet, grille fine, hachures — contre-inclinée pour rester droite */
-  #sting .p1 .mat { position: absolute; inset: 0 -400px; transform: skewX(24deg);
-    background:
-      radial-gradient(ellipse 900px 520px at 50% 50%, rgba(153, 51, 204, .38), rgba(86, 28, 115, .16) 45%, rgba(42, 43, 44, 0) 72%),
-      repeating-linear-gradient(-66deg, rgba(243, 241, 241, .025) 0 2px, transparent 2px 26px),
-      linear-gradient(rgba(201, 204, 209, .045) 1px, transparent 1px) 0 0 / 64px 64px,
-      linear-gradient(90deg, rgba(201, 204, 209, .045) 1px, transparent 1px) 0 0 / 64px 64px; }
-
-  /* Traînées de vitesse */
-  #sting .sk { position: absolute; left: 0; height: 3px; width: 700px; opacity: 0; border-radius: 3px;
-    background: linear-gradient(90deg, rgba(243, 241, 241, 0), rgba(243, 241, 241, .95) 70%, #fff); box-shadow: 0 0 14px rgba(243, 241, 241, .6);
-    animation: skGo .5s cubic-bezier(.5, 0, .3, 1) both; }
-  #sting .sk.v { background: linear-gradient(90deg, rgba(153, 51, 204, 0), var(--kx-violet) 70%, #e3b6ff); box-shadow: 0 0 18px var(--kx-violet); height: 4px; }
-  @keyframes skGo { 0% { opacity: 1; transform: translateX(-900px); } 100% { opacity: 1; transform: translateX(2600px); } }
-
-  /* Logo, lignes et nom (posés sur le volet principal) */
-  #sting .ctr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-  #sting .lg { position: absolute; width: 300px; height: 300px; left: -150px; top: -230px;
-    animation: lgIn .9s cubic-bezier(.16, 1, .3, 1) .85s both, lgOut .5s cubic-bezier(.7, 0, .84, 0) 1.72s forwards; }
-  #sting .lg img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .55)) drop-shadow(0 0 30px rgba(153, 51, 204, .55)); }
-  @keyframes lgIn { from { opacity: 0; transform: translateX(-70px) scale(.8); filter: blur(16px); } to { opacity: 1; transform: none; filter: blur(0); } }
-  @keyframes lgOut { to { opacity: 0; transform: translateX(300px) scale(1.08); filter: blur(12px); } }
-  /* Reflet : bande lumineuse qui ne s'affiche que sur la forme du logo (masque = le logo lui-même) */
-  #sting .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-    -webkit-mask-position: center; mask-position: center;
-    background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .95) 50%, transparent 62%) no-repeat; background-size: 300% 100%;
-    animation: glint .9s cubic-bezier(.45, 0, .2, 1) 1.3s both; }
-  @keyframes glint { from { background-position: 120% 0; } to { background-position: -20% 0; } }
-  #sting .ln { position: absolute; top: -81px; height: 2px; width: 470px; background: linear-gradient(90deg, rgba(201, 204, 209, 0), var(--kx-silver)); }
-  #sting .ln::after { content: ''; position: absolute; top: -4px; width: 10px; height: 10px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 12px var(--kx-violet); }
-  #sting .ln.l { right: 190px; transform-origin: right; animation: lnIn .7s cubic-bezier(.16, 1, .3, 1) 1.05s both, fadeOut .35s ease-in 1.68s forwards; }
-  #sting .ln.l::after { right: -5px; }
-  #sting .ln.r { left: 190px; transform-origin: left; background: linear-gradient(-90deg, rgba(201, 204, 209, 0), var(--kx-silver));
-    animation: lnIn .7s cubic-bezier(.16, 1, .3, 1) 1.05s both, fadeOut .35s ease-in 1.68s forwards; }
-  #sting .ln.r::after { left: -5px; }
-  @keyframes lnIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
-  @keyframes fadeOut { to { opacity: 0; } }
-  #sting .nm { position: absolute; left: -600px; width: 1200px; top: 100px; text-align: center; }
-  #sting .nm b { display: block; font: italic 800 84px/1 var(--f-title); text-transform: uppercase; color: var(--kx-white); white-space: nowrap; padding-right: 10px;
-    text-shadow: 0 8px 30px rgba(0, 0, 0, .45); animation: nmIn .7s cubic-bezier(.16, 1, .3, 1) 1.12s both, nmOut .38s ease-in 1.66s forwards; }
-  #sting .nm small { display: block; margin-top: 14px; font: 700 18px/1 var(--f-body); letter-spacing: .55em; padding-left: .55em; color: var(--kx-silver); text-transform: uppercase;
-    animation: subIn .6s cubic-bezier(.16, 1, .3, 1) 1.3s both, fadeOut .35s ease-in 1.64s forwards; }
-  @keyframes nmIn { from { clip-path: inset(0 50% 0 50%); letter-spacing: .35em; opacity: 0; } to { clip-path: inset(-20px -40px); letter-spacing: .06em; opacity: 1; } }
-  @keyframes nmOut { to { opacity: 0; transform: translateX(160px); filter: blur(8px); } }
-  @keyframes subIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-
-  @keyframes swGo { from { transform: translateX(-3400px) skewX(-24deg); } to { transform: translateX(2500px) skewX(-24deg); } }
+  /* Transitions logo et bande oblique : /js/kx-sting.js (partagé avec l'overlay /stinger) */
 
   .box { position: absolute; }
   .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px;
@@ -156,17 +91,35 @@
 
   /* Plaque joueur : dessinée à 72 px de haut puis mise à l'échelle de sa boîte */
   .plate { position: absolute; left: 0; top: 0; display: flex; height: 72px; transform-origin: 0 0; filter: var(--kx-shadow); }
-  .pl-logo { width: 72px; flex: none; display: grid; place-items: center; background: var(--kx-grad); }
-  .pl-logo img { width: 44px; height: 44px; object-fit: contain; }
-  .pl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 26px 0 20px;
-    background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .pl-logo { position: relative; width: 72px; flex: none; display: grid; place-items: center; overflow: hidden;
+    background: linear-gradient(180deg, rgba(243,241,241,.22), transparent 55%), var(--kx-grad); box-shadow: inset 0 0 0 1px rgba(243,241,241,.18); }
+  .pl-logo img { position: relative; width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+  @keyframes plGlint { 0% { background-position: 130% 0; } 10%, 100% { background-position: -30% 0; } }
+  .pl-main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 30px 0 20px;
+    background: linear-gradient(180deg, rgba(243,241,241,.08), rgba(243,241,241,0) 45%),
+      repeating-linear-gradient(-66deg, rgba(153,51,204,.10) 0 2px, transparent 2px 9px) right / 34% 100% no-repeat, var(--kx-panel);
+    box-shadow: inset 0 -3px 0 var(--kx-violet), inset 0 1px 0 rgba(243,241,241,.1); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .pl-cap { display: flex; gap: 5px; align-items: stretch; margin-left: -6px; padding: 10px 0; transform: skewX(-12deg); }
+  .pl-cap i { display: block; width: 6px; background: var(--kx-violet); }
+  .pl-cap i:nth-child(2) { opacity: .6; } .pl-cap i:nth-child(3) { opacity: .3; }
+  .box.enter.k-plate .pl-logo { animation: plLogo .55s var(--kx-out) both; animation-delay: var(--d, 0s); }
+  .box.enter.k-plate .pl-name { animation: plName .6s var(--kx-out) both; animation-delay: calc(var(--d, 0s) + .18s); }
+  .box.enter.k-plate .pl-meta { animation: plName .6s var(--kx-out) both; animation-delay: calc(var(--d, 0s) + .26s); }
+  .box.enter.k-plate .pl-cap i { animation: plCap .4s var(--kx-out) both; animation-delay: calc(var(--d, 0s) + .32s); }
+  .box.enter.k-plate .pl-cap i:nth-child(2) { animation-delay: calc(var(--d, 0s) + .38s); } .box.enter.k-plate .pl-cap i:nth-child(3) { animation-delay: calc(var(--d, 0s) + .44s); }
+  @keyframes plLogo { from { transform: translateX(-100%); } }
+  @keyframes plName { from { transform: translateY(70%); opacity: 0; } }
+  @keyframes plCap { from { transform: translateX(-14px); opacity: 0; } }
   .pl-name { font-size: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
   .pl-meta { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pl-meta i { display: inline-block; width: 4px; height: 4px; margin: 0 10px 2px; background: var(--kx-violet); vertical-align: middle; }
   .plate.slim .pl-meta { display: none; }
 
   .logo-box { display: grid; place-items: center; }
-  .logo-box img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 18px rgba(0,0,0,.5)); }
+  .logo-box img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 18px rgba(0,0,0,.5)) drop-shadow(0 0 14px rgba(153,51,204,.35)); }
+  .logo-box .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.9) 50%, transparent 60%) no-repeat; background-size: 300% 100%; background-position: 130% 0; animation: plGlint 14s ease-in-out 3s infinite; }
+
 </style>
 </head>
 <body class="overlay">
@@ -174,27 +127,23 @@
   <div class="halo a"></div><div class="halo b"></div>
   <div class="grid-bg"></div>
   <canvas id="stars"></canvas>
+  <div class="ghost" id="bgGhost"></div>
+  <svg class="dial" viewBox="0 0 760 760" aria-hidden="true">
+    <circle cx="380" cy="380" r="374" stroke="rgba(201,204,209,.10)" stroke-width="1"/>
+    <circle cx="380" cy="380" r="366" stroke="rgba(201,204,209,.16)" stroke-width="9" stroke-dasharray="1.5 16.5"/>
+    <circle cx="380" cy="380" r="366" stroke="rgba(153,51,204,.55)" stroke-width="9" stroke-dasharray="1.5 113.5"/>
+    <circle cx="380" cy="380" r="300" stroke="rgba(201,204,209,.08)" stroke-width="1" stroke-dasharray="4 10"/>
+  </svg>
   <div class="mark" id="bgMark"></div>
-  <div class="band" style="left:1730px"></div><div class="band thin" style="left:1670px"></div>
+  <div class="band" style="left:1730px"></div><div class="band thin" style="left:1670px"></div><div class="band hair" style="left:1622px"></div>
   <div class="band l" style="left:20px;top:-500px"></div><div class="band thin l" style="left:220px;top:-500px"></div>
   <div class="vignette"></div>
+  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
 </div>
 <div id="players"></div>
 <div id="deco"></div>
-<div id="sting">
-  <div class="pl p3"></div><div class="pl p2"></div><div class="pl p1"><div class="mat"></div></div>
-  <div class="sk" style="top:180px;animation-delay:.05s"></div><div class="sk v" style="top:410px;animation-delay:.16s"></div>
-  <div class="sk" style="top:705px;animation-delay:.26s;width:520px"></div><div class="sk v" style="top:930px;animation-delay:.1s"></div>
-  <div class="sk" style="top:300px;animation-delay:1.92s"></div><div class="sk v" style="top:820px;animation-delay:2s"></div>
-  <div class="sk" style="top:560px;animation-delay:2.08s;width:520px"></div>
-  <div class="ctr">
-    <div class="ln l"></div><div class="ln r"></div>
-    <div class="lg"><span id="stLogo"></span><div class="glint" id="stGlint"></div></div>
-    <div class="nm" id="stName"></div>
-  </div>
-</div>
-<div id="sweep"><div class="sw thin"></div><div class="sw"><div class="sw-logo" id="swLogo"></div></div></div>
 <script src="/js/kx.js"></script>
+<script src="/js/kx-sting.js"></script>
 <script>
 /* Une seule source OBS « /pov » : la mise en page en direct (Admin > POV) et les joueurs affectés aux emplacements.
    /pov?layout=<id> force une mise en page (pour en mettre une par scène OBS si tu préfères). */
@@ -299,13 +248,10 @@ function render(st) {
     holding = true;
     if (mode === 'logo') {
       playSting(st);
-      later(() => { holding = false; apply(lastSt, { instant: true, delay: 1 }); }, 1200); // écran couvert par les volets : on change tout
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: 1.05 }); }, 1000); // écran couvert (≈ 0,42 → 2,2 s) : on change tout
     } else if (mode === 'sweep') {
-      const sw = document.getElementById('sweep');
-      document.getElementById('swLogo').innerHTML = KX.logo(st);
-      sw.classList.remove('go'); void sw.offsetWidth; sw.classList.add('go');
-      later(() => { holding = false; apply(lastSt, { instant: true, delay: .3 }); }, 560); // écran couvert : on change tout d'un coup
-      later(() => sw.classList.remove('go'), 1300);
+      sting.play('sweep', st);
+      later(() => { holding = false; apply(lastSt, { instant: true, delay: .2 }); }, 450); // écran couvert ≈ 0,34 → 0,66 s
     } else { // fondu
       document.body.classList.add('fading');
       later(() => { holding = false; apply(lastSt, { instant: true, delay: .05 }); document.body.classList.remove('fading'); }, 300);
@@ -315,19 +261,9 @@ function render(st) {
   apply(st, { delay: rendered === null ? .15 : 0 });
 }
 
-// Transition logo « broadcast » (aussi déclenchable à la main depuis Admin > POV)
-let stingT = null;
-function playSting(st) {
-  const s = st || lastSt || {};
-  const el = document.getElementById('sting');
-  const src = s.settings?.logo || '/logo/logo.svg';
-  document.getElementById('stLogo').innerHTML = KX.logo(s);
-  const gl = document.getElementById('stGlint');
-  gl.style.webkitMaskImage = gl.style.maskImage = `url("${src.replace(/"/g, '')}")`;
-  document.getElementById('stName').innerHTML = `<b>${KX.esc(s.settings?.teamName || 'KAELYX')}</b>${s.settings?.teamSub ? `<small>${KX.esc(s.settings.teamSub)}</small>` : ''}`;
-  el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
-  clearTimeout(stingT); stingT = later(() => el.classList.remove('go'), 3000);
-}
+// Transition logo « broadcast » (aussi déclenchable à la main depuis Admin > POV) : voir /js/kx-sting.js
+const sting = KXSting.mount(document.body);
+function playSting(st) { sting.play('logo', st || lastSt); }
 KX.on('trigger', t => { if (t && t.kind === 'pov-sting') playSting(); });
 
 function leave(el) {
@@ -395,11 +331,16 @@ function apply(st, { instant = false, delay = 0 } = {}) {
   const on = items.length > 0 && layout.bg !== false;
   bg.classList.toggle('off', !on);
   if (on) {
+    // Masque SVG (blanc = fond visible, noir = trou) : deux trous qui se chevauchent restent des trous
     const holes = items.filter(i => i.kind === 'cam' || (i.kind === 'pov' && bySlot(i.slot)?.povSource === 'obs'))
-      .map(i => `M${i.x} ${i.y}h${i.w}v${i.h}h${-i.w}Z`).join('');
-    bg.style.clipPath = holes ? `path(evenodd, "M0 0H1920V1080H0Z${holes}")` : '';
+      .map(i => `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" fill="black"/>`).join('');
+    const mask = holes ? `url("data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><defs><mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080"><rect width="1920" height="1080" fill="white"/>${holes}</mask></defs><rect width="1920" height="1080" mask="url(#m)"/></svg>`)}")` : '';
+    bg.style.webkitMaskImage = bg.style.maskImage = mask;
+    bg.style.webkitMaskSize = bg.style.maskSize = mask ? '1920px 1080px' : '';
     const mark = document.getElementById('bgMark'), logoKey = st.settings?.logo || '';
     if (mark.dataset.k !== logoKey) { mark.dataset.k = logoKey; mark.innerHTML = KX.logo(st); }
+    const gh = document.getElementById('bgGhost'), word = [st.settings?.teamName || 'KAELYX', st.settings?.teamSub || ''].filter(Boolean).join(' ');
+    if (gh.dataset.k !== word) { gh.dataset.k = word; const half = Array.from({ length: 4 }, () => `<span>${KX.esc(word)}</span>`).join(''); gh.innerHTML = half + half; }
   }
 
   // 2. Habillage : un élément par entrée de la mise en page, gardé tant que son contenu ne change pas
@@ -423,6 +364,7 @@ function apply(st, { instant = false, delay = 0 } = {}) {
     el.className = `box k-${i.kind} ${d.cls || ''} enter`;
     el.style.cssText = d.style;
     el.style.animationDelay = (delay + (cur ? .22 : 0) + n * .06) + 's'; // la nouvelle plaque entre pendant que l'ancienne sort
+    el.style.setProperty('--d', el.style.animationDelay); // repris par les éléments internes (plaque en trois temps, balayage)
     el.innerHTML = d.html;
     deco.appendChild(el);
     next.set(key, { el, geo, content: d.content, html: d.html, pid: d.pid });
@@ -441,7 +383,7 @@ function decoOf(i, p, st) {
     if (SHOW_HINTS && !p) { hint = `<div class="hint empty"><div><b>POV ${i.slot + 1}</b>aucun joueur</div></div>`; hintKey = 'empty'; }
     else if (SHOW_HINTS && p.povSource === 'obs') { hint = `<div class="hint"><div><b>${KX.esc(p.pseudo)}</b>source OBS · ${i.x}, ${i.y} · ${i.w} × ${i.h}</div></div>`; hintKey = 'obs' + p.id; }
     else if (SHOW_HINTS && p.povSource === 'twitch' && !channelOf(p)) { hint = `<div class="hint empty"><div><b>${KX.esc(p.pseudo)}</b>chaîne Twitch manquante</div></div>`; hintKey = 'nochan' + p.id; }
-    return { style, html: (isFull(i) ? '' : KX.frame(i.w, i.h, cut(i))) + hint, content: 'pov' + isFull(i) + hintKey, pid: p?.id || '' };
+    return { style, cls: isFull(i) ? '' : 'framed', html: (isFull(i) ? '' : KX.frame(i.w, i.h, cut(i))) + hint, content: 'pov' + isFull(i) + hintKey, pid: p?.id || '' };
   }
   if (i.kind === 'plate') {
     if (!p) return SHOW_HINTS ? { style, html: `<div class="hint empty" style="font-size:14px">Plaque POV ${i.slot + 1}</div>`, content: 'empty' } : null;
@@ -449,11 +391,15 @@ function decoOf(i, p, st) {
     const meta = [p.role || 'Joueur', p.game].filter(Boolean).map(KX.esc).join('<i></i>');
     const html = `<div class="plate ${i.h < 56 ? 'slim' : ''}" style="width:${i.w / k}px;transform:scale(${k})">
       <div class="pl-logo">${KX.logo(st)}</div>
-      <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div></div>`;
+      <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div>
+      <div class="pl-cap" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
     return { style, html, content: [p.id, p.pseudo, p.role, p.game, st.settings?.logo].join('|') };
   }
   if (i.kind === 'cam') return { style, html: KX.frame(i.w, i.h) + (SHOW_HINTS ? `<div class="hint"><div><b>Cam</b>source OBS · ${i.x}, ${i.y}</div></div>` : ''), content: 'cam' };
-  if (i.kind === 'logo') return { style, cls: 'logo-box', html: KX.logo(st), content: 'logo' + (st.settings?.logo || '') };
+  if (i.kind === 'logo') {
+    const src = (st.settings?.logo || '/logo/logo.svg').replace(/"/g, '');
+    return { style, cls: 'logo-box', html: KX.logo(st) + `<i class="glint" style="-webkit-mask-image:url(&quot;${KX.esc(src)}&quot;);mask-image:url(&quot;${KX.esc(src)}&quot;)"></i>`, content: 'logo' + src };
+  }
   return null;
 }
 KX.starfield(document.getElementById('stars'), 110);

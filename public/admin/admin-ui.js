@@ -92,8 +92,8 @@ TABS.regie = function () {
       <div class="rg-hero-bg" aria-hidden="true"></div>
       <div class="card-head"><h3 class="grow">Transitions</h3>${goBtn('alerts', 'Réglages')}</div>
       <div class="rg-hero-btns">
-        <button type="button" class="btn big rg-go" data-act="stinger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Lancer le stinger</button>
-        <button type="button" class="btn big deep" data-act="pov-sting">Animation logo (POV)</button>
+        <button type="button" class="btn big rg-go" data-act="stinger" title="Raccourci : Ctrl + Maj + S"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Lancer le stinger<span class="kb">Ctrl Maj S</span></button>
+        <button type="button" class="btn big deep" data-act="pov-sting" title="Raccourci : Ctrl + Maj + P">Animation logo (POV)<span class="kb">Ctrl Maj P</span></button>
       </div>
     </section>
 
@@ -108,7 +108,7 @@ TABS.regie = function () {
 
     <section class="card">
       <div class="card-head"><h3 class="grow">Lower third</h3><span class="state-tag ${ltShown() ? 'on' : ''}" data-lt-note>${ltShown() ? 'Affiché à l’écran' : 'Masqué'}</span></div>
-      <div class="row"><button type="button" class="btn" data-act="lt-show">Afficher</button><button type="button" class="btn ghost" data-act="lt-hide">Masquer</button>
+      <div class="row"><button type="button" class="btn" data-act="lt-show" title="Raccourci : Ctrl + Maj + L">Afficher</button><button type="button" class="btn ghost" data-act="lt-hide" title="Raccourci : Ctrl + Maj + L">Masquer</button>
         <span class="rg-lt">${esc(S.lowerthird.name || '—')}<small>${esc(S.lowerthird.title || '')}</small></span></div>
       ${P.length ? `<p class="rg-label">Remplir et afficher</p><div class="chips">${P.map((p, i) => `<button type="button" class="chip" data-act="lt-fill" data-i="${i}">${esc(p.pseudo)}</button>`).join('')}</div>` : ''}
     </section>
@@ -135,7 +135,7 @@ TABS.regie = function () {
 
     <section class="card">
       <div class="card-head"><h3 class="grow">Bandeaux & alertes</h3></div>
-      <div class="row" style="gap:22px">${toggle('Ticker visible', 'ticker.visible')}</div>
+      <div class="row" style="gap:22px" title="Raccourci : Ctrl + Maj + D">${toggle('Ticker visible', 'ticker.visible')}</div>
       <p class="rg-label">Alerte de test</p>
       <div class="chips">${[['follow', 'Follow'], ['sub', 'Sub'], ['gift', 'Gift sub'], ['bits', 'Bits'], ['raid', 'Raid'], ['don', 'Don']].map(([v, l]) => `<button type="button" class="chip" data-act="quick-alert" data-type="${v}">${l}</button>`).join('')}</div>
     </section>
@@ -197,12 +197,12 @@ function commands() {
   const C = [], add = (group, label, run, hint = '') => C.push({ group, label, run, hint });
   const tabName = b => b.querySelector('.lab')?.textContent || b.dataset.tab;
   [...document.querySelectorAll('#nav button')].forEach((b, i) => add('Aller à', tabName(b), () => go(b.dataset.tab), i < 9 ? 'Alt ' + (i + 1) : ''));
-  add('Action', 'Lancer le stinger', () => ACTIONS.stinger());
-  add('Action', 'Animation logo des POV', () => ACTIONS['pov-sting']());
-  add('Action', 'Afficher le lower third', () => ACTIONS['lt-show']());
-  add('Action', 'Masquer le lower third', () => ACTIONS['lt-hide']());
-  const flip = (label, path) => add('Action', (getP(path) ? 'Masquer ' : 'Afficher ') + label, () => { setP(path, !getP(path)); save(true); renderTab(); toast(label + (getP(path) ? ' affiché' : ' masqué')); });
-  flip('le ticker', 'ticker.visible'); flip('le scoreboard', 'scoreboard.visible'); flip('les POV', 'pov.visible');
+  add('Action', 'Lancer le stinger', () => ACTIONS.stinger(), 'Ctrl Maj S');
+  add('Action', 'Animation logo des POV', () => ACTIONS['pov-sting'](), 'Ctrl Maj P');
+  add('Action', 'Afficher le lower third', () => ACTIONS['lt-show'](), 'Ctrl Maj L');
+  add('Action', 'Masquer le lower third', () => ACTIONS['lt-hide'](), 'Ctrl Maj L');
+  const flip = (label, path, hint = '') => add('Action', (getP(path) ? 'Masquer ' : 'Afficher ') + label, () => { setP(path, !getP(path)); save(true); renderTab(); toast(label[0].toUpperCase() + label.slice(1) + (getP(path) ? ' affiché' : ' masqué')); }, hint);
+  flip('le ticker', 'ticker.visible', 'Ctrl Maj D'); flip('le scoreboard', 'scoreboard.visible', 'Ctrl Maj B'); flip('les POV', 'pov.visible');
   for (const [k, n] of [['starting', 'Starting soon'], ['brb', 'BRB'], ['ending', 'Fin de stream']]) {
     for (const m of [5, 10]) add('Compte à rebours', `${n} : ${m} min`, () => ACTIONS.count({ k, m }));
     add('Compte à rebours', `${n} : arrêter`, () => ACTIONS.count({ k, m: 0 }));

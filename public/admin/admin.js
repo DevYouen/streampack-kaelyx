@@ -532,8 +532,8 @@ const ACTIONS = {
   count: d => {
     const sc = S.scenes[d.k]; const m = +d.m;
     if (!m) sc.endAt = 0;
-    else if (d.add !== undefined) sc.endAt = Math.max(Date.now(), sc.endAt || 0) + 60000;
-    else sc.endAt = Date.now() + m * 60000;
+    else if (d.add !== undefined) { if ((sc.endAt || 0) < Date.now()) sc.startAt = Date.now(); sc.endAt = Math.max(Date.now(), sc.endAt || 0) + 60000; }
+    else { sc.startAt = Date.now(); sc.endAt = Date.now() + m * 60000; } // startAt : barre de progression du compte à rebours
     save(true); tickCounts(); setPreview('/scene/' + d.k);
   },
   'lt-show': () => { S.lowerthird.visible = true; S.lowerthird.showAt = Date.now(); save(true); setPreview('/lowerthird'); renderTab(); },

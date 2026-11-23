@@ -5,24 +5,71 @@
 <title>Scène — Kaelyx</title>
 <link rel="stylesheet" href="/css/kx.css">
 <style>
-  /* Fond : anthracite, un halo violet, une bande oblique, une grille très légère */
+  /* Fond : anthracite, halo violet, rayons lents, grille légère, nom d'équipe géant en filigrane, bandes obliques */
   .bg { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; }
   .halo { position: absolute; width: 1400px; height: 1400px; left: var(--hx, 1340px); top: 50%; margin: -700px 0 0 -700px; border-radius: 50%;
     background: radial-gradient(circle, rgba(153,51,204,.42) 0%, rgba(86,28,115,.32) 30%, rgba(86,28,115,0) 64%); animation: kx-pulse 8s ease-in-out infinite; }
+  .rays { position: absolute; width: 1800px; height: 1800px; left: 1340px; top: 540px; margin: -900px 0 0 -900px; opacity: .55;
+    background: repeating-conic-gradient(from 0deg, rgba(153,51,204,.16) 0deg 4deg, rgba(153,51,204,0) 4deg 15deg);
+    -webkit-mask-image: radial-gradient(circle, transparent 0 17%, #000 24%, transparent 58%); mask-image: radial-gradient(circle, transparent 0 17%, #000 24%, transparent 58%);
+    animation: kx-spin 140s linear infinite; }
   .grid-bg { position: absolute; inset: 0; opacity: .5;
     background-image: linear-gradient(rgba(201,204,209,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,204,209,.05) 1px, transparent 1px);
-    background-size: 80px 80px; -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); }
-  .band { position: absolute; width: 180px; height: 1700px; top: -300px; background: var(--kx-grad); transform: rotate(24deg); opacity: .9; }
-  .band.thin { width: 24px; opacity: .55; }
+    background-size: 80px 80px; animation: sGrid 50s linear infinite;
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000, transparent); }
+  @keyframes sGrid { to { background-position: 80px 80px; } }
   #stars { position: absolute; inset: 0; opacity: .55; }
+  /* Nom d'équipe géant, en contour très léger, qui défile lentement en bas de l'écran */
+  .ghost { position: absolute; left: 0; bottom: 18px; display: flex; white-space: nowrap; pointer-events: none; animation: sGhost 90s linear infinite; }
+  .ghost span { font: italic 900 250px/1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; padding-right: 80px; color: transparent;
+    -webkit-text-stroke: 2px rgba(201,204,209,.075); }
+  @keyframes sGhost { to { transform: translateX(-50%); } }
+  .band { position: absolute; width: 180px; height: 1700px; top: -300px; background: var(--kx-grad); transform: rotate(24deg); opacity: .9; overflow: hidden; }
+  .band.thin { width: 24px; opacity: .55; }
+  .band.hair { width: 4px; opacity: .5; background: var(--kx-silver); }
+  .band::after { content: ''; position: absolute; left: 0; right: 0; height: 280px; top: -320px;
+    background: linear-gradient(transparent, rgba(243,241,241,.5), transparent); animation: sSheen 7s ease-in-out infinite; }
+  .band.thin::after { animation-delay: 1.4s; } .band.hair::after { animation-delay: 2.4s; }
+  @keyframes sSheen { 0%, 40% { top: -320px; } 85%, 100% { top: 1900px; } }
   .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 90% at 60% 50%, rgba(42,43,44,0) 55%, rgba(42,43,44,.9) 100%); }
 
-  /* Logo */
+  /* Repères aux coins de l'écran */
+  .corner { position: absolute; width: 46px; height: 46px; border: 0 solid rgba(201,204,209,.38); pointer-events: none; }
+  .corner.tl { left: 40px; top: 40px; border-width: 2px 0 0 2px; } .corner.tr { right: 40px; top: 40px; border-width: 2px 2px 0 0; }
+  .corner.bl { left: 40px; bottom: 40px; border-width: 0 0 2px 2px; } .corner.br { right: 40px; bottom: 40px; border-width: 0 2px 2px 0; }
+
+  /* Bandeau du haut : équipe · ligne · heure */
+  .top { position: absolute; left: 120px; right: 260px; top: 70px; display: flex; align-items: center; gap: 18px; }
+  .top .claws { --h: 18px; }
+  .top .t-label { color: var(--kx-white); font-size: 15px; letter-spacing: .3em; white-space: nowrap; }
+  .top .t-label em { font-style: normal; color: var(--kx-violet); }
+  .top-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(201,204,209,.45), rgba(201,204,209,.08)); position: relative; overflow: hidden; }
+  .top-line::after { content: ''; position: absolute; top: 0; height: 1px; width: 160px; left: -160px; background: linear-gradient(90deg, transparent, #F3F1F1, transparent); animation: sLine 6s ease-in-out infinite; }
+  @keyframes sLine { 0%, 30% { left: -160px; } 100% { left: 100%; } }
+  .clock { display: flex; align-items: center; gap: 12px; font: 700 15px/1 var(--f-body); letter-spacing: .24em; color: var(--kx-silver); white-space: nowrap; }
+  .clock b { font: 800 30px/1 var(--f-title); letter-spacing: .04em; color: var(--kx-white); font-variant-numeric: tabular-nums; }
+  .clock i { width: 8px; height: 8px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 10px var(--kx-violet); animation: kx-pulse 1s ease-in-out infinite; }
+
+  /* Logo et son cadran */
   .mark { position: absolute; left: 1340px; top: 540px; width: 0; height: 0; }
-  .mark .logo { position: absolute; width: 420px; height: 420px; left: -210px; top: -210px; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(18,18,20,.55)); animation: float 7s ease-in-out infinite; }
+  .mark .glow { position: absolute; width: 760px; height: 760px; left: -380px; top: -380px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(153,51,204,.35), rgba(86,28,115,.12) 45%, transparent 68%); animation: sGlow 5s ease-in-out infinite; }
+  @keyframes sGlow { 50% { transform: scale(1.08); opacity: .75; } }
+  .mark .lg { position: absolute; width: 420px; height: 420px; left: -210px; top: -210px; animation: float 7s ease-in-out infinite; }
+  .mark .logo { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(18,18,20,.55)) drop-shadow(0 0 30px rgba(153,51,204,.35)); }
+  /* Reflet qui passe sur la forme du logo (masque = le logo lui-même) */
+  .mark .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.85) 50%, transparent 60%) no-repeat; background-size: 300% 100%; animation: sGlint 7s cubic-bezier(.45, 0, .2, 1) 1.2s infinite; }
+  @keyframes sGlint { 0% { background-position: 130% 0; } 22%, 100% { background-position: -30% 0; } }
   .mark .ring { position: absolute; width: 620px; height: 620px; left: -310px; top: -310px; border-radius: 50%; border: 2px solid rgba(201,204,209,.14); }
-  .mark .ring::after { content: ''; position: absolute; width: 12px; height: 12px; left: 50%; top: -7px; margin-left: -6px; background: var(--kx-violet); transform: rotate(45deg); }
+  .mark .ring::after { content: ''; position: absolute; width: 12px; height: 12px; left: 50%; top: -7px; margin-left: -6px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 12px var(--kx-violet); }
   .mark .spin { position: absolute; inset: 0; animation: kx-spin 24s linear infinite; }
+  .mark .dial { position: absolute; width: 820px; height: 820px; left: -410px; top: -410px; overflow: visible; animation: kx-spin 90s linear infinite reverse; }
+  .mark .dial circle { fill: none; }
+  .mark .inner { position: absolute; width: 500px; height: 500px; left: -250px; top: -250px; border-radius: 50%; border: 1px dashed rgba(201,204,209,.16); animation: kx-spin 60s linear infinite; }
+  .mark .inner i { position: absolute; width: 8px; height: 8px; margin: -4px; background: var(--kx-silver); transform: rotate(45deg); opacity: .6; }
+  .mark .inner i:nth-child(1) { left: 50%; top: 0; } .mark .inner i:nth-child(2) { left: 100%; top: 50%; }
+  .mark .inner i:nth-child(3) { left: 50%; top: 100%; } .mark .inner i:nth-child(4) { left: 0; top: 50%; background: var(--kx-violet); opacity: 1; box-shadow: 0 0 10px var(--kx-violet); }
   @keyframes float { 50% { transform: translateY(-12px); } }
   /* Néon qui parcourt l'anneau autour du logo */
   .mark .neon-ring { position: absolute; width: 620px; height: 620px; left: -310px; top: -310px; overflow: visible; transform: rotate(-90deg); }
@@ -32,23 +79,49 @@
   .copy { position: absolute; left: 120px; top: 0; bottom: 0; width: 860px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
   .kicker { display: flex; align-items: center; gap: 18px; }
   .kicker .t-label { font-size: 18px; color: var(--kx-white); letter-spacing: .22em; }
-  .title { font-size: 170px; margin: 0; padding-right: 12px; }
-  .title span { color: var(--kx-violet); }
-  .sub { font: 500 26px/1.4 var(--f-body); color: var(--kx-silver); margin: 0; max-width: 700px; }
+  .kicker .claws i { animation: sClaw 2.4s ease-in-out infinite; }
+  .kicker .claws i:nth-child(2) { animation-delay: .2s; } .kicker .claws i:nth-child(3) { animation-delay: .4s; }
+  @keyframes sClaw { 0%, 60%, 100% { filter: none; } 20% { filter: brightness(1.6) drop-shadow(0 0 6px #9933CC); } }
+  .title { font-size: 170px; margin: 0; padding-right: 12px; filter: drop-shadow(0 10px 30px rgba(18,18,20,.35));
+    background: linear-gradient(100deg, rgba(153,51,204,0) 44%, rgba(153,51,204,.75) 50%, rgba(153,51,204,0) 56%) no-repeat, linear-gradient(#F3F1F1, #F3F1F1);
+    background-size: 320% 100%, 100% 100%; background-position: 120% 0, 0 0;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: sShimmer 8s ease-in-out 1.5s infinite; }
+  .title span { -webkit-text-fill-color: var(--kx-violet); text-shadow: 0 0 46px rgba(153,51,204,.45); }
+  @keyframes sShimmer { 0% { background-position: 120% 0, 0 0; } 25%, 100% { background-position: -20% 0, 0 0; } }
+  .sub { font: 500 26px/1.4 var(--f-body); color: var(--kx-silver); margin: 0; max-width: 700px; padding-left: 18px; border-left: 3px solid var(--kx-violet); }
 
-  .count { display: flex; align-items: center; gap: 22px; }
-  .digits { display: flex; align-items: center; gap: 6px; filter: var(--kx-shadow); }
-  .digit { width: 108px; height: 132px; display: grid; place-items: center; background: var(--kx-panel); box-shadow: inset 0 -4px 0 var(--kx-violet); }
+  /* Compte à rebours : chiffres façon panneau, MIN / SEC, barre de progression */
+  .count { display: flex; flex-direction: column; gap: 14px; width: max-content; }
+  .cd { display: flex; align-items: flex-start; gap: 14px; filter: var(--kx-shadow); }
+  .cd-grp { display: flex; flex-direction: column; gap: 10px; }
+  .digits { display: flex; gap: 6px; }
+  .digit { position: relative; width: 108px; height: 132px; display: grid; place-items: center; overflow: hidden;
+    background: linear-gradient(180deg, rgba(243,241,241,.09), rgba(243,241,241,0) 50%, rgba(0,0,0,.18) 50.5%, rgba(0,0,0,0)), var(--kx-panel);
+    box-shadow: inset 0 -4px 0 var(--kx-violet), inset 0 1px 0 rgba(243,241,241,.12); clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px); }
+  .digit::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(18,18,20,.55); }
   .digit b { font: 800 104px/1 var(--f-title); font-variant-numeric: tabular-nums; }
-  .colon { font: 800 84px/1 var(--f-title); color: var(--kx-violet); padding: 0 6px 10px; }
-  .done { font-size: 100px; padding-right: 12px; animation: kx-rise .7s var(--kx-out) both; }
+  .digit b.tick { animation: sTick .45s var(--kx-out) both; }
+  @keyframes sTick { from { transform: translateY(-46%); opacity: 0; filter: blur(4px); } to { transform: none; opacity: 1; filter: none; } }
+  .cd-l { font: 700 13px/1 var(--f-body); letter-spacing: .4em; color: var(--kx-silver); padding-left: 4px; }
+  .colon { display: flex; flex-direction: column; gap: 22px; padding-top: 40px; }
+  .colon i { width: 12px; height: 12px; background: var(--kx-violet); transform: rotate(45deg); box-shadow: 0 0 12px var(--kx-violet); animation: kx-pulse 1s ease-in-out infinite; }
+  .cd-bar { position: relative; height: 4px; background: rgba(201,204,209,.16); }
+  .cd-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--kx-grad); box-shadow: 0 0 12px rgba(153,51,204,.8); transition: width 1s linear; }
+  .cd-bar i::after { content: ''; position: absolute; right: -4px; top: -4px; width: 12px; height: 12px; background: var(--kx-white); transform: rotate(45deg); box-shadow: 0 0 14px var(--kx-violet); }
+  .done { font-size: 100px; padding-right: 12px; animation: sDone .9s var(--kx-out) both; text-shadow: 0 0 40px rgba(153,51,204,.6); }
+  @keyframes sDone { 0% { opacity: 0; transform: scale(1.25); filter: blur(10px) brightness(2); } 100% { opacity: 1; transform: none; filter: none; } }
 
-  .next { display: inline-flex; align-items: stretch; height: 52px; width: max-content; filter: var(--kx-shadow); }
-  .next b { display: flex; align-items: center; padding: 0 22px; background: var(--kx-violet); font: 800 13px/1 var(--f-body); letter-spacing: .18em; text-transform: uppercase; }
-  .next span { display: flex; align-items: center; padding: 0 30px 0 22px; background: var(--kx-panel); font: 600 22px/1 var(--f-body); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
-  .socials { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
-  .soc { display: flex; align-items: center; gap: 10px; font: 600 20px/1 var(--f-body); color: var(--kx-white); }
-  .soc svg { color: var(--kx-violet); }
+  .next { position: relative; overflow: hidden; display: inline-flex; align-items: stretch; height: 56px; width: max-content; filter: var(--kx-shadow); }
+  .next b { display: flex; align-items: center; gap: 10px; padding: 0 22px; background: var(--kx-grad); font: 800 13px/1 var(--f-body); letter-spacing: .18em; text-transform: uppercase; }
+  .next b em { font-style: normal; font-size: 18px; animation: sChev 1.6s ease-in-out infinite; }
+  @keyframes sChev { 50% { transform: translateX(4px); opacity: .6; } }
+  .next span { display: flex; align-items: center; padding: 0 34px 0 22px; background: var(--kx-panel); font: 600 23px/1 var(--f-body); box-shadow: inset 0 -2px 0 rgba(153,51,204,.6);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .next::after { content: ''; position: absolute; top: 0; bottom: 0; width: 90px; left: -120px; background: linear-gradient(100deg, transparent, rgba(243,241,241,.22), transparent); animation: sNext 5s ease-in-out 2s infinite; }
+  @keyframes sNext { 0%, 60% { left: -120px; } 100% { left: 110%; } }
+  .socials { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+  .soc { display: flex; align-items: center; gap: 12px; padding-right: 18px; font: 600 20px/1 var(--f-body); color: var(--kx-white); background: rgba(42,43,44,.55); box-shadow: inset 0 0 0 1px rgba(201,204,209,.12); }
+  .soc svg { box-sizing: content-box; padding: 9px; color: var(--kx-white); background: var(--kx-deep); box-shadow: inset 0 -2px 0 var(--kx-violet); }
 
   #ticker { position: absolute; left: 0; bottom: 0; width: 1920px; height: 64px; border: 0; }
 
@@ -56,24 +129,47 @@
   .chat-cam, .chat-box { position: absolute; }
   .chat-head { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 20px; }
   .chat-head h1 { font-size: 72px; margin: 0; padding-right: 10px; }
-  .chat-head img { width: 72px; height: 72px; object-fit: contain; }
-  .chat-box .panel { position: absolute; inset: 0; background: rgba(42,43,44,.7); }
+  .chat-head img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 0 14px rgba(153,51,204,.5)); }
+  .chat-box .panel { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(86,28,115,.25), rgba(42,43,44,0) 30%), rgba(42,43,44,.7); }
   .chat-box iframe { position: absolute; left: 10px; right: 10px; top: 16px; bottom: 10px; width: calc(100% - 20px); height: calc(100% - 26px); border: 0; }
   .chat-box .kx-frame { z-index: 2; }
+  .chat-top { position: absolute; right: 64px; top: 70px; display: flex; align-items: center; gap: 22px; }
+  .tab { position: absolute; display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 16px; font: 800 13px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase;
+    background: var(--kx-grad); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); filter: var(--kx-shadow); z-index: 3; }
+  .tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--kx-white); animation: sLive 1.6s ease-out infinite; }
+  @keyframes sLive { 0% { box-shadow: 0 0 0 0 rgba(243,241,241,.9); } 100% { box-shadow: 0 0 0 8px rgba(243,241,241,0); } }
+  .tab svg { width: 16px; height: 16px; }
 
+  /* Entrée */
   .enter .copy > * { animation: kx-rise .8s var(--kx-out) both; }
   .enter .copy > *:nth-child(2) { animation-delay: .07s; } .enter .copy > *:nth-child(3) { animation-delay: .14s; }
   .enter .copy > *:nth-child(4) { animation-delay: .21s; } .enter .copy > *:nth-child(5) { animation-delay: .28s; }
+  .enter .copy > .title { animation: sTitle 1s var(--kx-out) .06s both, sShimmer 8s ease-in-out 1.5s infinite; }
+  @keyframes sTitle { from { clip-path: inset(-10% 100% -10% 0); transform: translateX(-40px) skewX(-6deg); } to { clip-path: inset(-10% -10% -10% 0); transform: none; } }
+  .enter .top { animation: sTop .9s var(--kx-out) .2s both; }
+  @keyframes sTop { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(-20px -20px -20px 0); } }
+  .enter .mark .lg { animation: sLogo 1.1s var(--kx-out) .15s both, float 7s ease-in-out 1.3s infinite; }
+  @keyframes sLogo { from { opacity: 0; transform: scale(.82); filter: blur(14px); } to { opacity: 1; transform: none; filter: none; } }
+  .enter .mark .ring { animation: sRingIn 1.2s var(--kx-out) both; }
+  .enter .mark .dial { animation: sRingIn 1.4s var(--kx-out) .1s both, kx-spin 90s linear infinite reverse; }
+  .enter .mark .inner { animation: sRingIn 1.3s var(--kx-out) .05s both, kx-spin 60s linear infinite; }
+  .chatting .corner { display: none; }
+  @keyframes sRingIn { from { opacity: 0; scale: .7; } to { opacity: 1; scale: 1; } }
+  .enter .chat-cam, .enter .chat-box { animation: kx-rise .8s var(--kx-out) both; } .enter .chat-box { animation-delay: .1s; }
 </style>
 </head>
 <body class="overlay">
 <div class="bg" id="bg">
   <div class="halo"></div>
+  <div class="rays" id="rays"></div>
   <div class="grid-bg"></div>
   <canvas id="stars"></canvas>
+  <div class="ghost" id="ghost"></div>
   <div class="band" style="left:1720px"></div>
   <div class="band thin" style="left:1660px"></div>
+  <div class="band hair" style="left:1610px"></div>
   <div class="vignette"></div>
+  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
 </div>
 <div id="root"></div>
 <iframe id="ticker" scrolling="no" style="display:none"></iframe>
@@ -93,6 +189,8 @@ function titleHTML(t) {
   const last = parts.pop();
   return parts.join(' ') + '<br><span>' + last + '</span>';
 }
+const team = st => [st.settings?.teamName || 'KAELYX', st.settings?.teamSub || ''].filter(Boolean).join(' ');
+function tickClock() { document.querySelectorAll('[data-clock]').forEach(el => { el.innerHTML = `<b>${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b>`; }); }
 
 function render(st) {
   const sc = (st.scenes || {})[type] || {};
@@ -101,10 +199,18 @@ function render(st) {
   const key = type + sc.title + sc.kicker;
   root.className = key !== lastKey ? 'enter' : '';
   lastKey = key;
-  const socHTML = soc.map(s => `<div class="soc">${KX.icon(s.key)}${KX.esc(s.handle)}</div>`).join('');
+  const socHTML = soc.map(s => `<div class="soc">${KX.icon(s.key, 20)}${KX.esc(s.handle)}</div>`).join('');
+  // Filigrane : nom d'équipe répété (deux moitiés identiques pour une boucle sans à-coup)
+  const word = KX.esc(team(st));
+  const half = Array.from({ length: 4 }, () => `<span>${word}</span>`).join('');
+  document.getElementById('ghost').innerHTML = half + half;
+  const logoSrc = (st.settings?.logo || '/logo/logo.svg').replace(/"/g, '');
+  const clock = `<span class="clock"><i></i><span data-clock></span></span>`;
 
+  document.body.classList.toggle('chatting', type === 'chatting');
   if (type === 'chatting') {
     document.querySelector('.halo').style.setProperty('--hx', '1600px');
+    document.getElementById('rays').style.display = 'none';
     const liveChat = sc.chat !== false; // chat Twitch dans le cadre, sinon zone transparente pour une autre source
     KX.holeMask(document.getElementById('bg'), 1920, 1080, [
       KX.chamferPts(CAM.x, CAM.y, CAM.w, CAM.h, 0),
@@ -113,59 +219,88 @@ function render(st) {
     root.innerHTML = `
       <div class="chat-head">${KX.logo(st)}<div class="claws" style="--h:44px"><i></i><i></i><i></i></div>
         <div><div class="t-label">${KX.esc(sc.kicker)}</div><h1 class="t-title">${KX.esc(sc.title)}</h1></div></div>
-      <div class="chat-cam" style="left:${CAM.x}px;top:${CAM.y}px;width:${CAM.w}px;height:${CAM.h}px">${KX.frame(CAM.w, CAM.h, 56, { border: 4 })}</div>
-      <div class="chat-box" style="left:${CHAT.x}px;top:${CHAT.y}px;width:${CHAT.w}px;height:${CHAT.h}px">${liveChat ? '<div class="panel"></div><iframe src="/chat?embed=1" scrolling="no" title="Chat"></iframe>' : ''}${KX.frame(CHAT.w, CHAT.h, 32, { brackets: false })}</div>
-      <div class="socials" style="position:absolute;left:${CAM.x}px;top:${CAM.y + CAM.h + 40}px">${socHTML}</div>`;
+      <div class="chat-top">${clock}</div>
+      <div class="chat-cam" style="left:${CAM.x}px;top:${CAM.y}px;width:${CAM.w}px;height:${CAM.h}px">${KX.frame(CAM.w, CAM.h, 56, { border: 4 })}
+        <span class="tab" style="right:28px;bottom:-17px"><i></i>En direct</span></div>
+      <div class="chat-box" style="left:${CHAT.x}px;top:${CHAT.y}px;width:${CHAT.w}px;height:${CHAT.h}px">${liveChat ? '<div class="panel"></div><iframe src="/chat?embed=1" scrolling="no" title="Chat"></iframe>' : ''}${KX.frame(CHAT.w, CHAT.h, 32, { brackets: false })}
+        <span class="tab" style="left:22px;top:-17px">${KX.icon('twitch', 16)}Chat</span></div>
+      <div class="socials" style="position:absolute;left:${CAM.x}px;top:${CAM.y + CAM.h + 44}px">${socHTML}</div>`;
   } else {
     root.innerHTML = `
-      <div class="mark"><div class="spin"><div class="ring"></div></div>
+      <div class="top"><div class="claws"><i></i><i></i><i></i></div><span class="t-label">${KX.esc(st.settings?.teamName || 'KAELYX')} <em>${KX.esc(st.settings?.teamSub || '')}</em></span>
+        <i class="top-line"></i>${clock}</div>
+      <div class="mark"><div class="glow"></div>
+        <svg class="dial" viewBox="0 0 820 820" aria-hidden="true">
+          <circle cx="410" cy="410" r="404" stroke="rgba(201,204,209,.12)" stroke-width="1"/>
+          <circle cx="410" cy="410" r="396" stroke="rgba(201,204,209,.22)" stroke-width="10" stroke-dasharray="1.5 18.24"/>
+          <circle cx="410" cy="410" r="396" stroke="rgba(153,51,204,.75)" stroke-width="10" stroke-dasharray="1.5 98.66" stroke-dashoffset="-6"/>
+        </svg>
+        <div class="inner"><i></i><i></i><i></i><i></i></div>
+        <div class="spin"><div class="ring"></div></div>
         <svg class="neon-ring" viewBox="0 0 620 620" aria-hidden="true"><g class="kx-neon-run">
           <circle class="halo" cx="310" cy="310" r="309" pathLength="1000" stroke-width="8"/><circle class="core" cx="310" cy="310" r="309" pathLength="1000" stroke-width="2"/>
           <circle class="halo b" cx="310" cy="310" r="309" pathLength="1000" stroke-width="8"/><circle class="core b" cx="310" cy="310" r="309" pathLength="1000" stroke-width="2"/>
-        </g></svg>${KX.logo(st, 'logo')}</div>
+        </g></svg>
+        <div class="lg">${KX.logo(st, 'logo')}<div class="glint" style="-webkit-mask-image:url(&quot;${KX.esc(logoSrc)}&quot;);mask-image:url(&quot;${KX.esc(logoSrc)}&quot;)"></div></div></div>
       <div class="copy">
         <div class="kicker"><div class="claws"><i></i><i></i><i></i></div><span class="t-label">${KX.esc(sc.kicker)}</span></div>
         <h1 class="title t-title">${titleHTML(sc.title || '')}</h1>
         ${sc.subtitle ? `<p class="sub">${KX.esc(sc.subtitle)}</p>` : '<div></div>'}
         <div class="count" id="count"></div>
         <div>
-          ${sc.next ? `<div class="next"><b>À suivre</b><span>${KX.esc(sc.next)}</span></div>` : ''}
+          ${sc.next ? `<div class="next"><b>À suivre<em>»</em></b><span>${KX.esc(sc.next)}</span></div>` : ''}
           <div class="socials">${socHTML}</div>
         </div>
       </div>`;
-    drawCount();
+    drawCount(true);
   }
+  tickClock();
   const tf = document.getElementById('ticker');
   const showT = st.ticker?.visible && type !== 'chatting';
   if (showT && !tf.src) tf.src = '/ticker?embed=1';
   tf.style.display = showT ? 'block' : 'none';
 }
 
-// Compte à rebours : lit endAt en direct, sans reconstruire la scène
+// Compte à rebours : lit endAt en direct ; seuls les chiffres qui changent sont animés
 const DONE_LABEL = { starting: "C'est parti !", brb: 'On revient !', tech: 'On revient !', ending: 'À bientôt !' };
-function drawCount() {
+let shown = '';
+function drawCount(force) {
   const box = document.getElementById('count');
   if (!box) return;
-  const end = KX.state?.scenes?.[type]?.endAt || 0;
+  const sc = KX.state?.scenes?.[type] || {};
+  const end = sc.endAt || 0;
   const left = Math.max(0, Math.round((end - Date.now()) / 1000));
-  if (!end) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  if (!end) { box.innerHTML = ''; box.style.display = 'none'; shown = ''; return; }
   box.style.display = 'flex';
   if (!left) {
-    if (!box.dataset.done) { box.dataset.done = '1'; box.innerHTML = `<div class="done t-title">${DONE_LABEL[type] || 'On arrive !'}</div>`; }
+    if (!box.dataset.done) { box.dataset.done = '1'; shown = ''; box.innerHTML = `<div class="done t-title">${DONE_LABEL[type] || 'On arrive !'}</div>`; }
     return;
   }
-  delete box.dataset.done;
-  const mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
-  const dg = d => `<div class="digit"><b>${d}</b></div>`;
-  box.innerHTML = `<div class="digits">${dg(mm[0])}${dg(mm[1])}<span class="colon">:</span>${dg(ss[0])}${dg(ss[1])}</div>`;
+  const mm = String(Math.min(99, Math.floor(left / 60))).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+  const total = Math.max(1, (end - (sc.startAt || end - left * 1000)) / 1000);
+  const pct = Math.max(0, Math.min(100, left / total * 100));
+  if (force || box.dataset.done || !box.querySelector('.cd')) {
+    delete box.dataset.done; shown = '';
+    const grp = (a, l) => `<div class="cd-grp"><div class="digits"><div class="digit"><b>${a[0]}</b></div><div class="digit"><b>${a[1]}</b></div></div><span class="cd-l">${l}</span></div>`;
+    box.innerHTML = `<div class="cd">${grp(mm, 'MIN')}<span class="colon"><i></i><i></i></span>${grp(ss, 'SEC')}</div><div class="cd-bar"><i style="width:${pct}%"></i></div>`;
+    shown = mm + ss;
+    return;
+  }
+  const now = mm + ss;
+  box.querySelectorAll('.digit b').forEach((b, i) => {
+    if (shown[i] === now[i]) return;
+    b.textContent = now[i]; b.classList.remove('tick'); void b.offsetWidth; b.classList.add('tick');
+  });
+  shown = now;
+  box.querySelector('.cd-bar i').style.width = pct + '%';
 }
-setInterval(drawCount, 1000);
-// Décor : reconstruit seulement si le texte, le logo, les réseaux ou le ticker changent
+setInterval(() => { drawCount(); tickClock(); }, 1000);
+// Décor : reconstruit seulement si le texte, le logo, les réseaux, l'équipe ou le ticker changent
 KX.watch(st => {
-  const { endAt, ...sc } = (st.scenes || {})[type] || {};
-  return [sc, st.settings?.logo, st.settings?.socials, !!st.ticker?.visible];
+  const { endAt, startAt, ...sc } = (st.scenes || {})[type] || {};
+  return [sc, st.settings?.logo, st.settings?.socials, st.settings?.teamName, st.settings?.teamSub, !!st.ticker?.visible];
 }, render);
-KX.watch(st => st.scenes?.[type]?.endAt || 0, drawCount);
+KX.watch(st => [st.scenes?.[type]?.endAt || 0, st.scenes?.[type]?.startAt || 0], () => drawCount(true));
 </script>
 </body>
 </html>
