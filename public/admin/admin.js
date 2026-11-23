@@ -1,7 +1,7 @@
 /* Admin Kaelyx — chaque modification est envoyée au serveur, qui la pousse en direct aux overlays */
 let S = null;      // état local (ce que l'admin affiche et modifie)
 let base = null;   // dernier état confirmé par le serveur (sert à fusionner avec un autre admin)
-let tab = localStorage.getItem('kx-tab') || 'players';
+let tab = (() => { try { return localStorage.getItem('kx-tab'); } catch { return null; } })() || 'regie';
 let pvPath = '';
 let photos = [];
 let tickTimer;
@@ -30,7 +30,8 @@ function needLogin() {
     const box = document.createElement('div');
     box.className = 'login'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'loginTitle');
     box.innerHTML = `<form class="login-card" novalidate>
-      <img src="/logo/logo.svg" alt="">
+      <div class="login-logo" aria-hidden="true"><i class="ring"></i><img src="/logo/logo.svg" alt=""></div>
+      <p class="login-kicker">Streampack</p>
       <h1 id="loginTitle">Admin Kaelyx</h1>
       <p>Entre le mot de passe du streampack. Il est retenu 30 jours sur cet appareil.</p>
       <label class="field"><span>Mot de passe</span><input type="password" name="password" autocomplete="current-password" required></label>
@@ -140,8 +141,13 @@ async function trigger(payload) {
     if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return trigger(payload); }
   } catch { toast('Serveur injoignable'); }
 }
+let lastStatus = '';
 function status(kind) {
   const el = $('#status'); el.className = 'status ' + (kind === 'auth' ? 'err' : kind);
+  // Petit « ✓ Enregistré » en bas à droite après chaque envoi réussi
+  const sv = $('#saved');
+  if (sv && kind === 'ok' && lastStatus === 'saving') { sv.classList.remove('on'); void sv.offsetWidth; sv.classList.add('on'); clearTimeout(sv._t); sv._t = setTimeout(() => sv.classList.remove('on'), 1400); }
+  lastStatus = kind;
   el.querySelector('span').textContent = { ok: 'En direct · enregistré', saving: 'Envoi…', err: 'Serveur injoignable', auth: 'Mot de passe requis' }[kind] || kind;
 }
 // undo : si fourni, le toast propose « Annuler » pendant 10 secondes
@@ -188,7 +194,7 @@ function ltShown() {
 /* ---------- Onglets ---------- */
 const TABS = {
   players() {
-    return head('Overlays joueurs', 'Joueurs', '') + `
+    return head('Overlays joueurs', 'Joueurs', 'Un overlay par joueur : pseudo, photo, cam et réseaux.') + `
     <div class="card">
       <form class="add" data-form="add-player">
         <label class="field"><span>Pseudo</span><input type="text" name="pseudo" placeholder="Pseudo du joueur" required autocomplete="off"></label>
@@ -196,7 +202,7 @@ const TABS = {
         <button class="btn big" type="submit">Créer l’overlay</button>
       </form>
     </div>
-    ${S.players.length ? '' : '<p class="note">Aucun joueur pour l’instant.</p>'}
+    ${S.players.length ? '' : empty('players', 'Aucun joueur pour l’instant', 'Écris un pseudo ci-dessus puis clique sur « Créer l’overlay ». Il apparaîtra aussi dans les POV, le lower third et le roster.')}
     ${S.players.map((p, i) => `
       <div class="card ${pvPath === '/p/' + p.id ? 'is-active' : ''}">
         <div class="card-head">
@@ -306,7 +312,7 @@ const TABS = {
       </div>
     </div>
     <div class="card"><div class="card-head"><h3>Remplir depuis un joueur</h3></div>
-      <div class="chips">${S.players.map((p, i) => `<button type="button" class="chip" data-act="lt-fill" data-i="${i}">${esc(p.pseudo)}</button>`).join('') || '<span class="note">Crée d’abord un joueur.</span>'}</div></div>`;
+      ${S.players.length ? `<div class="chips">${S.players.map((p, i) => `<button type="button" class="chip" data-act="lt-fill" data-i="${i}">${esc(p.pseudo)}</button>`).join('')}</div>` : empty('players', 'Pas encore de joueur', 'Crée un joueur pour remplir le bandeau en un clic.', '<button type="button" class="btn" data-act="go" data-tab="players">Ajouter un joueur</button>')}</div>`;
   },
 
   ticker() {
@@ -335,7 +341,8 @@ const TABS = {
     ${s.mode === 'vs' ? `<div class="card"><div class="grid">
       ${field('Équipe A', 'scoreboard.vs.a')}${vsStep('scoreA', 'Score A')}${field('Équipe B', 'scoreboard.vs.b')}${vsStep('scoreB', 'Score B')}</div></div>` : `
     <div class="card">
-      <table class="tbl"><thead><tr><th></th><th>Équipe / joueur</th><th>Élims</th><th>Points</th><th></th></tr></thead><tbody>
+      ${s.rows.length ? '' : empty('score', 'Classement vide', 'Ajoute une ligne par équipe ou par joueur, puis utilise les boutons + pour compter les élims et les points.')}
+      <table class="tbl" ${s.rows.length ? '' : 'hidden'}><thead><tr><th></th><th>Équipe / joueur</th><th>Élims</th><th>Points</th><th></th></tr></thead><tbody>
       ${s.rows.map((r, i) => `<tr>
         <td class="rank">${i + 1}</td>
         <td class="n"><input type="text" data-b="scoreboard.rows.${i}.name" value="${esc(r.name)}" aria-label="Nom ligne ${i + 1}"></td>
@@ -446,26 +453,29 @@ const TABS = {
   }
 };
 
-const DEFAULT_PV = { players: () => S.players[0] ? '/p/' + S.players[0].id : '/roster', scenes: () => '/scene/starting', lowerthird: () => '/lowerthird',
+const DEFAULT_PV = { regie: () => pvPath || '/pov', players: () => S.players[0] ? '/p/' + S.players[0].id : '/roster', scenes: () => '/scene/starting', lowerthird: () => '/lowerthird',
   ticker: () => '/ticker', casters: () => '/caster', pov: () => '/pov', scoreboard: () => '/scoreboard', alerts: () => '/alerts', links: () => pvPath || '/roster', settings: () => '/scene/starting', twitch: () => '/chat' };
 
 function renderTab() {
   const y = scrollY;
-  try { $('#main').innerHTML = (TABS[tab] || TABS.players)(); }
+  try { $('#view').innerHTML = (TABS[tab] || TABS.players)(); }
   catch (err) {
     console.error(err);
     // Souvent : serveur lancé avant une mise à jour des fichiers
-    $('#main').innerHTML = head('Oups', 'Onglet indisponible', 'Ferme la fenêtre noire du streampack, relance <b>demarrer-windows.bat</b>, puis recharge cette page (F5).');
+    $('#view').innerHTML = head('Oups', 'Onglet indisponible', 'Ferme la fenêtre noire du streampack, relance <b>demarrer-windows.bat</b>, puis recharge cette page (F5).');
   }
   document.querySelectorAll('#nav button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   window.scrollTo(0, y);
   tickCounts();
+  window.afterRender?.();
 }
 function go(t) {
   tab = t; localStorage.setItem('kx-tab', t);
   window.scrollTo(0, 0);
   setPreview(DEFAULT_PV[t]());
   renderTab();
+  // Transition d'entrée de l'onglet (cartes qui arrivent en cascade)
+  const v = $('#view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter');
 }
 
 /* ---------- Aperçu ---------- */
@@ -712,7 +722,7 @@ async function boot() {
   KX.on('open', () => fetch('/api/update').then(r => r.json()).then(showUpdate).catch(() => {})); // après un redémarrage
   fetch('/api/update').then(r => r.json()).then(showUpdate).catch(() => {});
   fetch('/api/twitch').then(r => r.json()).then(d => { tw = d.status; if (tab === 'twitch') renderSoon(); }).catch(() => {});
-  if (!TABS[tab]) tab = 'players';
+  if (!TABS[tab]) tab = 'regie';
   setPreview(DEFAULT_PV[tab]());
   renderTab();
   fitPreview();

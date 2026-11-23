@@ -1,6 +1,6 @@
 /* KAELYX — client temps réel partagé par tous les overlays */
 const KX = (() => {
-  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [] };
+  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [], presence: [] };
   let state = null;
 
   function on(ev, fn) {
@@ -19,13 +19,33 @@ const KX = (() => {
     });
   }
 
+  // Multivue de l'admin (?mv) : pas de connexion propre (le navigateur limite leur nombre), l'admin relaie l'état
+  const MV = window.parent !== window && new URLSearchParams(location.search).has('mv');
+  function dispatch(ev, d) {
+    if (ev === 'state') state = d;
+    (listeners[ev] || []).forEach(f => { try { f(d); } catch (err) { console.error(err); } });
+  }
   function connect() {
-    const es = new EventSource('/events');
+    if (MV) {
+      addEventListener('message', e => { if (e.origin === location.origin && e.data && e.data.kx) dispatch(e.data.kx, e.data.data); });
+      parent.postMessage({ kxReady: true }, location.origin);
+      return;
+    }
+    // Dans OBS : l'overlay se signale à l'admin (connecté, à l'antenne ou non)
+    const obs = window.obsstudio ? '?obs=' + encodeURIComponent(location.pathname + location.search) : '';
+    const es = new EventSource('/events' + obs);
+    if (obs) {
+      let cid = '', seen = { active: null, visible: null };
+      const report = () => cid && fetch(`/api/presence?cid=${cid}&active=${seen.active === null ? '' : +seen.active}&visible=${seen.visible === null ? '' : +seen.visible}`).catch(() => {});
+      es.addEventListener('hello', e => { cid = JSON.parse(e.data).cid; report(); });
+      addEventListener('obsSourceActiveChanged', e => { seen.active = !!e.detail?.active; report(); });
+      addEventListener('obsSourceVisibleChanged', e => { seen.visible = !!e.detail?.visible; report(); });
+    }
     const safe = (f, v) => { try { f(v); } catch (err) { console.error(err); } };
     es.onopen = () => listeners.open.forEach(f => safe(f));
     es.onerror = () => listeners.error.forEach(f => safe(f));
     es.addEventListener('state', e => { state = JSON.parse(e.data); listeners.state.forEach(f => safe(f, state)); });
-    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update'])
+    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update', 'presence'])
       es.addEventListener(ev, e => { const d = JSON.parse(e.data); listeners[ev].forEach(f => safe(f, d)); });
   }
 
@@ -138,7 +158,7 @@ const KX = (() => {
 
   connect();
   watch(st => st.settings?.neon, applyNeon);
-  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, get state() { return state; } };
+  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, mv: MV, get state() { return state; } };
 })();
 
 /* Overlay ouvert directement dans un navigateur (pas dans OBS, ni dans l'aperçu de l'admin) :

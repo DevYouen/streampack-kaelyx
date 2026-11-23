@@ -37,7 +37,8 @@ TABS.pov = function () {
     <p class="pov-sub">Mettre en grand (POV 1) :</p>
     <div class="pov-chips">${S.players.length ? S.players.map(p =>
       `<button type="button" class="btn ${S.pov.slots[0] === p.id ? '' : 'deep'}" data-act="pov-main" data-id="${esc(p.id)}">${esc(p.pseudo)}${S.pov.slots.indexOf(p.id) > 0 && S.pov.slots.indexOf(p.id) < slots ? ` <small>· POV ${S.pov.slots.indexOf(p.id) + 1}</small>` : ''}</button>`).join('')
-      : '<span class="pov-sub">Ajoute d’abord des joueurs dans l’onglet Joueurs.</span>'}</div>
+      : ''}</div>
+    ${S.players.length ? '' : empty('pov', 'Aucun joueur à mettre en grand', 'Les POV affichent les joueurs créés dans l’onglet Joueurs.', '<button type="button" class="btn" data-act="go" data-tab="players">Ajouter un joueur</button>')}
     ${S.players.length ? `<p class="pov-sub">Volume des POV :</p><div class="pov-vols">${S.players.map((p, i) => povVolRow(p, i)).join('')}</div>` : ''}
     <div class="grid" style="margin-top:16px">
       ${Array.from({ length: slots }, (_, s) => field(s ? `POV ${s + 1} (petite)` : 'POV 1 (principale)', `pov.slots.${s}`, { options: opts, rerender: true })).join('')}

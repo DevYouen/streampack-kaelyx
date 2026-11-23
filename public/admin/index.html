@@ -9,6 +9,13 @@
 <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
+<header class="tbar" id="tbar" aria-label="Barre de titre">
+  <img src="/logo/logo.svg" alt="" class="tb-logo">
+  <b class="tb-name">Streampack <em>Kaelyx</em></b><span class="tb-ver" id="tbVer"></span>
+  <span class="tb-live" id="tbLive"><i></i><span>OBS non connecté</span></span>
+  <button type="button" class="tb-cmd" data-act="palette"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>Rechercher une action<kbd>Ctrl K</kbd></button>
+  <button type="button" class="tb-upd" id="tbUpd" data-act="upd-install" hidden><i></i><span>Mise à jour prête</span></button>
+</header>
 <div class="app">
   <aside class="side">
     <a class="brand" href="/" aria-label="Accueil du streampack">
@@ -16,24 +23,30 @@
       <span><b>Kaelyx</b><small>Streampack</small></span>
     </a>
     <nav class="nav" id="nav" aria-label="Sections">
-      <button type="button" data-tab="players"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></svg>Joueurs</button>
-      <button type="button" data-tab="scenes"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1"/><path d="M8 21h8M12 17v4"/></svg>Scènes</button>
-      <button type="button" data-tab="casters"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="1"/><path d="m15.5 10 6-3.5v11l-6-3.5"/></svg>Cam &amp; casters</button>
-      <button type="button" data-tab="pov"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="14" rx="1"/><rect x="12.5" y="6.5" width="7" height="5"/><path d="M8 21h8"/></svg>POV</button>
-      <button type="button" data-tab="lowerthird"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h13l-2 4H3zM5 10h10"/></svg>Lower third</button>
-      <button type="button" data-tab="ticker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M15 6l6 6-6 6"/></svg>Ticker</button>
-      <button type="button" data-tab="scoreboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Scoreboard</button>
-      <button type="button" data-tab="alerts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Alertes &amp; stinger</button>
-      <button type="button" data-tab="twitch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h15v10l-4 4h-4l-3 3H7v-3H4V6zM11 8v4M15 8v4"/></svg>Twitch</button>
-      <button type="button" data-tab="links"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Liens OBS</button>
-      <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Réglages</button>
+      <p class="nav-g">En direct</p>
+      <button type="button" data-tab="regie" title="Régie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span class="lab">Régie</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="pov" title="POV"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="14" rx="1"/><rect x="12.5" y="6.5" width="7" height="5"/><path d="M8 21h8"/></svg><span class="lab">POV</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="scenes" title="Scènes"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1"/><path d="M8 21h8M12 17v4"/></svg><span class="lab">Scènes</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="lowerthird" title="Lower third"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h13l-2 4H3zM5 10h10"/></svg><span class="lab">Lower third</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="ticker" title="Ticker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M15 6l6 6-6 6"/></svg><span class="lab">Ticker</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="scoreboard" title="Scoreboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lab">Scoreboard</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="alerts" title="Alertes & stinger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="lab">Alertes &amp; stinger</span><i class="dot" aria-hidden="true"></i></button>
+      <p class="nav-g">Habillage</p>
+      <button type="button" data-tab="players" title="Joueurs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></svg><span class="lab">Joueurs</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="casters" title="Cam & casters"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="1"/><path d="m15.5 10 6-3.5v11l-6-3.5"/></svg><span class="lab">Cam &amp; casters</span><i class="dot" aria-hidden="true"></i></button>
+      <p class="nav-g">Configuration</p>
+      <button type="button" data-tab="twitch" title="Twitch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h15v10l-4 4h-4l-3 3H7v-3H4V6zM11 8v4M15 8v4"/></svg><span class="lab">Twitch</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="links" title="Liens OBS"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="lab">Liens OBS</span><i class="dot" aria-hidden="true"></i></button>
+      <button type="button" data-tab="settings" title="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span class="lab">Réglages</span><i class="dot" aria-hidden="true"></i></button>
     </nav>
+    <button type="button" class="kbar" data-act="palette"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span class="lab">Rechercher</span><kbd>Ctrl K</kbd></button>
+    <div class="obs-live" id="obsLive" role="status"><i></i><span>OBS non connecté</span></div>
     <div class="status" id="status" role="status"><i></i><span>Connexion…</span></div>
   </aside>
 
-  <main class="main" id="main"></main>
+  <main class="main" id="main"><div id="view"></div><section class="mv" id="mv" hidden aria-label="Multivue"></section></main>
 
-  <section class="preview" aria-label="Aperçu en direct">
+  <section class="preview" id="preview" aria-label="Aperçu en direct">
     <div class="pv-head">
       <span class="pv-title">Aperçu en direct</span>
       <code id="pvUrl"></code>
@@ -48,8 +61,11 @@
 </div>
 <datalist id="photoList"></datalist>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="saved" id="saved" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg><span>Enregistré</span></div>
+<button type="button" class="pv-fab" data-act="pv-toggle" aria-controls="preview">Aperçu</button>
 <script src="/js/kx.js"></script>
 <script src="/admin/admin.js"></script>
 <script src="/admin/admin-pov.js"></script>
+<script src="/admin/admin-ui.js"></script>
 </body>
 </html>

@@ -168,6 +168,11 @@ try {
 }
 state.rev = Date.now(); // numéro de version (croissant même après redémarrage) : empêche deux admins de s'écraser
 const clients = new Set();
+// Sources OBS ouvertes (overlays chargés dans OBS) : l'admin affiche lesquelles sont connectées et lesquelles sont à l'antenne
+const obsSources = new Map(); // res -> { cid, path, active, visible }
+let presenceTimer;
+const presence = () => [...obsSources.values()].map(({ path, active, visible }) => ({ path, active, visible }));
+function presenceChanged() { clearTimeout(presenceTimer); presenceTimer = setTimeout(() => broadcast('presence', presence()), 150); }
 let updater = null; // { status(), check(manual), install() } quand le serveur tourne dans l'application de bureau
 const twitch = require('./twitch')({ dataDir: DATA_DIR, broadcast: (e, d) => broadcast(e, d), getConfig: () => state.settings.twitch });
 
@@ -274,8 +279,15 @@ async function handle(req, res) {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write(`retry: 1000\nevent: state\ndata: ${JSON.stringify(state)}\n\n`);
     clients.add(res);
+    const from = url.searchParams.get('obs');
+    if (from && from.startsWith('/') && from.length < 300) {
+      const cid = crypto.randomBytes(8).toString('hex');
+      obsSources.set(res, { cid, path: from, active: null, visible: null });
+      res.write(`event: hello\ndata: ${JSON.stringify({ cid })}\n\n`);
+      presenceChanged();
+    }
     const ka = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 15000);
-    const bye = () => { clearInterval(ka); clients.delete(res); };
+    const bye = () => { clearInterval(ka); clients.delete(res); if (obsSources.delete(res)) presenceChanged(); };
     req.on('close', bye); res.on('error', bye);
     return;
   }
@@ -348,6 +360,15 @@ async function handle(req, res) {
     send(res, 200, { ok: true }); return updater.install();
   }
 
+  // Présence des sources OBS (sans mot de passe : ne révèle que les adresses des overlays ouverts)
+  if (p === '/api/presence' && req.method === 'GET') {
+    const cid = url.searchParams.get('cid');
+    if (cid) {
+      const flag = k => { const v = url.searchParams.get(k); return v === '1' ? true : v === '0' ? false : null; };
+      for (const src of obsSources.values()) if (src.cid === cid) { src.active = flag('active'); src.visible = flag('visible'); presenceChanged(); }
+    }
+    return send(res, 200, presence());
+  }
   if (p === '/api/photos') return send(res, 200, listPhotos());
   if (p === '/api/twitch' && req.method === 'GET') return send(res, 200, { status: twitch.status(), recent: twitch.recent() });
   if (p === '/api/twitch/state' && req.method === 'POST') return send(res, 200, { state: twitch.newState() });

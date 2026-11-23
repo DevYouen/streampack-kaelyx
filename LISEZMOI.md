@@ -18,6 +18,12 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 
 > Windows peut afficher « Windows a protégé votre ordinateur » au premier lancement de l'installateur : clique sur *Informations complémentaires* > *Exécuter quand même*.
 
+## L'admin en un coup d'œil
+- **Régie** (premier onglet) : tout le live sur une page. Stinger, animation logo, POV (mise en page et joueur en grand), lower third, comptes à rebours, score, ticker et alertes de test. En dessous, la **multivue** montre tous les overlays en vignettes : clique sur une vignette pour l'ouvrir dans l'aperçu. Cadre violet = à l'antenne dans OBS.
+- **Barre du haut / bas du menu** : « OBS non connecté », « OBS connecté · n sources » ou **« En direct · n à l'antenne »**. Dans le menu, la pastille d'un onglet pulse quand son overlay est à l'antenne, est violette quand il est affiché (lower third, ticker, scoreboard, compte à rebours) et cerclée quand il est seulement ouvert dans OBS.
+- **Ctrl + K** : tape une action (« stinger », « brb 5 », « grand yass », « lower moya »…) puis Entrée. **Alt + 1…9** : change d'onglet.
+- **Dock OBS étroit** : l'admin passe en mode compact (icônes seules) ; le bouton **Aperçu** en bas à gauche affiche ou cache l'aperçu.
+
 ## Dans OBS
 - Une **Source navigateur** par overlay, en **1920 × 1080** (les URL sont dans Admin > Liens OBS).
 - Admin dans OBS : *Docks > Docks de navigateur personnalisés*, URL `http://localhost:3000/admin`.

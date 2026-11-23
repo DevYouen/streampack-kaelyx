@@ -222,6 +222,7 @@ const cut = i => Math.round(Math.min(i.w, i.h) * 0.07);
 
 // Source vidéo d'un joueur : { type: 'twitch' | 'vdo', id } — null si rien à afficher (source OBS, chaîne vide)
 function sourceOf(p) {
+  if (KX.mv) return null; // multivue de l'admin : pas de lecteur vidéo (ni son)
   if (p.povSource === 'vdo') return p.povVdo ? { type: 'vdo', id: p.povVdo } : null;
   if (p.povSource === 'obs') return null;
   const c = channelOf(p);

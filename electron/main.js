@@ -96,6 +96,8 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 860, minWidth: 900, minHeight: 600, title: APP_NAME, icon: icon(),
     backgroundColor: '#2A2B2C', autoHideMenuBar: true,
+    // Barre de titre aux couleurs Kaelyx (dessinée par l'admin) ; seuls les boutons réduire / agrandir / fermer restent natifs
+    titleBarStyle: 'hidden', titleBarOverlay: { color: '#2A2B2C', symbolColor: '#C9CCD1', height: 38 },
     webPreferences: { contextIsolation: true, sandbox: true }
   });
   win.loadURL(adminUrl());
