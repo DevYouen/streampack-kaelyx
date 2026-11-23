@@ -463,6 +463,8 @@ async function handle(req, res) {
     return send(res, 200, { token: newSession() });
   }
 
+  // Valeurs d'origine de chaque module (boutons « Réinitialiser » de l'admin)
+  if (p === '/api/defaults' && req.method === 'GET') return send(res, 200, { state: normalize({}), player: fill(PLAYER, {}) });
   if (p === '/api/state') {
     if (req.method === 'GET') return send(res, 200, state);
     if (req.method === 'POST') {

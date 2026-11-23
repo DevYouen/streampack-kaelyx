@@ -31,7 +31,7 @@ TABS.pov = function () {
   const sj = sel ? L.items.indexOf(sel) : -1;
 
   return head('Joueurs en jeu', 'POV', 'Une seule source OBS : <b>' + esc(origin) + '/pov</b> (1920 × 1080). Clique sur un joueur pour le mettre en grand ; les autres passent sur les petites POV.') + `
-  <div class="card"><div class="card-head"><h3 class="grow">En direct</h3>${toggle('Afficher les POV', 'pov.visible')}</div>
+  <div class="card" data-reset="pov-live"><div class="card-head"><h3 class="grow">En direct</h3>${toggle('Afficher les POV', 'pov.visible')}</div>
     <div class="pov-chips" role="group" aria-label="Mise en page en direct">${povLayouts().map(l =>
       `<button type="button" class="btn ${l.id === S.pov.live ? '' : 'ghost'}" data-act="pov-live" data-id="${esc(l.id)}" ${l.id === S.pov.live ? 'aria-pressed="true"' : 'aria-pressed="false"'}>${esc(l.name)}</button>`).join('')}</div>
     <p class="pov-sub">Mettre en grand (POV 1) :</p>
@@ -48,7 +48,7 @@ TABS.pov = function () {
     <div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="pov-sting">Jouer l’animation logo</button>
       <span class="pov-sub" style="margin:0">Par exemple avant un replay ou un moment fort.</span></div></div>
 
-  <div class="card"><div class="card-head"><h3 class="grow">Éditeur de mise en page</h3>
+  <div class="card" data-reset="pov-layouts"><div class="card-head"><h3 class="grow">Éditeur de mise en page</h3>
       ${isLive ? '<span class="pov-live">● En direct : les changements sont visibles tout de suite</span>' : `<button type="button" class="btn" data-act="pov-live" data-id="${esc(L.id)}">Mettre en direct</button>`}</div>
     <div class="row pov-tools">
       <label class="field" style="min-width:200px"><span>Mise en page</span><select data-pov-edit>${povLayouts().map(l => `<option value="${esc(l.id)}" ${l.id === L.id ? 'selected' : ''}>${esc(l.name)}${l.id === S.pov.live ? ' (direct)' : ''}</option>`).join('')}</select></label>

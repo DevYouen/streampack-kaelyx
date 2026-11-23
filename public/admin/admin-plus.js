@@ -110,7 +110,7 @@ TABS.infos = function () {
   const sc = S.schedule, sp = S.sponsors, g = S.goal;
   const pct = Math.min(100, Math.round(g.current / Math.max(1, g.target) * 100));
   return head('Habillage du live', 'Infos & sponsors', 'Le programme de la soirée, les logos des partenaires et une barre d’objectif. Chacun a son overlay (URL dans le Guide et Liens OBS).') + `
-  <div class="card ${pvPath.startsWith('/programme') ? 'is-active' : ''}">
+  <div class="card ${pvPath.startsWith('/programme') ? 'is-active' : ''}" data-reset="schedule">
     <div class="card-head"><div class="grow"><h3>Programme</h3><code>${esc(origin)}/programme</code> · <code>/programme?bandeau</code></div>
       <div class="row"><button type="button" class="btn ghost" data-act="preview" data-path="/programme">Aperçu</button><button type="button" class="btn ghost" data-act="preview" data-path="/programme?bandeau">Aperçu bandeau</button></div></div>
     <div class="grid">${field('Petit titre', 'schedule.kicker')}${field('Titre', 'schedule.title')}</div>
@@ -123,7 +123,7 @@ TABS.infos = function () {
     <div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="sched-add">Ajouter un match</button></div>
   </div>
 
-  <div class="card ${pvPath.startsWith('/sponsors') ? 'is-active' : ''}">
+  <div class="card ${pvPath.startsWith('/sponsors') ? 'is-active' : ''}" data-reset="sponsors">
     <div class="card-head"><div class="grow"><h3>Sponsors</h3><code>${esc(origin)}/sponsors</code></div>
       ${toggle('Visible', 'sponsors.visible')}<button type="button" class="btn ghost" data-act="preview" data-path="/sponsors">Aperçu</button></div>
     <div class="grid">${field('Titre du panneau', 'sponsors.title')}${field('Secondes par logo', 'sponsors.every', { num: true, min: 2 })}</div>
@@ -135,7 +135,7 @@ TABS.infos = function () {
     <div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="spons-add">Ajouter un partenaire</button></div>
   </div>
 
-  <div class="card ${pvPath.startsWith('/objectif') ? 'is-active' : ''}">
+  <div class="card ${pvPath.startsWith('/objectif') ? 'is-active' : ''}" data-reset="goal">
     <div class="card-head"><div class="grow"><h3>Objectif</h3><code>${esc(origin)}/objectif</code></div>
       ${toggle('Visible', 'goal.visible')}<button type="button" class="btn ghost" data-act="preview" data-path="/objectif">Aperçu</button></div>
     <div class="grid">${field('Texte', 'goal.label')}

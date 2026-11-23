@@ -210,7 +210,7 @@ const TABS = {
     </div>
     ${S.players.length ? '' : empty('players', 'Aucun joueur pour l’instant', 'Écris un pseudo ci-dessus puis clique sur « Créer l’overlay ». Il apparaîtra aussi dans les POV, le lower third et le roster.')}
     ${S.players.map((p, i) => `
-      <div class="card ${pvPath === '/p/' + p.id ? 'is-active' : ''}" data-drop-photo="${i}">
+      <div class="card ${pvPath === '/p/' + p.id ? 'is-active' : ''}" data-drop-photo="${i}" data-reset="player:${i}">
         <div class="card-head">
           ${thumb(p)}
           <div class="grow"><h3>${esc(p.pseudo)}</h3><code>${esc(origin)}/p/${esc(p.id)}</code></div>
@@ -227,7 +227,7 @@ const TABS = {
           ${field('Position cam', `players.${i}.camPos`, { options: [['bl', 'Bas gauche'], ['br', 'Bas droite'], ['tl', 'Haut gauche'], ['tr', 'Haut droite']] })}
           ${field('Taille cam', `players.${i}.camSize`, { options: [['s', 'Petite'], ['m', 'Moyenne'], ['l', 'Grande'], ['xl', 'Très grande']] })}
         </div>
-        <div class="row" style="margin-top:14px;gap:22px">
+        <div class="row" style="margin-top:14px;gap:22px" data-reset-slot>
           ${toggle('Cadre webcam', `players.${i}.camVisible`)}
           ${toggle('Tag équipe', `players.${i}.showTag`)}
           ${toggle('Réseau du joueur', `players.${i}.showSocial`)}
@@ -241,7 +241,7 @@ const TABS = {
     const NAMES = { starting: 'Starting soon', brb: 'BRB / pause', ending: 'Fin de stream', tech: 'Difficultés techniques', chatting: 'Just chatting' };
     return head('Écrans plein format', 'Scènes', '') +
       Object.keys(NAMES).map(k => `
-      <div class="card ${pvPath === '/scene/' + k ? 'is-active' : ''}">
+      <div class="card ${pvPath === '/scene/' + k ? 'is-active' : ''}" data-reset="scene:${k}">
         <div class="card-head"><div class="grow"><h3>${NAMES[k]}</h3><code>${esc(origin)}/scene/${k}</code></div>
           <div class="row">${pvBtn('/scene/' + k)}${copyBtn('/scene/' + k)}</div></div>
         <div class="grid">
@@ -266,7 +266,7 @@ const TABS = {
     const camUrl = '/cam';
     return head('Webcams', 'Cam & casters', '',
       `<div class="row"><button type="button" class="btn ghost" data-act="preview" data-path="/caster">Aperçu desk</button><button type="button" class="btn ghost" data-act="preview" data-path="/caster/pip">Aperçu petites cams</button></div>`) + `
-    <div class="card ${pvPath === '/caster' || pvPath === '/caster/pip' ? 'is-active' : ''}">
+    <div class="card ${pvPath === '/caster' || pvPath === '/caster/pip' ? 'is-active' : ''}" data-reset="casters">
       <div class="card-head"><div class="grow"><h3>Casters</h3><code>${esc(origin)}/caster</code> · <code>/caster/pip</code></div>
         <div class="row"><button type="button" class="btn ghost" data-act="copy" data-path="/caster">URL desk</button><button type="button" class="btn ghost" data-act="copy" data-path="/caster/pip">URL petites cams</button></div></div>
       <div class="grid">
@@ -288,7 +288,7 @@ const TABS = {
       </div>`).join('')}
       ${C.list.length < 3 ? '<div class="row" style="margin-top:14px"><button type="button" class="btn deep" data-act="add-caster">Ajouter un caster</button></div>' : ''}
     </div>
-    <div class="card ${pvPath === camUrl ? 'is-active' : ''}">
+    <div class="card ${pvPath === camUrl ? 'is-active' : ''}" data-reset="camframe">
       <div class="card-head"><div class="grow"><h3>Cadre webcam</h3><code>${esc(origin)}${camUrl}</code></div>
         <div class="row">${pvBtn(camUrl)}${copyBtn(camUrl)}</div></div>
       <div class="grid">
@@ -305,7 +305,7 @@ const TABS = {
     const l = S.lowerthird;
     return head('Bandeau nom', 'Lower third', '',
       `<div class="row">${pvBtn('/lowerthird')}${copyBtn('/lowerthird')}</div>`) + `
-    <div class="card">
+    <div class="card" data-reset="lowerthird">
       <div class="row" style="margin-bottom:18px">
         <button type="button" class="btn big" data-act="lt-show">Afficher</button>
         <button type="button" class="btn big ghost" data-act="lt-hide">Masquer</button>
@@ -325,7 +325,7 @@ const TABS = {
   ticker() {
     return head('Bandeau défilant', 'Ticker', '',
       `<div class="row">${pvBtn('/ticker')}${copyBtn('/ticker')}</div>`) + `
-    <div class="card">
+    <div class="card" data-reset="ticker">
       <div class="row" style="margin-bottom:16px">${toggle('Ticker visible', 'ticker.visible')}</div>
       <div class="grid">
         ${field('Messages', 'ticker.items', { lines: true, wide: true, ph: 'Code créateur…\nProchain match…' })}
@@ -338,7 +338,7 @@ const TABS = {
     const s = S.scoreboard;
     return head('Compétition', 'Scoreboard', '',
       `<div class="row">${pvBtn('/scoreboard')}${copyBtn('/scoreboard')}</div>`) + `
-    <div class="card">
+    <div class="card" data-reset="scoreboard">
       <div class="row" style="margin-bottom:16px">${toggle('Scoreboard visible', 'scoreboard.visible')}</div>
       <div class="grid">
         ${field('Mode', 'scoreboard.mode', { options: [['classement', 'Classement (Fortnite)'], ['vs', 'VS (LoL)']], rerender: true })}
@@ -373,7 +373,7 @@ const TABS = {
   alerts() {
     const types = [['follow', 'Follow'], ['sub', 'Sub'], ['gift', 'Gift sub'], ['bits', 'Bits'], ['raid', 'Raid'], ['don', 'Don']];
     return head('Animations', 'Alertes & stinger', '') + `
-    <div class="card ${pvPath === '/alerts' ? 'is-active' : ''}">
+    <div class="card ${pvPath === '/alerts' ? 'is-active' : ''}" data-reset="alerts">
       <div class="card-head"><div class="grow"><h3>Alertes</h3><code>${esc(origin)}/alerts</code></div><div class="row">${pvBtn('/alerts')}${copyBtn('/alerts')}</div></div>
       <form data-form="alert">
         <div class="grid">
@@ -404,13 +404,13 @@ const TABS = {
     return head('Connexion', 'Twitch', '', `<div class="row">${pvBtn('/chat')}${copyBtn('/chat')}</div>`) + `
     <div class="card"><div class="card-head"><h3>Chaîne</h3>${pill(s.chat, s.chatError, 'Chat connecté · #' + (s.channel || ''))}</div>
       <div class="grid">${field('Chaîne Twitch', 'settings.twitch.channel', { ph: 'kaelyx' })}</div></div>
-    <div class="card ${pvPath === '/chat' ? 'is-active' : ''}"><div class="card-head"><div class="grow"><h3>Chat</h3><code>${esc(origin)}/chat</code></div></div>
+    <div class="card ${pvPath === '/chat' ? 'is-active' : ''}" data-reset="chat"><div class="card-head"><div class="grow"><h3>Chat</h3><code>${esc(origin)}/chat</code></div></div>
       <div class="grid">
         ${field('Masquer après (secondes)', 'settings.twitch.chatHide', { num: true, min: 0 })}
         ${field('Comptes ignorés', 'settings.twitch.ignore', { lines: true, ph: 'nightbot' })}
       </div>
       <div class="row" style="margin-top:16px">${toggle('Masquer les commandes (!)', 'settings.twitch.hideCommands')}</div></div>
-    <div class="card"><div class="card-head"><h3>Alertes Twitch</h3></div>
+    <div class="card" data-reset="twalerts"><div class="card-head"><h3 class="grow">Alertes Twitch</h3></div>
       <div class="row">${[['follow', 'Follow'], ['sub', 'Sub'], ['gift', 'Gift sub'], ['bits', 'Bits'], ['raid', 'Raid']].map(([k, l]) => toggle(l, 'settings.twitch.alerts.' + k)).join('')}</div></div>
     <div class="card"><div class="card-head"><h3>Follows</h3>${pill(s.follows, s.followsError, 'Connecté · ' + (s.login || ''))}</div>
       <div class="grid">${field('Client ID', 'settings.twitch.clientId', { ph: 'Application dev.twitch.tv' })}</div>
@@ -440,12 +440,12 @@ const TABS = {
   settings() {
     const soc = [['x', 'X'], ['twitch', 'Twitch'], ['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['youtube', 'YouTube'], ['discord', 'Discord'], ['site', 'Site']];
     return head('Identité', 'Réglages', '') + `
-    <div class="card"><div class="card-head"><h3>Équipe</h3></div><div class="grid">
+    <div class="card" data-reset="team"><div class="card-head"><h3 class="grow">Équipe</h3></div><div class="grid">
       ${field('Nom', 'settings.teamName')}${field('Sous-titre', 'settings.teamSub')}
       ${field('Logo', 'settings.logo', { ph: '/logo/logo.svg' })}
     </div>
     <div class="row" style="margin-top:16px">${toggle('Effet néon (lumière qui tourne autour des cadres)', 'settings.neon')}</div></div>
-    <div class="card"><div class="card-head"><h3>Réseaux</h3></div><div class="grid">
+    <div class="card" data-reset="socials"><div class="card-head"><h3 class="grow">Réseaux</h3></div><div class="grid">
       ${soc.map(([k, l]) => field(l, `settings.socials.${k}`, { ph: k === 'site' ? 'kaelyx.gg' : '@compte' })).join('')}
     </div></div>
     <div class="card"><div class="card-head"><h3>Sauvegarde</h3></div>

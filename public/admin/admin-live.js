@@ -32,7 +32,7 @@ TABS.live = function () {
   const po = S.poll, total = po.votes.reduce((a, b) => a + b, 0);
   const s = obsSt || {}, m = S.mvp;
   return head('Avec les viewers', 'Interactif', 'Sondage par le chat, message du chat à l’écran, joueur du match et replay instantané.') + `
-  <div class="card ${pvPath === '/sondage' ? 'is-active' : ''}">
+  <div class="card ${pvPath === '/sondage' ? 'is-active' : ''}" data-reset="poll">
     <div class="card-head"><div class="grow"><h3>Sondage par le chat</h3><code>${esc(origin)}/sondage</code></div>
       ${toggle('Visible', 'poll.visible')}<button type="button" class="btn ghost" data-act="preview" data-path="/sondage">Aperçu</button></div>
     <div class="grid">${field('Question', 'poll.question', { wide: true, ph: 'Qui gagne la prochaine game ?' })}
@@ -45,7 +45,7 @@ TABS.live = function () {
     <div class="poll-res">${po.options.map((o, i) => o ? `<div class="pr"><span>${i + 1}. ${esc(o)}</span><div class="goal-bar"><i style="width:${total ? po.votes[i] / total * 100 : 0}%"></i></div><b>${po.votes[i]}</b></div>` : '').join('')}</div>
   </div>
 
-  <div class="card ${pvPath === '/message' ? 'is-active' : ''}">
+  <div class="card ${pvPath === '/message' ? 'is-active' : ''}" data-reset="chatpin">
     <div class="card-head"><div class="grow"><h3>Message du chat à l’écran</h3><code>${esc(origin)}/message</code></div>
       <button type="button" class="btn ghost" data-act="preview" data-path="/message">Aperçu</button>
       <button type="button" class="btn ghost" data-act="pin-hide" ${S.chatpin.visible ? '' : 'disabled'}>Masquer</button></div>
@@ -54,7 +54,7 @@ TABS.live = function () {
     <div class="chat-list" id="chatList"></div>
   </div>
 
-  <div class="card ${pvPath === '/mvp' ? 'is-active' : ''}">
+  <div class="card ${pvPath === '/mvp' ? 'is-active' : ''}" data-reset="mvp">
     <div class="card-head"><div class="grow"><h3>Joueur du match</h3><code>${esc(origin)}/mvp</code></div>
       ${toggle('Visible', 'mvp.visible')}<button type="button" class="btn ghost" data-act="preview" data-path="/mvp">Aperçu</button></div>
     <div class="grid">${field('Joueur', 'mvp.player', { options: [['', '— choisir —'], ...S.players.map(p => [p.id, p.pseudo])] })}${field('Titre', 'mvp.title')}</div>
@@ -116,7 +116,7 @@ TABS.tournoi = function () {
   const b = S.bracket, rounds = KX.bracket(b);
   return head('Compétition', 'Tournoi', 'Arbre de tournoi : écris les équipes du premier tour, puis les scores. Les vainqueurs passent tout seuls au tour suivant.',
     `<div class="row"><button type="button" class="btn ghost" data-act="preview" data-path="/tournoi">Aperçu</button><button type="button" class="btn ghost" data-act="copy" data-path="/tournoi">Copier l’URL</button></div>`) + `
-  <div class="card"><div class="grid">${field('Titre', 'bracket.title')}${field('Nombre d’équipes', 'bracket.size', { options: [[4, '4 équipes'], [8, '8 équipes'], [16, '16 équipes']], num: true, rerender: true })}</div>
+  <div class="card" data-reset="bracket"><div class="grid">${field('Titre', 'bracket.title')}${field('Nombre d’équipes', 'bracket.size', { options: [[4, '4 équipes'], [8, '8 équipes'], [16, '16 équipes']], num: true, rerender: true })}</div>
     <div class="row" style="margin-top:12px"><button type="button" class="btn ghost" data-act="br-reset">Effacer les scores</button></div></div>
   ${rounds.map((r, c) => `<div class="card"><div class="card-head"><h3>${esc(r.name)}</h3></div><div class="br-list">${r.matches.map(m => `<div class="br-m ${m.done ? 'done' : ''}">
     ${c === 0 ? `<input type="text" data-b="bracket.matches.${m.i}.a" value="${esc(m.a)}" placeholder="Équipe">` : `<b class="${m.a ? '' : 'tbd'}">${esc(m.a || 'Vainqueur précédent')}</b>`}

@@ -33,6 +33,7 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 - **Stream Deck** : action « Raccourci clavier » avec les raccourcis globaux, ou extension *Web Requests* avec les adresses de Réglages › Stream Deck (clé personnelle, renouvelable).
 - **Aperçu privé** : bouton « Tester en privé » (lower third, alertes) : l'overlay s'affiche dans l'aperçu de l'admin seulement, rien n'est envoyé à l'antenne.
 - **Configurations enregistrées** (Réglages) : enregistre toute la config pour un événement et recharge-la en un clic.
+- **Réinitialiser** : chaque carte de réglages (chaque scène, lower third, ticker, scoreboard, casters, POV, programme, sponsors, objectif, sondage, joueur du match, tournoi, réglages Twitch, équipe, réseaux…) a un bouton qui remet les valeurs d'origine. « Annuler » reste proposé 10 secondes. Sur un joueur, seuls les réglages d'affichage reviennent par défaut : pseudo, photo et chaîne de la POV sont gardés.
 
 ## Interactif, tournoi, check-list
 - **Sondage par le chat** (Admin › Interactif, overlay `/sondage`) : une question, 2 à 4 choix ; les viewers tapent `1`, `2`… dans le chat Twitch (un vote par compte, ces messages ne s'affichent pas dans le chat à l'écran). Les barres bougent en direct, durée réglable.
