@@ -12,10 +12,6 @@
   .silk.on ~ .halo { display: none; }
   .halo { position: absolute; width: 1400px; height: 1400px; left: var(--hx, 1340px); top: 50%; margin: -700px 0 0 -700px; border-radius: 50%;
     background: radial-gradient(circle, rgba(153,51,204,.42) 0%, rgba(86,28,115,.32) 30%, rgba(86,28,115,0) 64%); animation: kx-pulse 8s ease-in-out infinite; }
-  .rays { position: absolute; width: 1800px; height: 1800px; left: 1340px; top: 540px; margin: -900px 0 0 -900px; opacity: .55;
-    background: repeating-conic-gradient(from 0deg, rgba(153,51,204,.16) 0deg 4deg, rgba(153,51,204,0) 4deg 15deg);
-    -webkit-mask-image: radial-gradient(circle, transparent 0 17%, #000 24%, transparent 58%); mask-image: radial-gradient(circle, transparent 0 17%, #000 24%, transparent 58%);
-    animation: kx-spin 140s linear infinite; }
   .grid-bg { position: absolute; inset: 0; opacity: .5;
     background-image: linear-gradient(rgba(201,204,209,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,204,209,.05) 1px, transparent 1px);
     background-size: 80px 80px; animation: sGrid 50s linear infinite;
@@ -182,7 +178,6 @@
 <div class="bg" id="bg">
   <canvas class="silk" id="silk"></canvas>
   <div class="halo"></div>
-  <div class="rays" id="rays"></div>
   <div class="grid-bg"></div>
   <canvas id="stars"></canvas>
   <div class="ghost" id="ghost"></div>
@@ -237,7 +232,6 @@ function render(st) {
   document.body.classList.toggle('chatting', type === 'chatting');
   if (type === 'chatting') {
     document.querySelector('.halo').style.setProperty('--hx', '1600px');
-    document.getElementById('rays').style.display = 'none';
     const liveChat = sc.chat !== false; // chat Twitch dans le cadre, sinon zone transparente pour une autre source
     KX.holeMask(document.getElementById('bg'), 1920, 1080, [
       KX.chamferPts(CAM.x, CAM.y, CAM.w, CAM.h, 0),
