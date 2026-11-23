@@ -136,7 +136,7 @@ TABS.guide = function () {
   ${gSec('dock', ++n, 'Admin dans OBS (dock)', steps([
     'Dans OBS : menu <b>Docks › Docks de navigateur personnalisés</b>.',
     `Nom : <b>Kaelyx</b> · URL : <code>${esc(origin)}/admin</code> <button type="button" class="btn ghost g-inline" data-act="copy" data-path="/admin">Copier</button>`,
-    'Clique sur <b>Appliquer</b> : l’admin s’ouvre dans OBS. Entre le mot de passe une fois (retenu 30 jours).',
+    'Clique sur <b>Appliquer</b> : l’admin s’ouvre dans OBS. Le mot de passe est demandé à chaque connexion (et à chaque redémarrage d’OBS).',
     'Si le dock est étroit, l’admin passe en <b>mode compact</b> : icônes seules, et le bouton <b>Aperçu</b> en bas à gauche affiche ou cache l’aperçu.'
   ]) + tip('Tu peux aussi piloter depuis un téléphone : voir « Piloter depuis un téléphone » dans le fichier LISEZMOI.'))}
 
@@ -177,7 +177,7 @@ TABS.guide = function () {
 
   ${gSec('secu', ++n, 'Mises à jour et mot de passe', `<ul class="g-list">
       <li><b>Mises à jour</b> : l’application cherche une nouvelle version à chaque lancement et toutes les 30 min. Tes réglages, photos et URL ne changent pas. Tu peux vérifier dans <a href="#" data-act="go" data-tab="settings">Réglages › Application</a>.</li>
-      <li><b>Mot de passe</b> : retenu 30 jours sur chaque appareil. Pour le changer : <a href="#" data-act="go" data-tab="settings">Réglages › Sécurité</a> (les autres appareils sont déconnectés).</li>
+      <li><b>Mot de passe</b> : demandé à chaque connexion à l’admin (ouverture de la fenêtre, rechargement, dock OBS, téléphone). Pour le changer : <a href="#" data-act="go" data-tab="settings">Réglages › Sécurité</a> (les autres appareils sont déconnectés).</li>
       <li><b>Oublié</b> : quitte l’application, supprime <code>auth.json</code> dans <code>%APPDATA%\\Streampack Kaelyx\\data</code>, relance : le mot de passe d’origine redevient valable.</li>
       <li><b>Sauvegarde</b> : <a href="#" data-act="go" data-tab="settings">Réglages › Sauvegarde</a> exporte tout dans un fichier JSON.</li>
     </ul>`)}

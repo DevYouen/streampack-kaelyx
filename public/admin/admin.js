@@ -14,18 +14,21 @@ const clone = o => o === undefined ? o : JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /* ---------- Connexion à l'admin (mot de passe) ----------
-   Le serveur renvoie un jeton de session (30 jours), gardé dans ce navigateur. Les overlays n'en ont pas besoin. */
+   Le serveur renvoie un jeton de session gardé seulement dans la page ouverte : le mot de passe est redemandé à chaque
+   ouverture de l'admin (rechargement, nouvelle fenêtre, dock OBS relancé). Les overlays n'en ont pas besoin. */
 const store = {
   get: k => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
   del: k => { try { localStorage.removeItem(k); } catch {} }
 };
-const headers = () => ({ 'Content-Type': 'application/json', 'X-Kx-Token': store.get('kx-token') || '' });
+let kxToken = '';
+store.del('kx-token'); // anciennes versions : le jeton était retenu 30 jours, on l'efface
+const headers = () => ({ 'Content-Type': 'application/json', 'X-Kx-Token': kxToken });
 let loginWait = null;
 // Affiche l'écran de connexion ; se résout une fois connecté (un seul écran même si plusieurs envois échouent)
 function needLogin() {
   if (loginWait) return loginWait;
-  store.del('kx-token');
+  kxToken = '';
   loginWait = new Promise(done => {
     const box = document.createElement('div');
     box.className = 'login'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'loginTitle');
@@ -33,7 +36,7 @@ function needLogin() {
       <div class="login-logo" aria-hidden="true"><i class="ring"></i><img src="/logo/logo.svg" alt=""></div>
       <p class="login-kicker">Streampack</p>
       <h1 id="loginTitle">Admin Kaelyx</h1>
-      <p>Entre le mot de passe du streampack. Il est retenu 30 jours sur cet appareil.</p>
+      <p>Entre le mot de passe du streampack. Il est demandé à chaque connexion.</p>
       <label class="field"><span>Mot de passe</span><input type="password" name="password" autocomplete="current-password" required></label>
       <p class="login-err" role="alert"></p>
       <button type="submit" class="btn">Se connecter</button>
@@ -54,7 +57,7 @@ function needLogin() {
       try {
         const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: input.value }) });
         const d = await r.json().catch(() => ({}));
-        if (r.ok && d.token) { store.set('kx-token', d.token); box.remove(); loginWait = null; return done(true); }
+        if (r.ok && d.token) { kxToken = d.token; box.remove(); loginWait = null; return done(true); }
         err.textContent = d.error || 'Connexion impossible.';
         input.select();
         if (d.wait) return lock(d.wait);
@@ -596,7 +599,7 @@ const ACTIONS = {
   },
   logout: async () => {
     try { await fetch('/api/logout', { method: 'POST', headers: headers() }); } catch {}
-    store.del('kx-token'); location.reload();
+    kxToken = ''; location.reload();
   },
   export: () => {
     const a = document.createElement('a');
@@ -694,7 +697,7 @@ async function changePassword(form, data) {
     if (r.status === 401) { await needLogin(); return toast('Reconnecté : recommence le changement'); }
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return toast(d.error || 'Changement impossible');
-    store.set('kx-token', d.token); form.reset();
+    kxToken = d.token; form.reset();
     toast('Mot de passe changé. Les autres appareils devront se reconnecter.');
   } catch { toast('Serveur injoignable'); }
 }

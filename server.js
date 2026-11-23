@@ -113,7 +113,7 @@ function normalize(s) {
    (enregistré dans data/auth.json, qui contient aussi les sessions ouvertes). */
 const DEFAULT_HASH = 'scrypt$16384$8$1$2rD/O0x7t+mL++SJ5RSDFQ==$M5W/1N3vRTiG90lkCpF/ScpQW3LKip3MMVm735z2oiM=';
 const AUTH = path.join(DATA_DIR, 'auth.json');
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 1; // le jeton ne vit que dans la page ouverte de l'admin : mot de passe redemandé à chaque connexion
 let auth = { hash: '', sessions: {} };
 try { auth = { ...auth, ...JSON.parse(fs.readFileSync(AUTH, 'utf8')) }; } catch {}
 const saveAuth = () => { try { fs.writeFileSync(AUTH, JSON.stringify(auth, null, 2)); } catch (e) { console.error('  auth.json :', e.message); } };

@@ -120,7 +120,11 @@ function createWindow() {
     }
   });
 }
-function showWindow() { if (!win) createWindow(); win.show(); win.focus(); }
+function showWindow() {
+  if (!win) createWindow();
+  else if (!win.isVisible()) win.webContents.reload(); // rouvrir la fenêtre = nouvelle connexion : le mot de passe est redemandé
+  win.show(); win.focus();
+}
 
 function refreshTray() {
   if (!tray) return;

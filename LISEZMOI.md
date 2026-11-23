@@ -103,7 +103,7 @@ Une seule **Source navigateur** OBS : `/pov` en **1920 × 1080**, avec *Contrôl
 - Les repères gris (« aucun joueur », « source OBS… ») n'apparaissent que dans l'aperçu et le navigateur, jamais dans OBS.
 
 ## Mot de passe de l'admin
-L'admin demande un mot de passe (donné par le mainteneur du pack). Il est retenu **30 jours** sur chaque appareil : fenêtre de l'application, dock OBS, navigateur, téléphone.
+L'admin demande un mot de passe (donné par le mainteneur du pack). Il est demandé **à chaque connexion** : ouverture de la fenêtre de l'application, rechargement de la page, dock OBS (à chaque démarrage d'OBS), navigateur, téléphone.
 - **Les overlays OBS n'ont jamais besoin du mot de passe.**
 - Pour le changer : Admin > Réglages > **Sécurité**. Les autres appareils sont alors déconnectés.
 - Après 5 essais ratés, il faut attendre (1 min, puis de plus en plus longtemps).
