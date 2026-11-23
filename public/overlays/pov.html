@@ -101,6 +101,9 @@
   .pl-logo { position: relative; width: 72px; flex: none; display: grid; place-items: center; overflow: hidden;
     background: linear-gradient(180deg, rgba(243,241,241,.22), transparent 55%), var(--kx-grad); box-shadow: inset 0 0 0 1px rgba(243,241,241,.18); }
   .pl-logo img { position: relative; width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+  .pl-logo img.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: none; }
+  .pl-logo.has-ph img:not(.ph) { display: none; }
+  .pl-logo.has-ph::before { content: ''; position: absolute; inset: 0; z-index: 1; box-shadow: inset 0 -3px 0 var(--kx-violet), inset 0 0 0 1px rgba(243,241,241,.18); }
   @keyframes plGlint { 0% { background-position: 130% 0; } 10%, 100% { background-position: -30% 0; } }
   .pl-main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 30px 0 20px;
     background: linear-gradient(180deg, rgba(243,241,241,.08), rgba(243,241,241,0) 45%),
@@ -401,10 +404,10 @@ function decoOf(i, p, st) {
     const k = i.h / 72;
     const meta = [p.role || 'Joueur', p.game].filter(Boolean).map(KX.esc).join('<i></i>');
     const html = `<div class="plate ${i.h < 56 ? 'slim' : ''}" style="width:${i.w / k}px;transform:scale(${k})">
-      <div class="pl-logo">${KX.logo(st)}</div>
+      <div class="pl-logo ${p.photo ? 'has-ph' : ''}">${p.photo ? `<img class="ph" src="${KX.esc(p.photo)}" alt="" onerror="this.remove()">` : ''}${KX.logo(st)}</div>
       <div class="pl-main kx-neon-line bottom"><b class="pl-name t-title">${KX.esc(p.pseudo)}</b><span class="pl-meta t-label">${meta}</span></div>
       <div class="pl-cap" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
-    return { style, html, content: [p.id, p.pseudo, p.role, p.game, st.settings?.logo].join('|') };
+    return { style, html, content: [p.id, p.pseudo, p.role, p.game, p.photo, st.settings?.logo].join('|') };
   }
   if (i.kind === 'cam') return { style, html: KX.frame(i.w, i.h) + (SHOW_HINTS ? `<div class="hint"><div><b>Cam</b>source OBS · ${i.x}, ${i.y}</div></div>` : ''), content: 'cam' };
   if (i.kind === 'logo') {
@@ -416,7 +419,7 @@ function decoOf(i, p, st) {
 KX.starfield(document.getElementById('stars'), 110);
 KXFX.silk(document.getElementById('silk'), { focus: [.5, .5], strength: .85 });
 function settle() { const b = document.body; b.classList.remove('settle'); void b.offsetWidth; b.classList.add('settle'); later(() => b.classList.remove('settle'), 1100); }
-KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo, p.povVolume, p.povMute]), st.settings?.logo], render);
+KX.watch(st => [st.pov, (st.players || []).map(p => [p.id, p.pseudo, p.role, p.game, p.twitch, p.povSource, p.povChannel, p.povVdo, p.povVolume, p.povMute, p.photo]), st.settings?.logo, st.settings?.teamName, st.settings?.teamSub], render);
 </script>
 </body>
 </html>

@@ -76,8 +76,10 @@ Une lumière fait le tour des cadres violets (webcams, chat, roster), glisse sur
 
 ## Fond animé et effets
 - **Fond « soie »** sur les scènes et les POV : des rubans violets ondulent lentement à l'angle des bandes, calculés en temps réel par la carte graphique (dans OBS, l'accélération matérielle des sources navigateur est activée par défaut). Sans carte graphique compatible, le fond classique s'affiche.
-- **Compte à rebours** en volets qui basculent (comme un panneau d'aéroport), avec une barre de progression.
-- **Titre des scènes** révélé lettre par lettre, logo qui flotte en 3D. Dans OBS, la scène se reconstruit chaque fois qu'elle passe à l'antenne.
+- **Compte à rebours** en volets qui basculent (comme un panneau d'aéroport), avec une barre de progression. Dans la dernière minute, le fond accélère et s'illumine ; les 10 dernières secondes battent en violet.
+- **Titre des scènes** révélé lettre par lettre, puis une vague de lumière parcourt les lettres de temps en temps ; logo qui flotte en 3D ; un reflet traverse la scène. Dans OBS, la scène se reconstruit chaque fois qu'elle passe à l'antenne.
+- **Transition logo** : la soie animée tourne aussi dans le panneau du logo pendant la transition.
+- **Plaques des POV** : la photo du joueur (Admin › Joueurs › Photo) remplace le logo dans le carré de la plaque.
 
 ## Palette (stricte)
 `#2A2B2C` fond · `#9933CC` violet · `#561C73` violet profond · `#F3F1F1` texte · `#C9CCD1` argent

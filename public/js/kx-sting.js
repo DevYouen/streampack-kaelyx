@@ -31,6 +31,10 @@ const KXSting = (() => {
   .kxs-sm.l.c2 { background: linear-gradient(270deg, rgba(42,43,44,.9), rgba(42,43,44,0)); }
   .kxs.sweep .kxs-sm.r.c2 { background: linear-gradient(90deg, rgba(86,28,115,0) 0 3000px, rgba(86,28,115,.9) 3000px, rgba(86,28,115,0) 3560px); }
   .kxs.sweep .kxs-sm.l.c2 { background: linear-gradient(270deg, rgba(86,28,115,.9), rgba(86,28,115,0)); }
+  /* Soie animée (WebGL, /js/kx-fx.js) dans le panneau du logo : ne tourne que pendant la transition */
+  .kxs-silk { position: absolute; left: 0; top: 0; width: 3000px; height: 1480px; opacity: 0; }
+  .kxs-silk.on { opacity: 1; }
+  .kxs.sweep .kxs-silk { display: none; }
   /* Reflet qui balaie le panneau quand il se pose */
   .kxs-sheen { position: absolute; top: 0; bottom: 0; left: -420px; width: 320px; will-change: transform;
     background: linear-gradient(90deg, rgba(243,241,241,0), rgba(243,241,241,.075), rgba(243,241,241,0)); }
@@ -110,7 +114,7 @@ const KXSting = (() => {
     root.className = 'kxs'; root.setAttribute('aria-hidden', 'true');
     root.innerHTML = `<div class="kxs-p kxs-p1"><i class="kxs-edge l"></i><i class="kxs-edge r"></i></div>
       <i class="kxs-sm r c1"></i><i class="kxs-sm l c1"></i><i class="kxs-sm r c2"></i><i class="kxs-sm l c2"></i>
-      <div class="kxs-p kxs-p2"><i class="kxs-sheen"></i><div class="kxs-drift"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div><div class="kxs-mat"><div class="kxs-in">
+      <div class="kxs-p kxs-p2"><canvas class="kxs-silk"></canvas><i class="kxs-sheen"></i><div class="kxs-drift"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div><div class="kxs-mat"><div class="kxs-in">
         <div class="kxs-logo"><img alt=""></div>
         <div class="kxs-name"><span class="kxs-mask"><b></b></span><i class="kxs-line"></i><span class="kxs-mask"><small></small></span></div>
       </div></div></div>`;
@@ -132,7 +136,12 @@ const KXSting = (() => {
       return [st, [key, [{ transform: frames[0].transform, opacity: 0 }, { opacity: 1, offset: .5 }, { transform: frames[1].transform, opacity: 0 }], duration, delay, easing, 'both']];
     });
     const img = root.querySelector('img');
-    let anims = [], endT = null;
+    let anims = [], endT = null, silk = null;
+    const getSilk = () => {
+      if (!silk && typeof KXFX !== 'undefined')
+        silk = KXFX.silk(root.querySelector('.kxs-silk'), { width: 3000, height: 1480, scale: 1 / 3, paused: true, strength: 1.05, focus: [.5, .5], capture: !!window.kxCapture });
+      return silk;
+    };
 
     function dress(st) {
       const s = st?.settings || {};
@@ -142,13 +151,14 @@ const KXSting = (() => {
       el.sub.textContent = s.teamSub || '';
       el.sub.parentElement.style.display = s.teamSub ? '' : 'none';
     }
-    function stop() { anims.forEach(a => a.cancel()); anims = []; clearTimeout(endT); root.classList.remove('go'); }
+    function stop() { anims.forEach(a => a.cancel()); anims = []; clearTimeout(endT); root.classList.remove('go'); silk?.pause(); }
     // Joue une transition ; renvoie sa durée (ms)
     function play(kind = 'logo', st) {
       const tl = TL[kind] || TL.logo;
       stop(); dress(st || (typeof KX !== 'undefined' ? KX.state : null));
       root.classList.toggle('sweep', kind === 'sweep');
       root.classList.add('go');
+      if (kind !== 'sweep') getSilk()?.play();
       anims = withSmears(tl.steps).map(([k, frames, duration, delay, easing, fill]) => el[k].animate(frames, { duration, delay, easing, fill }));
       endT = setTimeout(stop, tl.total + 60);
       return tl.total;
@@ -157,6 +167,7 @@ const KXSting = (() => {
     function seek(t, kind = 'logo', st) {
       if (!anims.length || root.dataset.kind !== kind) { play(kind, st); root.dataset.kind = kind; clearTimeout(endT); }
       anims.forEach(a => { a.pause(); a.currentTime = t; });
+      if (kind !== 'sweep') getSilk()?.render(t / 1000);
     }
     return { play, seek, stop, el: root };
   }

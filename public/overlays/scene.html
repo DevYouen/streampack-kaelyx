@@ -35,6 +35,9 @@
   .band.thin::after { animation-delay: 1.4s; } .band.hair::after { animation-delay: 2.4s; }
   @keyframes sSheen { 0%, 40% { top: -320px; } 85%, 100% { top: 1900px; } }
   .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 90% at 60% 50%, rgba(42,43,44,0) 55%, rgba(42,43,44,.9) 100%); }
+  .shine { position: absolute; top: -30%; bottom: -30%; left: -700px; width: 460px; transform: rotate(24deg); pointer-events: none;
+    background: linear-gradient(90deg, rgba(243,241,241,0), rgba(243,241,241,.075), rgba(243,241,241,0)); animation: sShine 13s cubic-bezier(.45, 0, .25, 1) 4s infinite; }
+  @keyframes sShine { 0% { left: -700px; } 28%, 100% { left: 2400px; } }
 
   /* Repères aux coins de l'écran */
   .corner { position: absolute; width: 46px; height: 46px; border: 0 solid rgba(201,204,209,.38); pointer-events: none; }
@@ -90,6 +93,8 @@
   .title .w { display: inline-block; overflow: hidden; vertical-align: top; padding: .16em .14em 0 0; margin: -.16em -.14em 0 0; }
   .title .ch { display: inline-block; }
   .title .last .ch { color: var(--kx-violet); }
+  .title .ch { animation: chWave 11s ease-in-out infinite; animation-delay: calc(3.5s + var(--i) * 45ms); }
+  @keyframes chWave { 0%, 7%, 100% { transform: none; filter: none; } 3.5% { transform: translateY(-5px); filter: brightness(1.3) drop-shadow(0 0 14px rgba(153,51,204,.95)); } }
   .sub { font: 500 26px/1.4 var(--f-body); color: var(--kx-silver); margin: 0; max-width: 700px; padding-left: 18px; border-left: 3px solid var(--kx-violet); }
 
   /* Compte à rebours : chiffres façon panneau, MIN / SEC, barre de progression */
@@ -116,6 +121,12 @@
   .cd-bar { position: relative; height: 4px; background: rgba(201,204,209,.16); }
   .cd-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--kx-grad); box-shadow: 0 0 12px rgba(153,51,204,.8); transition: width 1s linear; }
   .cd-bar i::after { content: ''; position: absolute; right: -4px; top: -4px; width: 12px; height: 12px; background: var(--kx-white); transform: rotate(45deg); box-shadow: 0 0 14px var(--kx-violet); }
+  .count.final .digit .up, .count.final .digit .fu { background: linear-gradient(180deg, rgba(243,241,241,.16), rgba(243,241,241,.04)), #561C73; }
+  .count.final .digit .dn, .count.final .digit .fd { background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,0) 60%), #561C73; box-shadow: inset 0 -4px 0 #F3F1F1; }
+  .count.final .cd { animation: cdBeat 1s cubic-bezier(.16, 1, .3, 1) infinite; }
+  @keyframes cdBeat { 0% { transform: scale(1.045); filter: drop-shadow(0 0 26px rgba(153,51,204,.8)); } 60%, 100% { transform: none; filter: drop-shadow(0 12px 28px rgba(18,18,20,.45)); } }
+  .count.final .cd-bar i { background: linear-gradient(90deg, #9933CC, #F3F1F1); box-shadow: 0 0 18px rgba(243,241,241,.7); }
+  .count.final .cd-l { color: var(--kx-white); }
   .done { font-size: 100px; padding-right: 12px; animation: sDone .9s var(--kx-out) both; text-shadow: 0 0 40px rgba(153,51,204,.6); }
   @keyframes sDone { 0% { opacity: 0; transform: scale(1.25); filter: blur(10px) brightness(2); } 100% { opacity: 1; transform: none; filter: none; } }
 
@@ -153,7 +164,7 @@
   .enter .copy > *:nth-child(2) { animation-delay: .07s; } .enter .copy > *:nth-child(3) { animation-delay: .14s; }
   .enter .copy > *:nth-child(4) { animation-delay: .21s; } .enter .copy > *:nth-child(5) { animation-delay: .28s; }
   .enter .copy > .title { animation: none; }
-  .enter .title .ch { animation: chIn .85s var(--kx-out) both; animation-delay: calc(.12s + var(--i) * 32ms); }
+  .enter .title .ch { animation: chIn .85s var(--kx-out) both, chWave 11s ease-in-out infinite; animation-delay: calc(.12s + var(--i) * 32ms), calc(3.5s + var(--i) * 45ms); }
   @keyframes chIn { from { transform: translateY(106%) skewX(-12deg); } to { transform: none; } }
   .enter .top { animation: sTop .9s var(--kx-out) .2s both; }
   @keyframes sTop { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(-20px -20px -20px 0); } }
@@ -179,6 +190,7 @@
   <div class="band thin" style="left:1660px"></div>
   <div class="band hair" style="left:1610px"></div>
   <div class="vignette"></div>
+  <i class="shine"></i>
   <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
 </div>
 <div id="root"></div>
@@ -188,7 +200,8 @@
 <script>
 const type = location.pathname.split('/')[2] || 'starting';
 KX.starfield(document.getElementById('stars'), 120);
-KXFX.silk(document.getElementById('silk'), { focus: [(type === 'chatting' ? 1600 : 1340) / 1920, .5], strength: type === 'chatting' ? .8 : 1 });
+const silk = KXFX.silk(document.getElementById('silk'), { focus: [(type === 'chatting' ? 1600 : 1340) / 1920, .5], strength: type === 'chatting' ? .8 : 1 });
+const SILK_BASE = type === 'chatting' ? .8 : 1;
 let lastKey = '';
 
 const CAM = { x: 64, y: 168, w: 1200, h: 675 };
@@ -294,13 +307,20 @@ function drawCount(force) {
   const sc = KX.state?.scenes?.[type] || {};
   const end = sc.endAt || 0;
   const left = Math.max(0, Math.round((end - Date.now()) / 1000));
-  if (!end) { box.innerHTML = ''; box.style.display = 'none'; shown = ''; return; }
+  if (!end) { box.innerHTML = ''; box.style.display = 'none'; box.classList.remove('final'); shown = ''; silk.speed(1); silk.strength(SILK_BASE); return; }
   box.style.display = 'flex';
   if (!left) {
-    if (!box.dataset.done) { box.dataset.done = '1'; shown = ''; box.innerHTML = `<div class="done t-title">${DONE_LABEL[type] || 'On arrive !'}</div>`; }
+    if (!box.dataset.done) {
+      box.dataset.done = '1'; shown = ''; box.classList.remove('final');
+      box.innerHTML = `<div class="done t-title">${DONE_LABEL[type] || 'On arrive !'}</div>`;
+      silk.speed(1.4); silk.strength(SILK_BASE + .25); setTimeout(() => { silk.speed(1); silk.strength(SILK_BASE); }, 6000);
+    }
     return;
   }
   const mm = String(Math.min(99, Math.floor(left / 60))).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+  const charge = Math.max(0, Math.min(1, (60 - left) / 60));
+  silk.speed(1 + charge * 2.2); silk.strength(SILK_BASE + charge * .5);
+  box.classList.toggle('final', left <= 10);
   const total = Math.max(1, (end - (sc.startAt || end - left * 1000)) / 1000);
   const pct = Math.max(0, Math.min(100, left / total * 100));
   if (force || box.dataset.done || !box.querySelector('.cd')) {
