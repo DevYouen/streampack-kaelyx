@@ -19,15 +19,30 @@ const KX = (() => {
     });
   }
 
-  // Multivue de l'admin (?mv) : pas de connexion propre (le navigateur limite leur nombre), l'admin relaie l'état
-  const MV = window.parent !== window && new URLSearchParams(location.search).has('mv');
+  // Multivue de l'admin (?mv) : pas de connexion propre, l'admin relaie l'état.
+  // Le navigateur n'ouvre que 6 connexions vers le serveur : si les vignettes en ouvraient, les clics de la Régie restaient en file d'attente.
+  // Un overlay intégré dans une vignette (ticker d'une scène, chat de « Just chatting »…) est lui aussi en multivue : la vignette lui relaie l'état.
+  const MV = (() => {
+    if (window.parent === window) return false;
+    if (new URLSearchParams(location.search).has('mv')) return true;
+    try { return parent.kxMv === true; } catch { return false; }
+  })();
+  window.kxMv = MV; // lu par les overlays intégrés (KX est un const : invisible depuis un autre cadre)
   function dispatch(ev, d) {
     if (ev === 'state') state = d;
     (listeners[ev] || []).forEach(f => { try { f(d); } catch (err) { console.error(err); } });
   }
+  const childFrames = () => [...document.querySelectorAll('iframe')].map(f => f.contentWindow).filter(Boolean);
   function connect() {
     if (MV) {
-      addEventListener('message', e => { if (e.origin === location.origin && e.data && e.data.kx) dispatch(e.data.kx, e.data.data); });
+      addEventListener('message', e => {
+        if (e.origin !== location.origin || !e.data) return;
+        // Overlay intégré qui démarre : on lui donne l'état tout de suite
+        if (e.data.kxReady && e.source !== parent) { if (state) e.source?.postMessage({ kx: 'state', data: state }, location.origin); return; }
+        if (!e.data.kx || e.source !== parent) return;
+        dispatch(e.data.kx, e.data.data);
+        childFrames().forEach(w => w.postMessage(e.data, location.origin)); // les cadres d'une autre origine (Twitch…) l'ignorent
+      });
       parent.postMessage({ kxReady: true }, location.origin);
       return;
     }

@@ -186,6 +186,8 @@ addEventListener('message', e => {
   e.source?.postMessage({ kx: 'state', data: KX.state }, location.origin);
 });
 KX.on('state', st => mvFrames().forEach(f => f.contentWindow?.postMessage({ kx: 'state', data: st }, location.origin)));
+// Le chat intégré à « Just chatting » n'a plus de connexion propre dans la vignette : on lui relaie aussi les messages
+for (const ev of ['chat', 'chat-clear']) KX.on(ev, d => mvFrames().forEach(f => f.contentWindow?.postMessage({ kx: ev, data: d }, location.origin)));
 
 window.afterRender = () => { paintNav(); syncMv(); };
 { const sp = setPreview; setPreview = p => { sp(p); paintMv(); }; }

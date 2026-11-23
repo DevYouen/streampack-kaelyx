@@ -4,7 +4,7 @@
 
 const api = async (url, body) => {
   const r = await fetch(url, { method: body === undefined ? 'GET' : 'POST', headers: headers(), body: body === undefined ? undefined : JSON.stringify(body) });
-  if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return api(url, body); }
+  if (unauth(r)) { status('auth'); await needLogin(); status('ok'); return api(url, body); }
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'erreur ' + r.status);
   return d;

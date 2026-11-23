@@ -26,6 +26,9 @@ const store = {
 let kxToken = '';
 store.del('kx-token'); // anciennes versions : le jeton était retenu 30 jours, on l'efface
 const headers = () => ({ 'Content-Type': 'application/json', 'X-Kx-Token': kxToken });
+// Réponse « non connecté » : on la ferme avant d'attendre le mot de passe. Non lue, elle gardait l'une des 6 connexions
+// du navigateur vers le serveur jusqu'à la fermeture de l'admin (les clics de la Régie finissaient en file d'attente).
+const unauth = r => { if (r.status !== 401) return false; r.body?.cancel().catch(() => {}); return true; };
 let loginWait = null;
 // Affiche l'écran de connexion ; se résout une fois connecté (un seul écran même si plusieurs envois échouent)
 function needLogin() {
@@ -111,7 +114,7 @@ async function push() {
     if (r.status === 409) {
       // Un autre admin a modifié entre-temps : on fusionne puis on renvoie
       adopt(await r.json()); again = true;
-    } else if (r.status === 401) {
+    } else if (unauth(r)) {
       status('auth');
       inflight = false; await needLogin(); return push(); // les modifications faites entre-temps sont gardées
     } else if (r.ok) {
@@ -144,7 +147,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (renderPending
 async function trigger(payload) {
   try {
     const r = await fetch('/api/trigger', { method: 'POST', headers: headers(), body: JSON.stringify(payload) });
-    if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return trigger(payload); }
+    if (unauth(r)) { status('auth'); await needLogin(); status('ok'); return trigger(payload); }
   } catch { toast('Serveur injoignable'); }
 }
 let lastStatus = '';
@@ -586,7 +589,7 @@ const ACTIONS = {
     try {
       await push(); // le Client ID doit être enregistré avant
       const r = await fetch('/api/twitch/state', { method: 'POST', headers: headers() });
-      if (r.status === 401) { win?.close(); status('auth'); await needLogin(); status('ok'); toast('Connecté : reclique sur « Connecter Twitch »'); return; }
+      if (unauth(r)) { win?.close(); status('auth'); await needLogin(); status('ok'); toast('Connecté : reclique sur « Connecter Twitch »'); return; }
       const { state } = await r.json();
       const u = new URL('https://id.twitch.tv/oauth2/authorize');
       u.search = new URLSearchParams({ client_id: S.settings.twitch.clientId.trim(), redirect_uri: `http://localhost:${location.port || 80}/twitch-auth`,
@@ -597,7 +600,7 @@ const ACTIONS = {
   'tw-logout': async () => {
     if (!confirm('Déconnecter le compte Twitch ? Les follows ne s’afficheront plus.')) return;
     const r = await fetch('/api/twitch/logout', { method: 'POST', headers: headers() });
-    if (r.status === 401) { status('auth'); await needLogin(); status('ok'); return ACTIONS['tw-logout'](); }
+    if (unauth(r)) { status('auth'); await needLogin(); status('ok'); return ACTIONS['tw-logout'](); }
     tw = await r.json(); renderTab();
   },
   'upd-check': async () => {
@@ -699,7 +702,7 @@ function showUpdate(u) {
 }
 async function updatePost(url) {
   const r = await fetch(url, { method: 'POST', headers: headers() });
-  if (r.status === 401) { await needLogin(); return updatePost(url); }
+  if (unauth(r)) { await needLogin(); return updatePost(url); }
   return r;
 }
 
@@ -708,7 +711,7 @@ async function changePassword(form, data) {
   if (data.next !== data.confirm) return toast('Les deux nouveaux mots de passe ne sont pas identiques');
   try {
     const r = await fetch('/api/password', { method: 'POST', headers: headers(), body: JSON.stringify({ current: data.current, next: data.next }) });
-    if (r.status === 401) { await needLogin(); return toast('Reconnecté : recommence le changement'); }
+    if (unauth(r)) { await needLogin(); return toast('Reconnecté : recommence le changement'); }
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return toast(d.error || 'Changement impossible');
     kxToken = d.token; form.reset();
