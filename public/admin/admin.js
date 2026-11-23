@@ -207,11 +207,11 @@ const TABS = {
     </div>
     ${S.players.length ? '' : empty('players', 'Aucun joueur pour l’instant', 'Écris un pseudo ci-dessus puis clique sur « Créer l’overlay ». Il apparaîtra aussi dans les POV, le lower third et le roster.')}
     ${S.players.map((p, i) => `
-      <div class="card ${pvPath === '/p/' + p.id ? 'is-active' : ''}">
+      <div class="card ${pvPath === '/p/' + p.id ? 'is-active' : ''}" data-drop-photo="${i}">
         <div class="card-head">
           ${thumb(p)}
           <div class="grow"><h3>${esc(p.pseudo)}</h3><code>${esc(origin)}/p/${esc(p.id)}</code></div>
-          <div class="row">${pvBtn('/p/' + p.id)}${copyBtn('/p/' + p.id)}
+          <div class="row"><button type="button" class="btn" data-act="photo-up" data-i="${i}" title="Ou glisse une image sur la carte">Photo…</button>${pvBtn('/p/' + p.id)}${copyBtn('/p/' + p.id)}
             <button type="button" class="btn ghost sq danger" data-act="del-player" data-i="${i}" aria-label="Supprimer ${esc(p.pseudo)}">×</button></div>
         </div>
         <div class="grid">
@@ -306,6 +306,7 @@ const TABS = {
       <div class="row" style="margin-bottom:18px">
         <button type="button" class="btn big" data-act="lt-show">Afficher</button>
         <button type="button" class="btn big ghost" data-act="lt-hide">Masquer</button>
+        <button type="button" class="btn big deep" data-act="private-lt" title="Le lower third s'affiche seulement dans l'aperçu, pas à l'antenne">Tester en privé</button>
         <span class="note" data-lt-note>${ltShown() ? 'Affiché à l’écran' : 'Masqué'}</span>
       </div>
       <div class="grid">
@@ -342,7 +343,8 @@ const TABS = {
       </div>
     </div>
     ${s.mode === 'vs' ? `<div class="card"><div class="grid">
-      ${field('Équipe A', 'scoreboard.vs.a')}${vsStep('scoreA', 'Score A')}${field('Équipe B', 'scoreboard.vs.b')}${vsStep('scoreB', 'Score B')}</div></div>` : `
+      ${field('Équipe A', 'scoreboard.vs.a')}${vsStep('scoreA', 'Score A')}${field('Équipe B', 'scoreboard.vs.b')}${vsStep('scoreB', 'Score B')}</div>
+      <div class="grid" style="margin-top:14px">${logoField('Logo équipe A', 'scoreboard.vs.logoA', 'equipe-' + (s.vs.a || 'a'))}${logoField('Logo équipe B', 'scoreboard.vs.logoB', 'equipe-' + (s.vs.b || 'b'))}</div></div>` : `
     <div class="card">
       ${s.rows.length ? '' : empty('score', 'Classement vide', 'Ajoute une ligne par équipe ou par joueur, puis utilise les boutons + pour compter les élims et les points.')}
       <table class="tbl" ${s.rows.length ? '' : 'hidden'}><thead><tr><th></th><th>Équipe / joueur</th><th>Élims</th><th>Points</th><th></th></tr></thead><tbody>
@@ -378,6 +380,7 @@ const TABS = {
           <label class="field"><span>Message</span><input type="text" name="message" placeholder="Optionnel" autocomplete="off"></label>
         </div>
         <div class="row" style="margin-top:16px"><button class="btn big" type="submit">Envoyer l’alerte</button>
+          <button type="button" class="btn big deep" data-act="private-alert" title="L'alerte s'affiche seulement dans l'aperçu, pas à l'antenne">Tester en privé</button>
           <span class="sep-v"></span>${types.map(([v, l]) => `<button type="button" class="chip" data-act="quick-alert" data-type="${v}">${l}</button>`).join('')}</div>
       </form>
       <div class="grid" style="margin-top:18px">${field('Durée d’une alerte (secondes)', 'settings.alertDuration', { num: true, min: 2 })}</div>
@@ -421,6 +424,7 @@ const TABS = {
       ['Starting soon', '/scene/starting'], ['BRB', '/scene/brb'], ['Fin de stream', '/scene/ending'], ['Difficultés techniques', '/scene/tech'], ['Just chatting', '/scene/chatting'],
       ['Lower third', '/lowerthird'], ['Ticker', '/ticker'], ['Chat', '/chat'], ['Scoreboard', '/scoreboard'], ['Alertes', '/alerts'], ['Stinger', '/stinger'],
       ['POV joueurs', '/pov'], ['Casters (desk)', '/caster'], ['Casters (petites cams)', '/caster/pip'], ['Cadre webcam', '/cam'],
+      ['Programme (scène)', '/programme'], ['Programme (bandeau)', '/programme?bandeau'], ['Sponsors', '/sponsors'], ['Objectif', '/objectif'],
       ['Roster', '/roster'], ['Roster Fortnite', '/roster?game=Fortnite'], ['Roster LoL', '/roster?game=League of Legends']
     ];
     return head('Pour OBS', 'Liens OBS', '') + `

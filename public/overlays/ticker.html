@@ -21,6 +21,11 @@
   .strip .fade-r { position: absolute; inset: 0 0 0 auto; width: 90px; z-index: 1; background: linear-gradient(-90deg, rgba(42,43,44,1) 20%, rgba(42,43,44,0)); }
   .item .sep { display: inline-grid; place-items: center; width: 26px; height: 26px; opacity: .85; }
   .item .sep img { width: 100%; height: 100%; object-fit: contain; }
+  .item.spons img.sl { height: 34px; max-width: 160px; object-fit: contain; }
+  .item.spons small { font: 800 11px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase; color: var(--kx-silver); }
+  .item.goal b { font: italic 800 22px/1 var(--f-title); text-transform: uppercase; }
+  .item.goal .gb { width: 140px; height: 10px; background: rgba(201,204,209,.2); clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+  .item.goal .gb i { display: block; height: 100%; background: var(--kx-grad); box-shadow: inset -3px 0 0 var(--kx-white); }
   /* Entrée : la bande monte, le badge se dévoile, puis le texte apparaît */
   .bar:not(.off) .badge { animation: kx-wipe .6s var(--kx-out) .1s backwards; }
   .bar:not(.off) .strip { animation: stripIn .7s var(--kx-out) .25s backwards; }
@@ -71,10 +76,13 @@ function layout() {
   }));
 }
 // La piste ne redémarre que si les messages, les réseaux ou la vitesse changent
-KX.watch(st => [messages(st), KX.socials(st), st.ticker?.speed, st.settings?.logo], st => {
+KX.watch(st => [messages(st), KX.socials(st), st.ticker?.speed, st.settings?.logo, st.sponsors?.inTicker && st.sponsors.items, st.goal?.inTicker && st.goal], st => {
   const sep = `<span class="sep">${KX.logo(st)}</span>`; // séparateur : le logo de l'équipe
   const soc = KX.socials(st).map(s => `<span class="item">${KX.icon(s.key, 22)}<em>${KX.esc(s.handle)}</em>${sep}</span>`).join('');
-  html = messages(st).map(x => `<span class="item">${KX.esc(x)}${sep}</span>`).join('') + soc;
+  const sp = st.sponsors?.inTicker ? (st.sponsors.items || []).filter(i => i.logo || i.name).map(i => `<span class="item spons"><small>Partenaire</small>${i.logo ? `<img class="sl" src="${KX.esc(i.logo)}" alt="${KX.esc(i.name)}">` : `<em>${KX.esc(i.name)}</em>`}${sep}</span>`).join('') : '';
+  const g = st.goal, gp = g ? Math.min(100, (Number(g.current) || 0) / Math.max(1, Number(g.target) || 1) * 100) : 0;
+  const gl = g?.inTicker ? `<span class="item goal"><b>${KX.esc(g.label)}</b><span class="gb"><i style="width:${gp}%"></i></span><em>${Number(g.current) || 0} / ${Number(g.target) || 0}</em>${sep}</span>` : '';
+  html = messages(st).map(x => `<span class="item">${KX.esc(x)}${sep}</span>`).join('') + gl + sp + soc;
   speed = Math.max(20, Number(st.ticker?.speed) || 60); // jamais figé, même pendant la saisie de la vitesse
   layout();
 });

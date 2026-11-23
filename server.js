@@ -21,7 +21,7 @@ const crypto = require('crypto');
 const SCENE = { kicker: '', title: '', subtitle: '', endAt: 0, next: '' };
 const DEFAULTS = {
   settings: { teamName: 'KAELYX', teamSub: 'ESPORT', logo: '/logo/logo.svg', tagline: '',
-    socials: { x: '', twitch: '', tiktok: '', instagram: '', youtube: '', discord: '', site: '' }, alertDuration: 6, neon: true,
+    socials: { x: '', twitch: '', tiktok: '', instagram: '', youtube: '', discord: '', site: '' }, alertDuration: 6, neon: true, globalKeys: true,
     twitch: { channel: '', clientId: '', chatHide: 0, hideCommands: true, ignore: ['nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot'],
       alerts: { follow: true, sub: true, gift: true, bits: true, raid: true } } },
   players: [],
@@ -35,7 +35,13 @@ const DEFAULTS = {
   lowerthird: { visible: false, name: '', title: '', autoHide: 8, showAt: 0 },
   ticker: { visible: false, speed: 60, items: [] },
   scoreboard: { visible: false, mode: 'classement', event: '', game: 1, games: 6, rows: [],
-    vs: { a: '', b: '', scoreA: 0, scoreB: 0, label: 'BO3' } },
+    vs: { a: '', b: '', scoreA: 0, scoreB: 0, label: 'BO3', logoA: '', logoB: '' } },
+  // Programme de la soirée (/programme) : une ligne par match
+  schedule: { title: 'Programme', kicker: 'Ce soir', items: [] },
+  // Sponsors (/sponsors, et dans le ticker si inTicker) : logos qui défilent
+  sponsors: { visible: false, inTicker: false, title: 'Partenaires', every: 6, items: [] },
+  // Barre d'objectif (/objectif, scènes, ticker) ; kind : subs | follows | bits | manuel (compté automatiquement via Twitch, sauf manuel)
+  goal: { visible: false, label: 'Objectif subs', kind: 'subs', current: 0, target: 50, inTicker: false, inScenes: false },
   // Desk caster : 1 à 3 casters, plein écran (/caster) ou petites cams sur le jeu (/caster/pip)
   casters: { kicker: 'Desk', title: 'Analyse', showScore: true, pipPos: 'tr', pipSize: 'm', list: [] },
   // Cadre webcam seul (/cam) : la source OBS fait la taille du cadre
@@ -49,6 +55,8 @@ const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch
 // POV : 'twitch' (live du joueur : povChannel, sinon champ twitch), 'vdo' (envoi direct VDO.Ninja, identifiant povVdo) ou 'obs' (trou transparent)
 // Élément d'une mise en page POV, en pixels du 1920 × 1080. kind : pov | plate | cam | logo ; slot : n° de POV (0 = principale)
 const POV_ITEM = { id: '', kind: 'pov', slot: 0, x: 0, y: 0, w: 480, h: 270 };
+const SCHED_ITEM = { time: '', label: '', sub: '' };
+const SPONSOR = { name: '', logo: '' };
 const POV_LAYOUT = { id: '', name: 'Mise en page', bg: true, items: [] }; // bg : fond animé derrière les POV
 const it = (kind, slot, x, y, w, h) => ({ id: kind + slot + '-' + x + '-' + y, kind, slot, x, y, w, h });
 const POV_PRESETS = [
@@ -96,6 +104,11 @@ function normalize(s) {
   }).filter(l => l.id).slice(0, 30);
   if (!pv.layouts.some(l => l.id === pv.live)) pv.live = pv.layouts[0]?.id || '';
   pv.slots = pv.slots.map(s => String(s ?? '')).slice(0, 8);
+  out.schedule.items = out.schedule.items.filter(isObj).map(i => fill(SCHED_ITEM, i)).slice(0, 30);
+  out.sponsors.items = out.sponsors.items.filter(isObj).map(i => fill(SPONSOR, i)).slice(0, 24);
+  out.sponsors.every = clampN(out.sponsors.every, 2, 60);
+  if (!['subs', 'follows', 'bits', 'manuel'].includes(out.goal.kind)) out.goal.kind = 'subs';
+  out.goal.current = clampN(out.goal.current, 0, 1e7); out.goal.target = clampN(out.goal.target, 1, 1e7);
   if (!['main', 'none', 'all'].includes(pv.audio)) pv.audio = 'main';
   if (!['logo', 'sweep', 'fade', 'none'].includes(pv.transition)) pv.transition = 'logo';
   for (const p of out.players) {
@@ -118,6 +131,7 @@ let auth = { hash: '', sessions: {} };
 try { auth = { ...auth, ...JSON.parse(fs.readFileSync(AUTH, 'utf8')) }; } catch {}
 const saveAuth = () => { try { fs.writeFileSync(AUTH, JSON.stringify(auth, null, 2)); } catch (e) { console.error('  auth.json :', e.message); } };
 const sha = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+if (!/^[a-f0-9]{24}$/.test(auth.deckKey || '')) { auth.deckKey = crypto.randomBytes(12).toString('hex'); saveAuth(); }
 
 function scrypt(pass, salt, N = 16384, r = 8, p = 1) {
   return new Promise((ok, ko) => crypto.scrypt(String(pass), salt, 32, { N, r, p, maxmem: 64 * 1024 * 1024 }, (e, k) => e ? ko(e) : ok(k)));
@@ -174,7 +188,63 @@ let presenceTimer;
 const presence = () => [...obsSources.values()].map(({ path, active, visible }) => ({ path, active, visible }));
 function presenceChanged() { clearTimeout(presenceTimer); presenceTimer = setTimeout(() => broadcast('presence', presence()), 150); }
 let updater = null; // { status(), check(manual), install() } quand le serveur tourne dans l'application de bureau
-const twitch = require('./twitch')({ dataDir: DATA_DIR, broadcast: (e, d) => broadcast(e, d), getConfig: () => state.settings.twitch });
+const twitch = require('./twitch')({ dataDir: DATA_DIR, broadcast: (e, d) => { if (e === 'trigger' && d && d.kind === 'alert') goalCount(d); broadcast(e, d); }, getConfig: () => state.settings.twitch });
+
+// Modification faite par le serveur lui-même (raccourci, Stream Deck, objectif) : nouvelle version, sauvegarde, envoi à tous
+function commit() { state.rev += 1; save(); broadcast('state', state); }
+function goalCount(a) {
+  const g = state.goal, n = Math.max(1, Number(a.amount) || 1);
+  const add = g.kind === 'subs' ? (a.type === 'sub' ? 1 : a.type === 'gift' ? n : 0)
+    : g.kind === 'follows' ? (a.type === 'follow' ? 1 : 0) : g.kind === 'bits' ? (a.type === 'bits' ? (Number(a.amount) || 0) : 0) : 0;
+  if (add > 0) { g.current = Math.min(1e7, g.current + add); commit(); }
+}
+
+/* ---------- Actions rapides : raccourcis clavier globaux (application de bureau) et Stream Deck ----------
+   Mêmes effets que les boutons de la Régie. arg : identifiant de joueur, de mise en page, type d'alerte… */
+const ltShown = l => l.visible && (!(Number(l.autoHide) > 0) || Date.now() - (Number(l.showAt) || 0) < l.autoHide * 1000);
+const ACTIONS = {
+  stinger: () => broadcast('trigger', { kind: 'stinger', at: Date.now() }),
+  'pov-sting': () => broadcast('trigger', { kind: 'pov-sting', at: Date.now() }),
+  lowerthird: () => { const l = state.lowerthird, on = ltShown(l); l.visible = !on; if (!on) l.showAt = Date.now(); commit(); },
+  'lowerthird-show': () => { state.lowerthird.visible = true; state.lowerthird.showAt = Date.now(); commit(); },
+  'lowerthird-hide': () => { state.lowerthird.visible = false; commit(); },
+  'lt-player': id => {
+    const p = state.players.find(x => x.id === id) || state.players[Number(id) - 1]; if (!p) return false;
+    Object.assign(state.lowerthird, { name: p.pseudo, title: [p.role, (state.settings.teamName + ' ' + state.settings.teamSub).trim()].filter(Boolean).join(' · '), visible: true, showAt: Date.now() });
+    commit();
+  },
+  ticker: () => { state.ticker.visible = !state.ticker.visible; commit(); },
+  scoreboard: () => { state.scoreboard.visible = !state.scoreboard.visible; commit(); },
+  pov: () => { state.pov.visible = !state.pov.visible; commit(); },
+  sponsors: () => { state.sponsors.visible = !state.sponsors.visible; commit(); },
+  goal: () => { state.goal.visible = !state.goal.visible; commit(); },
+  'goal-plus': () => { state.goal.current += 1; commit(); },
+  'goal-minus': () => { state.goal.current = Math.max(0, state.goal.current - 1); commit(); },
+  'score-a': () => { state.scoreboard.vs.scoreA += 1; commit(); },
+  'score-b': () => { state.scoreboard.vs.scoreB += 1; commit(); },
+  'pov-main': id => {
+    const p = state.players.find(x => x.id === id) || state.players[Number(id) - 1]; if (!p) return false;
+    const sl = state.pov.slots, at = sl.indexOf(p.id);
+    if (at === 0) return;
+    if (at > 0) [sl[0], sl[at]] = [sl[at], sl[0]]; else { sl.unshift(p.id); sl.length = Math.min(sl.length, 8); }
+    commit();
+  },
+  'pov-layout': id => { if (!state.pov.layouts.some(l => l.id === id)) return false; state.pov.live = id; commit(); },
+  alert: type => {
+    const amount = { sub: 3, gift: 5, bits: 500, raid: 42, don: 10 }[type] || 0;
+    broadcast('trigger', { kind: 'alert', type: ['follow', 'sub', 'gift', 'bits', 'raid', 'don'].includes(type) ? type : 'follow', user: 'Viewer', amount, at: Date.now() });
+  },
+  count: arg => { // ex. starting-5 : compte à rebours de 5 min sur Starting soon ; starting-0 : arrêt
+    const [k, m] = String(arg || '').split('-'); const sc = state.scenes[k]; if (!sc) return false;
+    const min = Number(m) || 0; sc.endAt = min ? Date.now() + min * 60000 : 0; sc.startAt = Date.now(); commit();
+  }
+};
+function doAction(name, arg) { const f = ACTIONS[name]; if (!f) return false; return f(arg) !== false; }
+
+// Réglages enregistrés (configurations par événement) : data/presets.json
+const PRESETS = path.join(DATA_DIR, 'presets.json');
+const readPresets = () => { try { const o = JSON.parse(fs.readFileSync(PRESETS, 'utf8')); return isObj(o) ? o : {}; } catch { return {}; } };
+const fileSlug = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -196,6 +266,9 @@ const ROUTES = [
   [/^\/roster\/?$/, 'overlays/roster.html'],
   [/^\/cam\/?$/, 'overlays/cam.html'],
   [/^\/pov\/?$/, 'overlays/pov.html'],
+  [/^\/programme\/?$/, 'overlays/programme.html'],
+  [/^\/sponsors\/?$/, 'overlays/sponsors.html'],
+  [/^\/objectif\/?$/, 'overlays/objectif.html'],
   [/^\/caster(\/pip)?\/?$/, 'overlays/caster.html'],
   [/^\/chat\/?$/, 'overlays/chat.html'],
   [/^\/twitch-auth\/?$/, 'twitch-auth.html']
@@ -207,6 +280,7 @@ function send(res, code, body, type = 'application/json; charset=utf-8') {
 }
 
 function broadcast(event, data) {
+  if (event === 'state' && typeof module.exports.emit === 'function') module.exports.emit('state', data);
   const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const c of clients) { try { c.write(msg); } catch { clients.delete(c); } }
 }
@@ -248,7 +322,7 @@ function listPhotos() {
 
 // /photos/... et /sounds/... : d'abord le dossier perso, puis les fichiers fournis avec le pack
 function userFile(p) {
-  if (!USER_DIR || !/^\/(photos|sounds)\//.test(p)) return null;
+  if (!USER_DIR || !/^\/(photos|sounds|logos)\//.test(p)) return null;
   const base = path.join(USER_DIR, p.split('/')[1]);
   const file = path.normalize(path.join(USER_DIR, p));
   if (!file.startsWith(base + path.sep)) return null;
@@ -290,6 +364,14 @@ async function handle(req, res) {
     const bye = () => { clearInterval(ka); clients.delete(res); if (obsSources.delete(res)) presenceChanged(); };
     req.on('close', bye); res.on('error', bye);
     return;
+  }
+
+  // Stream Deck (extension « Web Requests » / API Ninja, ou action Site web) : /api/deck/<action>[/<valeur>]?key=<clé>
+  const dk = /^\/api\/deck\/([a-z-]+)(?:\/([^/]+))?\/?$/.exec(p);
+  if (dk && dk[1] !== 'info' && dk[1] !== 'reset') {
+    const key = url.searchParams.get('key') || '';
+    if (!/^[a-f0-9]{24}$/.test(key) || !crypto.timingSafeEqual(Buffer.from(key), Buffer.from(auth.deckKey))) return send(res, 403, { error: 'clé Stream Deck invalide' });
+    return send(res, doAction(dk[1], dk[2]) ? 200 : 404, { ok: true });
   }
 
   // Retour de l'autorisation Twitch : protégé par le code à usage unique créé depuis l'admin (pas par le mot de passe)
@@ -345,6 +427,46 @@ async function handle(req, res) {
         return send(res, 200, { ok: true, rev, state });
       } catch { return send(res, 400, { error: 'json invalide' }); }
     }
+  }
+
+  // Clé Stream Deck : lecture et renouvellement (session obligatoire, même en lecture)
+  if (p === '/api/deck/info') return loggedIn(req) ? send(res, 200, { key: auth.deckKey, actions: Object.keys(ACTIONS) }) : send(res, 401, { error: 'connexion requise' });
+  if (p === '/api/deck/reset' && req.method === 'POST') { auth.deckKey = crypto.randomBytes(12).toString('hex'); saveAuth(); return send(res, 200, { key: auth.deckKey }); }
+  if (p === '/api/action' && req.method === 'POST') {
+    let b; try { b = await readBody(req); } catch { return send(res, 400, { error: 'json invalide' }); }
+    return send(res, doAction(String(b.name || ''), b.arg) ? 200 : 404, { ok: true });
+  }
+
+  // Envoi d'image depuis l'admin (photo recadrée, logo de sponsor ou d'équipe) : enregistrée dans le dossier perso
+  if (p === '/api/upload' && req.method === 'POST') {
+    let b; try { b = await readBody(req); } catch { return send(res, 413, { error: 'image trop lourde' }); }
+    const m = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || ''));
+    if (!m) return send(res, 400, { error: 'image invalide (PNG, JPEG ou WebP)' });
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length > 3.5e6) return send(res, 413, { error: 'image trop lourde' });
+    const sub = b.kind === 'logo' ? 'logos' : 'photos';
+    const dir = path.join(USER_DIR || ROOT, sub);
+    const name = (fileSlug(b.name) || 'image') + '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]);
+    try { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name), buf); }
+    catch (e) { return send(res, 500, { error: 'enregistrement impossible : ' + e.message }); }
+    return send(res, 200, { path: `/${sub}/${name}?v=${Date.now()}` });
+  }
+
+  // Configurations enregistrées : list | save (état envoyé par l'admin) | load | delete
+  if (p === '/api/presets' && req.method === 'POST') {
+    let b; try { b = await readBody(req); } catch { return send(res, 413, { error: 'json invalide' }); }
+    const all = readPresets(), name = String(b.name || '').trim().slice(0, 60);
+    const list = () => Object.entries(all).map(([n, v]) => ({ name: n, at: v.at || 0 })).sort((a, z) => z.at - a.at);
+    const write = () => fs.writeFileSync(PRESETS, JSON.stringify(all));
+    if (b.action === 'save') {
+      if (!name || !isObj(b.state)) return send(res, 400, { error: 'nom ou état manquant' });
+      if (!all[name] && Object.keys(all).length >= 40) return send(res, 400, { error: '40 configurations maximum' });
+      const { rev, ...data } = b.state; all[name] = { at: Date.now(), state: data };
+      write(); return send(res, 200, { list: list() });
+    }
+    if (b.action === 'load') return all[name] ? send(res, 200, { state: normalize(all[name].state) }) : send(res, 404, { error: 'introuvable' });
+    if (b.action === 'delete') { delete all[name]; write(); return send(res, 200, { list: list() }); }
+    return send(res, 200, { list: list() });
   }
 
   if (p === '/api/trigger' && req.method === 'POST') {
@@ -409,6 +531,8 @@ module.exports = new (require('events'))();
 module.exports.port = PORT;
 module.exports.broadcast = broadcast;
 module.exports.setUpdater = u => { updater = u; };
+module.exports.action = doAction;
+module.exports.getState = () => state;
 module.exports.close = () => {
   clearTimeout(saveTimer);
   const { rev, ...data } = state;

@@ -35,7 +35,7 @@ const gIcon = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${G_ICONS[k] || 
 const GUIDE = [
   ['start', 'start', 'Démarrage rapide'], ['obs', 'obs', 'Ajouter une URL dans OBS'], ['urls', 'link', 'Toutes les URL'],
   ['scenes', 'scenes', 'Scènes OBS conseillées'], ['dock', 'dock', 'Admin dans OBS (dock)'], ['sting', 'sting', 'Transition stinger'],
-  ['cam', 'cam', 'Webcam et masques'], ['pov', 'pov', 'POV des joueurs'], ['keys', 'keys', 'Raccourcis clavier'],
+  ['cam', 'cam', 'Webcam et masques'], ['pov', 'pov', 'POV des joueurs'], ['keys', 'keys', 'Raccourcis clavier'], ['deck', 'keys', 'Stream Deck'],
   ['secu', 'shield', 'Mises à jour et mot de passe'], ['faq', 'help', 'Dépannage']
 ];
 const gSec = (id, n, title, body) => {
@@ -66,7 +66,11 @@ function guideUrls() {
     ['Casters (desk)', '/caster', '1920 × 1080', 'Scène casters', ''],
     ['Casters (petites cams)', '/caster/pip', '1920 × 1080', 'Sur le jeu', ''],
     ['Cadre webcam', '/cam', `${cam.w} × ${cam.h}`, 'Posé sur une webcam', ''],
-    ['Roster', '/roster', '1920 × 1080', 'Présentation de l’équipe', '']
+    ['Roster', '/roster', '1920 × 1080', 'Présentation de l’équipe', ''],
+    ['Programme (scène)', '/programme', '1920 × 1080', 'Avant le live, pauses', ''],
+    ['Programme (bandeau)', '/programme?bandeau', '1920 × 1080', 'Sur le jeu (en cours / à suivre)', ''],
+    ['Sponsors', '/sponsors', '1920 × 1080', 'Scènes de jeu (coin en bas à droite)', ''],
+    ['Objectif', '/objectif', '1920 × 1080', 'Où tu veux (coin en haut à gauche)', '']
   ];
 }
 // Pile de sources d'une scène OBS (de haut en bas, comme dans OBS)
@@ -164,6 +168,10 @@ TABS.guide = function () {
       <div class="g-keyset"><h3>Partout dans l’admin</h3>
         ${[['Ctrl + K', 'Rechercher et lancer une action'], ['F1', 'Ouvrir ce guide'], ['Échap', 'Fermer la recherche']].map(krow).join('')}</div>
       <div class="g-keyset"><h3>Pendant le live</h3>${live.map(krow).join('')}</div>
+      <div class="g-keyset"><h3>Globaux (même dans le jeu ou OBS)</h3>
+        ${[['Ctrl + Alt + S', 'Stinger'], ['Ctrl + Alt + P', 'Animation logo des POV'], ['Ctrl + Alt + L', 'Lower third'], ['Ctrl + Alt + D', 'Ticker'], ['Ctrl + Alt + B', 'Scoreboard'],
+           ['Ctrl + Alt + K', 'Sponsors'], ['Ctrl + Alt + O', 'Objectif'], ['Ctrl + Alt + F1', 'Mettre en grand le joueur 1 (F2 : joueur 2… F8)']].map(krow).join('')}
+        <p class="note" style="margin-top:8px">Application de bureau uniquement. À couper dans Réglages si un jeu utilise déjà ces touches.</p></div>
       <div class="g-keyset"><h3>Changer d’onglet</h3>${tabs.map(krow).join('')}</div>
       <div class="g-keyset"><h3>Dans la recherche (Ctrl + K)</h3>
         ${[['↑ + ↓', 'Choisir une action'], ['Entrée', 'Lancer l’action'], ['Échap', 'Fermer']].map(([k, l]) => `<div class="g-key"><span class="g-k">${k === '↑ + ↓' ? '<kbd>↑</kbd><kbd>↓</kbd>' : keys(k)}</span><span>${esc(l)}</span></div>`).join('')}
@@ -174,6 +182,13 @@ TABS.guide = function () {
           `<div class="g-key"><span class="g-k">${k === 'Glisser' || k === 'Coin' ? `<em>${k}</em>` : keys(k)}</span><span>${esc(l)}</span></div>`).join('')}</div>
     </div>
     ${tip('Les raccourcis <kbd>Ctrl</kbd> + <kbd>Maj</kbd> marchent dans l’application et dans le dock OBS, même quand un champ est sélectionné. Dans un navigateur, certains peuvent être pris par le navigateur.')}`)}
+
+  ${gSec('deck', ++n, 'Stream Deck', `${steps([
+    '<b>Le plus simple</b> : sur le Stream Deck, ajoute l’action <b>Système › Raccourci clavier</b> et tape le raccourci global voulu (ex. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> pour le stinger). L’application doit être lancée.',
+    '<b>Plus de boutons</b> (mettre un joueur précis en grand, changer de mise en page, +1 au score…) : installe l’extension gratuite <b>Web Requests</b> (ou <b>API Ninja</b>) depuis le Stream Deck Store.',
+    'Dans <a href="#" data-act="go" data-tab="settings">Réglages › Stream Deck</a>, copie l’adresse du bouton voulu et colle-la dans l’action <b>HTTP GET</b> de l’extension.',
+    'La clé dans l’adresse est personnelle : si quelqu’un la récupère, clique sur <b>Nouvelle clé</b> et recopie les adresses.'
+  ])}`)}
 
   ${gSec('secu', ++n, 'Mises à jour et mot de passe', `<ul class="g-list">
       <li><b>Mises à jour</b> : l’application cherche une nouvelle version à chaque lancement et toutes les 30 min. Tes réglages, photos et URL ne changent pas. Tu peux vérifier dans <a href="#" data-act="go" data-tab="settings">Réglages › Application</a>.</li>

@@ -2,7 +2,7 @@
 // - lance le serveur des overlays (server.js) dans l'application : plus besoin d'installer Node
 // - garde les données hors du dossier d'installation : les mises à jour ne les touchent jamais
 // - se met à jour toute seule depuis GitHub Releases (téléchargement en fond, installation à la fermeture)
-const { app, BrowserWindow, Tray, Menu, Notification, dialog, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, dialog, shell, nativeImage, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -33,7 +33,7 @@ function copyIfChanged(src, dst) {
   } catch {}
 }
 function prepareUserDir() {
-  for (const sub of ['photos', 'sounds', 'masques', 'stinger']) fs.mkdirSync(path.join(USER_DIR, sub), { recursive: true });
+  for (const sub of ['photos', 'sounds', 'logos', 'masques', 'stinger']) fs.mkdirSync(path.join(USER_DIR, sub), { recursive: true });
   // Masques et stinger : copiés à chaque version, pour que les chemins dans OBS ne changent jamais
   for (const sub of ['masques', 'stinger']) {
     const dir = path.join(RES, sub);
@@ -209,6 +209,25 @@ function setupUpdates() {
 app.on('second-instance', showWindow);
 app.on('window-all-closed', () => {}); // on reste près de l'horloge
 app.on('before-quit', () => { quitting = true; try { server && server.close(); } catch {} });
+app.on('will-quit', () => globalShortcut.unregisterAll());
+
+// --- Raccourcis clavier globaux : marchent même quand le jeu ou OBS est au premier plan (et depuis un Stream Deck) ---
+// Ctrl + Alt + lettre (aucun caractère AltGr sur ces touches en AZERTY) ; Ctrl + Alt + F1…F8 : mettre en grand le joueur 1…8
+const GLOBAL_KEYS = [
+  ['Control+Alt+S', 'stinger'], ['Control+Alt+P', 'pov-sting'], ['Control+Alt+L', 'lowerthird'],
+  ['Control+Alt+D', 'ticker'], ['Control+Alt+B', 'scoreboard'], ['Control+Alt+K', 'sponsors'], ['Control+Alt+O', 'goal'],
+  ...Array.from({ length: 8 }, (_, i) => [`Control+Alt+F${i + 1}`, 'pov-main', String(i + 1)])
+];
+let keysOn = null;
+function applyGlobalKeys(on) {
+  if (on === keysOn) return;
+  keysOn = on;
+  globalShortcut.unregisterAll();
+  if (!on) return;
+  for (const [acc, action, arg] of GLOBAL_KEYS) {
+    try { globalShortcut.register(acc, () => server.action(action, arg)); } catch {}
+  }
+}
 
 // --- Lancement façon Discord : fenêtre « Recherche de mises à jour… » avant d'ouvrir l'application -----------
 // Le caster n'est pas encore en stream : si une version existe, on la télécharge et on l'installe tout de suite
@@ -306,4 +325,6 @@ app.whenReady().then(async () => {
   refreshTray();
   createWindow();
   setupUpdates();
+  applyGlobalKeys(server.getState().settings.globalKeys !== false);
+  server.on('state', st => applyGlobalKeys(st.settings?.globalKeys !== false));
 });

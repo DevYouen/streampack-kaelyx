@@ -26,6 +26,14 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 - **Pendant le live** : **Ctrl + Maj + S** stinger · **Ctrl + Maj + P** animation logo des POV · **Ctrl + Maj + L** lower third · **Ctrl + Maj + D** ticker · **Ctrl + Maj + B** scoreboard.
 - **Dock OBS étroit** : l'admin passe en mode compact (icônes seules) ; le bouton **Aperçu** en bas à gauche affiche ou cache l'aperçu.
 
+## Nouveautés de l'admin
+- **Infos & sponsors** (onglet) : programme de la soirée (le match en cours est mis en avant d'après l'heure), partenaires (logos qui défilent, aussi dans le ticker), barre d'objectif (subs, follows ou bits comptés automatiquement avec Twitch, ou à la main ; sur les scènes et dans le ticker). Overlays : `/programme`, `/programme?bandeau`, `/sponsors`, `/objectif`.
+- **Images** : bouton **Photo…** sur chaque joueur (ou glisse une image sur sa carte) avec recadrage ; logos des sponsors et des équipes adverses (Scoreboard › VS) envoyés de la même façon. Ils sont rangés dans `Documents\Streampack Kaelyx\photos` et `logos`.
+- **Raccourcis globaux** (application de bureau, même dans le jeu ou OBS) : Ctrl + Alt + S stinger · P animation logo · L lower third · D ticker · B scoreboard · K sponsors · O objectif · F1…F8 mettre en grand le joueur 1 à 8. À couper dans Réglages.
+- **Stream Deck** : action « Raccourci clavier » avec les raccourcis globaux, ou extension *Web Requests* avec les adresses de Réglages › Stream Deck (clé personnelle, renouvelable).
+- **Aperçu privé** : bouton « Tester en privé » (lower third, alertes) : l'overlay s'affiche dans l'aperçu de l'admin seulement, rien n'est envoyé à l'antenne.
+- **Configurations enregistrées** (Réglages) : enregistre toute la config pour un événement et recharge-la en un clic.
+
 ## Dans OBS
 - Une **Source navigateur** par overlay, en **1920 × 1080** (les URL sont dans Admin > Liens OBS).
 - Admin dans OBS : *Docks > Docks de navigateur personnalisés*, URL `http://localhost:3000/admin`.

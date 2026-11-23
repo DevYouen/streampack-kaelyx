@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Programme — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  /* ---------- Plein écran (scène) ---------- */
+  .bg { position: absolute; inset: 0; background: var(--kx-bg); overflow: hidden; }
+  .silk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 1.6s ease; }
+  .silk.on { opacity: 1; }
+  #stars { position: absolute; inset: 0; opacity: .5; }
+  .band { position: absolute; width: 170px; height: 1800px; top: -360px; background: var(--kx-grad); transform: rotate(24deg); opacity: .85; }
+  .band.thin { width: 22px; opacity: .5; } .band.hair { width: 4px; opacity: .45; background: var(--kx-silver); }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 95% at 40% 50%, rgba(42,43,44,0) 55%, rgba(42,43,44,.85) 100%); }
+  .head { position: absolute; left: 120px; top: 96px; display: flex; align-items: center; gap: 26px; }
+  .head img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 0 22px rgba(153,51,204,.6)); }
+  .head .t-label { font-size: 18px; color: var(--kx-white); letter-spacing: .26em; }
+  .head .mask { overflow: hidden; padding: 16px 12px 4px 0; margin: -16px 0 -4px; }
+  .head h1 { font-size: 120px; margin: 0; padding-right: 12px; }
+  .head h1 .kx-ch { animation: kx-chIn .8s var(--kx-out) backwards; animation-delay: calc(.1s + var(--i) * 32ms); }
+  .list { position: absolute; left: 120px; top: 300px; width: 1240px; display: flex; flex-direction: column; gap: 12px; }
+  .it { position: relative; display: flex; align-items: stretch; height: 92px; filter: var(--kx-shadow); animation: kx-wipe .7s var(--kx-out) backwards; animation-delay: calc(.35s + var(--k) * 90ms); }
+  .it .tm { width: 170px; flex: none; display: grid; place-items: center; font: 800 46px/1 var(--f-title); font-variant-numeric: tabular-nums; background: var(--kx-panel); color: var(--kx-silver); box-shadow: inset 0 -3px 0 rgba(201,204,209,.3); }
+  .it .bd { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 0 40px 0 28px;
+    background: linear-gradient(180deg, rgba(243,241,241,.06), rgba(243,241,241,0) 45%), rgba(42,43,44,.92); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  .it .bd b { font: italic 800 44px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6px; }
+  .it .bd small { font: 600 18px/1 var(--f-body); color: var(--kx-silver); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .it .tag { position: absolute; right: 44px; top: 50%; margin-top: -15px; height: 30px; padding: 0 14px; display: none; align-items: center; gap: 8px;
+    font: 800 12px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+  .it.past { opacity: .45; }
+  .it.past .bd b { color: var(--kx-silver); }
+  .it.now .tm { background: var(--kx-violet); color: var(--kx-white); box-shadow: 0 0 30px rgba(153,51,204,.6); }
+  .it.now .bd { background: linear-gradient(90deg, rgba(86,28,115,.95), rgba(42,43,44,.92) 70%); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .it.now .tag { display: flex; background: var(--kx-white); color: var(--kx-bg); }
+  .it.now .tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--kx-violet); animation: live 1.6s ease-out infinite; }
+  .it.next .tag { display: flex; background: var(--kx-deep); color: var(--kx-white); }
+  .it.next .tm { color: var(--kx-white); }
+  @keyframes live { 0% { box-shadow: 0 0 0 0 rgba(153,51,204,.9); } 100% { box-shadow: 0 0 0 8px rgba(153,51,204,0); } }
+  .empty { position: absolute; left: 120px; top: 320px; font: 600 26px/1.4 var(--f-body); color: var(--kx-silver); }
+
+  /* ---------- Bandeau (?bandeau) : en cours + à suivre ---------- */
+  .strip { position: absolute; left: 40px; bottom: 40px; display: flex; align-items: stretch; height: 64px; filter: var(--kx-shadow); animation: kx-wipe .7s var(--kx-out) backwards; }
+  .strip .lg { width: 64px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(243,241,241,.2), transparent 55%), var(--kx-grad); }
+  .strip .lg img { width: 40px; height: 40px; object-fit: contain; }
+  .strip .cell { display: flex; align-items: center; gap: 14px; padding: 0 28px 0 20px; background: var(--kx-panel); white-space: nowrap; }
+  .strip .cell + .cell { background: rgba(42,43,44,.85); box-shadow: inset 2px 0 0 var(--kx-violet); }
+  .strip .cell:last-child { clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); padding-right: 40px; }
+  .strip .k { font: 800 11px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase; padding: 6px 9px; background: var(--kx-violet); }
+  .strip .cell + .cell .k { background: var(--kx-deep); }
+  .strip .h { font: 800 28px/1 var(--f-title); font-variant-numeric: tabular-nums; color: var(--kx-silver); }
+  .strip b { font: italic 800 30px/1 var(--f-title); text-transform: uppercase; }
+</style>
+</head>
+<body class="overlay">
+<div id="full" hidden>
+  <div class="bg"><canvas class="silk" id="silk"></canvas><canvas id="stars"></canvas>
+    <div class="band" style="left:1745px"></div><div class="band thin" style="left:1688px"></div><div class="band hair" style="left:1640px"></div>
+    <div class="vignette"></div></div>
+  <div class="head" id="head"></div>
+  <div class="list" id="list"></div>
+</div>
+<div id="strip" hidden></div>
+<script src="/js/kx.js"></script>
+<script src="/js/kx-fx.js"></script>
+<script>
+const BANDEAU = new URLSearchParams(location.search).has('bandeau');
+document.getElementById(BANDEAU ? 'strip' : 'full').hidden = false;
+if (!BANDEAU) { KX.starfield(document.getElementById('stars'), 100); KXFX.silk(document.getElementById('silk'), { focus: [.35, .55], strength: .9 }); }
+const mins = t => { const m = /^(\d{1,2})[:hH](\d{2})$/.exec(String(t || '').trim()); return m ? +m[1] * 60 + +m[2] : null; };
+// Match en cours : le dernier dont l'heure est passée ; à suivre : le suivant
+function status(items) {
+  const now = new Date(), n = now.getHours() * 60 + now.getMinutes();
+  let cur = -1;
+  items.forEach((it, i) => { const m = mins(it.time); if (m !== null && m <= n) cur = i; });
+  return { cur, next: cur + 1 < items.length ? cur + 1 : -1 };
+}
+let lastKey = '';
+function render(st) {
+  const sc = st.schedule || {}, items = (sc.items || []).filter(i => i.label || i.time);
+  const { cur, next } = status(items);
+  const key = JSON.stringify([sc, cur, st.settings?.logo]);
+  if (key === lastKey) return; lastKey = key;
+  if (BANDEAU) {
+    const c = items[cur], nx = items[next];
+    document.getElementById('strip').innerHTML = (c || nx) ? `<div class="strip"><div class="lg">${KX.logo(st)}</div>
+      ${c ? `<div class="cell"><span class="k">En cours</span><span class="h">${KX.esc(c.time)}</span><b>${KX.esc(c.label)}</b></div>` : ''}
+      ${nx ? `<div class="cell"><span class="k">À suivre</span><span class="h">${KX.esc(nx.time)}</span><b>${KX.esc(nx.label)}</b></div>` : ''}</div>` : '';
+    return;
+  }
+  document.getElementById('head').innerHTML = `${KX.logo(st)}<div class="claws" style="--h:64px"><i></i><i></i><i></i></div>
+    <div><div class="t-label">${KX.esc(sc.kicker || '')}</div><div class="mask"><h1 class="t-title">${KX.chars(sc.title || 'Programme')}</h1></div></div>`;
+  document.getElementById('list').innerHTML = items.length ? items.map((it, k) => `<div class="it ${k < cur ? 'past' : k === cur ? 'now' : k === next ? 'next' : ''}" style="--k:${k}">
+      <div class="tm">${KX.esc(it.time || '—')}</div>
+      <div class="bd"><b>${KX.esc(it.label)}</b>${it.sub ? `<small>${KX.esc(it.sub)}</small>` : ''}</div>
+      <span class="tag">${k === cur ? '<i></i>En cours' : 'À suivre'}</span></div>`).join('')
+    : '<p class="empty">Programme à remplir dans Admin › Infos &amp; sponsors.</p>';
+}
+KX.on('state', render);
+setInterval(() => KX.state && render(KX.state), 30000); // l'heure avance : le match en cours change tout seul
+</script>
+</body>
+</html>

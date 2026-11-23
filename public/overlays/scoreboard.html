@@ -71,6 +71,11 @@
   .vs .team { position: relative; display: flex; align-items: center; padding: 0 36px; min-width: 340px; overflow: hidden;
     background: linear-gradient(180deg, rgba(243,241,241,.08), transparent 50%), var(--kx-panel); }
   .vs .team b { font: italic 800 40px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; padding-right: 6px; }
+  .vs .team { gap: 16px; }
+  .vs .tl { display: grid; place-items: center; width: 52px; height: 52px; flex: none; }
+  .vs .tl:empty { display: none; }
+  .vs .tl img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+  .vs.in .tl { animation: kxp-up .6s var(--kx-out) .45s backwards; }
   .vs .team.a { justify-content: flex-end; clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%); box-shadow: inset 0 -3px 0 var(--kx-violet); }
   .vs .team.b { clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); box-shadow: inset 0 -3px 0 var(--kx-silver); }
   .vs .team.hit::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(153,51,204,.7), transparent); animation: sweep .8s var(--sw) both; }
@@ -185,9 +190,9 @@ function setFlip(el, v) {
 }
 function buildVs() {
   wrap.innerHTML = `<div class="vs">
-    <div class="team a kx-neon-line bottom"><b id="vA"></b></div><div class="sc a" id="sA">${flipHTML(0)}</div>
+    <div class="team a kx-neon-line bottom"><span class="tl" id="vLa"></span><b id="vA"></b></div><div class="sc a" id="sA">${flipHTML(0)}</div>
     <div class="mid"><span id="vLogo"></span><small id="vL"></small></div>
-    <div class="sc" id="sB">${flipHTML(0)}</div><div class="team b kx-neon-line bottom" style="--nl:-2.5s"><b id="vB"></b></div></div>`;
+    <div class="sc" id="sB">${flipHTML(0)}</div><div class="team b kx-neon-line bottom" style="--nl:-2.5s"><b id="vB"></b><span class="tl" id="vLb"></span></div></div>`;
   vsPrev = null;
 }
 function updVs(st) {
@@ -197,6 +202,10 @@ function updVs(st) {
   document.getElementById('vA').textContent = v.a || '';
   document.getElementById('vB').textContent = v.b || '';
   document.getElementById('vL').textContent = v.label || 'VS';
+  for (const [id, src] of [['vLa', v.logoA], ['vLb', v.logoB]]) {
+    const el = document.getElementById(id); if (el.dataset.k === (src || '')) continue;
+    el.dataset.k = src || ''; el.innerHTML = src ? `<img src="${KX.esc(src)}" alt="" onerror="this.remove()">` : '';
+  }
   const a = Number(v.scoreA) || 0, b = Number(v.scoreB) || 0;
   setFlip(document.querySelector('#sA .flip'), a); setFlip(document.querySelector('#sB .flip'), b);
   if (vsPrev) {

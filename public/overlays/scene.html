@@ -139,6 +139,12 @@
   .soc svg { box-sizing: content-box; padding: 9px; color: var(--kx-white); background: var(--kx-deep); box-shadow: inset 0 -2px 0 var(--kx-violet); }
 
   #ticker { position: absolute; left: 0; bottom: 0; width: 1920px; height: 64px; border: 0; }
+  .goal { width: 620px; margin-top: 22px; }
+  .goal .gh { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .goal .gh b { font: italic 800 26px/1 var(--f-title); text-transform: uppercase; }
+  .goal .gh span { font: 800 26px/1 var(--f-title); font-variant-numeric: tabular-nums; } .goal .gh em { font-style: normal; color: var(--kx-silver); }
+  .goal .gt { height: 14px; background: rgba(201,204,209,.18); clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+  .goal .gt i { display: block; height: 100%; background: var(--kx-grad); box-shadow: inset -4px 0 0 var(--kx-white); transition: width 1.2s cubic-bezier(.16, 1, .3, 1); }
 
   /* Just chatting */
   .chat-cam, .chat-box { position: absolute; }
@@ -211,6 +217,12 @@ function titleHTML(t) {
   const last = words.pop();
   return words.map(word).join(' ') + '<br><span class="last">' + word(last) + '</span>';
 }
+// Barre d'objectif (Admin › Infos & sponsors › « sur les scènes »)
+function goalHTML(st) {
+  const g = st.goal; if (!g || !g.inScenes) return '';
+  const cur = Number(g.current) || 0, tgt = Math.max(1, Number(g.target) || 1);
+  return `<div class="goal"><div class="gh"><b>${KX.esc(g.label)}</b><span>${cur} <em>/ ${tgt}</em></span></div><div class="gt"><i style="width:${Math.min(100, cur / tgt * 100)}%"></i></div></div>`;
+}
 const team = st => [st.settings?.teamName || 'KAELYX', st.settings?.teamSub || ''].filter(Boolean).join(' ');
 function tickClock() { document.querySelectorAll('[data-clock]').forEach(el => { el.innerHTML = `<b>${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b>`; }); }
 
@@ -271,6 +283,7 @@ function render(st) {
         <div>
           ${sc.next ? `<div class="next"><b>À suivre<em>»</em></b><span>${KX.esc(sc.next)}</span></div>` : ''}
           <div class="socials">${socHTML}</div>
+          ${goalHTML(st)}
         </div>
       </div>`;
     drawCount(true);
@@ -335,7 +348,7 @@ addEventListener('obsSourceActiveChanged', e => { if (e.detail?.active && KX.sta
 // Décor : reconstruit seulement si le texte, le logo, les réseaux, l'équipe ou le ticker changent
 KX.watch(st => {
   const { endAt, startAt, ...sc } = (st.scenes || {})[type] || {};
-  return [sc, st.settings?.logo, st.settings?.socials, st.settings?.teamName, st.settings?.teamSub, !!st.ticker?.visible];
+  return [sc, st.settings?.logo, st.settings?.socials, st.settings?.teamName, st.settings?.teamSub, !!st.ticker?.visible, st.goal?.inScenes && st.goal];
 }, render);
 KX.watch(st => [st.scenes?.[type]?.endAt || 0, st.scenes?.[type]?.startAt || 0], () => drawCount(true));
 </script>

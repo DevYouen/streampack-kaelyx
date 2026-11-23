@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sponsors — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  /* Panneau en bas à droite : « Partenaires » + un logo à la fois, qui change avec un volet oblique */
+  .sp { position: absolute; right: 40px; bottom: 40px; display: flex; flex-direction: column; align-items: stretch; width: 380px; filter: var(--kx-shadow); visibility: hidden; }
+  .sp.pos-tl { left: 40px; top: 40px; right: auto; bottom: auto; } .sp.pos-tr { top: 40px; bottom: auto; } .sp.pos-bl { left: 40px; right: auto; }
+  .sp.in, .sp.out { visibility: visible; }
+  .sp-head { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 18px; background: linear-gradient(180deg, rgba(243,241,241,.18), transparent 55%), var(--kx-grad); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .sp-head img { width: 24px; height: 24px; object-fit: contain; }
+  .sp-head span { font: 800 13px/1 var(--f-body); letter-spacing: .26em; text-transform: uppercase; }
+  .sp-box { position: relative; height: 150px; overflow: hidden; background: linear-gradient(180deg, rgba(243,241,241,.07), rgba(243,241,241,0) 50%), rgba(42,43,44,.94); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .slide { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px 34px; }
+  .slide img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,.35)); }
+  .slide b { font: italic 800 40px/1 var(--f-title); text-transform: uppercase; text-align: center; }
+  .slide.enter { animation: slIn .75s var(--sw) both; }
+  .slide.leave { animation: slOut .6s var(--sw) both; }
+  .wipe { position: absolute; top: -20px; bottom: -20px; width: 46px; left: -80px; transform: skewX(-14deg); background: var(--kx-violet); pointer-events: none; z-index: 2; }
+  .wipe::after { content: ''; position: absolute; top: 0; bottom: 0; right: -6px; width: 6px; background: var(--kx-white); }
+  .wipe.go { animation: wipe .75s var(--sw) both; }
+  @keyframes slIn { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); } to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); } }
+  @keyframes slOut { to { opacity: 0; transform: translateX(-30px); } }
+  @keyframes wipe { from { left: -80px; } to { left: calc(100% + 40px); } }
+  .sp-bar { height: 4px; background: rgba(201,204,209,.18); }
+  .sp-bar i { display: block; height: 100%; width: 0; background: var(--kx-white); }
+  .sp-bar i.run { animation: bar linear forwards; }
+  @keyframes bar { to { width: 100%; } }
+  .sp.in .sp-head { animation: kx-wipe .55s var(--kx-out) backwards; }
+  .sp.in .sp-box, .sp.in .sp-bar { animation: kx-wipe .65s var(--kx-out) .12s backwards; }
+  .sp.out { animation: spOut .45s var(--sw) forwards; }
+  @keyframes spOut { to { clip-path: inset(0 0 0 100%); } }
+</style>
+</head>
+<body class="overlay">
+<div class="sp" id="sp">
+  <div class="sp-head"><span id="lg"></span><span id="title"></span></div>
+  <div class="sp-box" id="box"><i class="wipe" id="wipe"></i></div>
+  <div class="sp-bar"><i id="bar"></i></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const sp = document.getElementById('sp'), box = document.getElementById('box');
+const pos = new URLSearchParams(location.search).get('pos');
+if (['tl', 'tr', 'bl', 'br'].includes(pos)) sp.classList.add('pos-' + pos);
+let items = [], idx = -1, every = 6, timer, shown = false, listKey = '';
+const slideHTML = it => it.logo ? `<img src="${KX.esc(it.logo)}" alt="${KX.esc(it.name)}">` : `<b>${KX.esc(it.name)}</b>`;
+function next() {
+  clearTimeout(timer);
+  if (!items.length) return;
+  idx = (idx + 1) % items.length;
+  const old = box.querySelector('.slide:not(.leave)');
+  if (old && items.length > 1) { old.classList.add('leave'); setTimeout(() => old.remove(), 600); } else if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'slide enter'; el.innerHTML = slideHTML(items[idx]);
+  box.appendChild(el);
+  const w = document.getElementById('wipe'); w.classList.remove('go'); void w.offsetWidth; w.classList.add('go');
+  const bar = document.getElementById('bar'); bar.classList.remove('run'); void bar.offsetWidth;
+  if (items.length > 1) { bar.style.animationDuration = every + 's'; bar.classList.add('run'); timer = setTimeout(next, every * 1000); }
+  else bar.style.width = '100%';
+}
+KX.on('state', st => {
+  const s = st.sponsors || {};
+  document.getElementById('title').textContent = s.title || 'Partenaires';
+  const lg = document.getElementById('lg'), lk = st.settings?.logo || '';
+  if (lg.dataset.k !== lk) { lg.dataset.k = lk; lg.innerHTML = KX.logo(st); }
+  every = Math.max(2, Number(s.every) || 6);
+  const list = (s.items || []).filter(i => i.logo || i.name), key = JSON.stringify([list, every]);
+  if (key !== listKey) { listKey = key; items = list; idx = -1; box.querySelectorAll('.slide').forEach(e => e.remove()); next(); }
+  const v = !!s.visible && items.length > 0;
+  if (v && !shown) { sp.classList.remove('out'); void sp.offsetWidth; sp.classList.add('in'); shown = true; }
+  else if (!v && shown) { sp.classList.remove('in'); sp.classList.add('out'); shown = false; setTimeout(() => { if (!shown) sp.classList.remove('out'); }, 500); }
+});
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@ syncCompact(); compactQ.addEventListener('change', syncCompact);
 
 /* ---------- Présence OBS ---------- */
 const TAB_SRC = { pov: ['/pov'], scenes: ['/scene/'], lowerthird: ['/lowerthird'], ticker: ['/ticker'], scoreboard: ['/scoreboard'],
-  alerts: ['/alerts', '/stinger'], players: ['/p/', '/roster'], casters: ['/caster', '/cam'], twitch: ['/chat'] };
+  alerts: ['/alerts', '/stinger'], players: ['/p/', '/roster'], casters: ['/caster', '/cam'], twitch: ['/chat'], infos: ['/programme', '/sponsors', '/objectif'] };
 const srcMatch = (src, prefixes) => prefixes.some(x => src.path === x || src.path.startsWith(x.endsWith('/') ? x : x + '/') || src.path.startsWith(x + '?'));
 function srcLevel(prefixes) {
   const hit = obsList.filter(s => srcMatch(s, prefixes));
@@ -22,7 +22,8 @@ function srcLevel(prefixes) {
 }
 const NAMES = { '/scene/starting': 'Starting soon', '/scene/brb': 'BRB', '/scene/ending': 'Fin de stream', '/scene/tech': 'Difficultés techniques',
   '/scene/chatting': 'Just chatting', '/pov': 'POV', '/caster': 'Casters (desk)', '/caster/pip': 'Casters (petites cams)', '/cam': 'Cadre webcam',
-  '/lowerthird': 'Lower third', '/ticker': 'Ticker', '/scoreboard': 'Scoreboard', '/alerts': 'Alertes', '/stinger': 'Stinger', '/chat': 'Chat', '/roster': 'Roster' };
+  '/lowerthird': 'Lower third', '/ticker': 'Ticker', '/scoreboard': 'Scoreboard', '/alerts': 'Alertes', '/stinger': 'Stinger', '/chat': 'Chat', '/roster': 'Roster',
+  '/programme': 'Programme', '/sponsors': 'Sponsors', '/objectif': 'Objectif' };
 function nameOf(path) {
   const p = path.split('?')[0].replace(/\/$/, '');
   if (p.startsWith('/p/')) { const pl = S?.players.find(x => x.id === p.slice(3)); return 'Joueur · ' + (pl ? pl.pseudo : p.slice(3)); }
@@ -43,6 +44,7 @@ function tabOn(t) {
   if (t === 'ticker') return !!S.ticker.visible;
   if (t === 'scoreboard') return !!S.scoreboard.visible;
   if (t === 'scenes') return Object.values(S.scenes).some(sc => (sc.endAt || 0) > Date.now());
+  if (t === 'infos') return !!(S.sponsors?.visible || S.goal?.visible);
   return false;
 }
 function paintNav() {
@@ -139,6 +141,7 @@ TABS.regie = function () {
       <p class="rg-label">Alerte de test</p>
       <div class="chips">${[['follow', 'Follow'], ['sub', 'Sub'], ['gift', 'Gift sub'], ['bits', 'Bits'], ['raid', 'Raid'], ['don', 'Don']].map(([v, l]) => `<button type="button" class="chip" data-act="quick-alert" data-type="${v}">${l}</button>`).join('')}</div>
     </section>
+    ${typeof rgInfos === 'function' ? rgInfos() : ''}
   </div>
   <div class="sec-mini"><div class="kicker"><span class="claws"><i></i><i></i><i></i></span>Multivue</div>
     <p class="note">Clique sur une vignette pour l’ouvrir dans l’aperçu. Cadre violet : à l’antenne dans OBS.</p></div>`;

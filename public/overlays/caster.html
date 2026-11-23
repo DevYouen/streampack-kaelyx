@@ -25,6 +25,7 @@
   .score { position: absolute; right: 64px; top: 64px; display: flex; align-items: stretch; height: 60px; filter: var(--kx-shadow); }
   .score .tm { display: flex; align-items: center; padding: 0 26px; background: var(--kx-panel); font: italic 800 32px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; }
   .score .tm.a { box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .score .tm { gap: 12px; } .score .tm img { width: 40px; height: 40px; object-fit: contain; }
   .score .tm.b { box-shadow: inset 0 -3px 0 var(--kx-silver); }
   .score .sc { width: 64px; display: grid; place-items: center; background: var(--kx-deep); font: 800 42px/1 var(--f-title); font-variant-numeric: tabular-nums; }
   .score .sc.a { background: var(--kx-violet); }
@@ -113,8 +114,8 @@ function render(st) {
     const v = st.scoreboard?.vs || {};
     html += `<div class="head">${KX.logo(st)}<div class="claws" style="--h:44px"><i></i><i></i><i></i></div>
       <div><div class="t-label">${KX.esc(C.kicker)}</div><div class="mask"><h1 class="t-title">${KX.chars(C.title)}</h1></div></div></div>`;
-    if (C.showScore && v.a && v.b) html += `<div class="score"><div class="tm a">${KX.esc(v.a)}</div><div class="sc a" id="scA" data-v="${scorePrev ? scorePrev.a : 0}">${scorePrev ? scorePrev.a : 0}</div>
-      <div class="lb">${KX.esc(v.label || 'VS')}</div><div class="sc" id="scB" data-v="${scorePrev ? scorePrev.b : 0}">${scorePrev ? scorePrev.b : 0}</div><div class="tm b">${KX.esc(v.b)}</div></div>`;
+    if (C.showScore && v.a && v.b) html += `<div class="score"><div class="tm a">${v.logoA ? `<img src="${KX.esc(v.logoA)}" alt="" onerror="this.remove()">` : ''}${KX.esc(v.a)}</div><div class="sc a" id="scA" data-v="${scorePrev ? scorePrev.a : 0}">${scorePrev ? scorePrev.a : 0}</div>
+      <div class="lb">${KX.esc(v.label || 'VS')}</div><div class="sc" id="scB" data-v="${scorePrev ? scorePrev.b : 0}">${scorePrev ? scorePrev.b : 0}</div><div class="tm b">${KX.esc(v.b)}${v.logoB ? `<img src="${KX.esc(v.logoB)}" alt="" onerror="this.remove()">` : ''}</div></div>`;
     KX.holeMask(document.getElementById('bg'), 1920, 1080, boxes.map(b => KX.chamferPts(b.x, b.y, b.w, b.h, 0)));
   }
   html += boxes.map(b => `<div class="cam" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${KX.frame(b.w, b.h, PIP ? 18 : undefined)}</div>`
