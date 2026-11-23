@@ -80,6 +80,11 @@ Une lumière fait le tour des cadres violets (webcams, chat, roster), glisse sur
 - **Titre des scènes** révélé lettre par lettre, puis une vague de lumière parcourt les lettres de temps en temps ; logo qui flotte en 3D ; un reflet traverse la scène. Dans OBS, la scène se reconstruit chaque fois qu'elle passe à l'antenne.
 - **Transition logo** : la soie animée tourne aussi dans le panneau du logo pendant la transition.
 - **Plaques des POV** : la photo du joueur (Admin › Joueurs › Photo) remplace le logo dans le carré de la plaque.
+- **Scoreboard** : les lignes glissent à leur nouvelle place quand le classement change, les points défilent avec un « +N », une flèche montre qui monte ou descend, le leader est mis en avant. En VS, les scores basculent comme un panneau d'aéroport.
+- **Lower third** : entrée façon mini-transition (volet violet), nom lettre par lettre ; si le nom est celui d'un joueur qui a une photo, elle s'affiche dans le carré.
+- **Alertes** : une icône par type (follow, sub, gift, bits, raid, don), panneau en soie animée, pseudo lettre par lettre, montant qui défile.
+- **Roster, desk casters, overlay joueur, cadre webcam** : fond soie, cartes en 3D, plaques au style des POV (photo, entrée en trois temps).
+- **Ticker et chat** : séparateurs avec le logo, entrée en plusieurs temps ; les messages du chat sortent d'un masque et la liste se referme en douceur.
 
 ## Palette (stricte)
 `#2A2B2C` fond · `#9933CC` violet · `#561C73` violet profond · `#F3F1F1` texte · `#C9CCD1` argent

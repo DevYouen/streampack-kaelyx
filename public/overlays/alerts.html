@@ -5,68 +5,99 @@
 <title>Alertes — Kaelyx</title>
 <link rel="stylesheet" href="/css/kx.css">
 <style>
-  .stage { position: absolute; left: 0; right: 0; top: 150px; height: 420px; display: flex; justify-content: center; }
-  .alert { position: relative; width: 900px; height: 420px; }
-  .alert svg.slash { position: absolute; left: 50%; top: 50%; width: 760px; height: 420px; margin: -210px 0 0 -380px; overflow: visible; }
-  .alert svg.slash path { fill: none; stroke: var(--kx-violet); stroke-linecap: square; stroke-dasharray: 900; stroke-dashoffset: 900; filter: drop-shadow(0 0 14px #9933CC); }
-  .alert svg.slash path:first-child { stroke: #F3F1F1; }
-  .alert .burst { position: absolute; left: 50%; top: 50%; width: 700px; height: 220px; margin: -110px 0 0 -350px; border-radius: 50%;
-    border: 3px solid var(--kx-silver); border-color: #F3F1F1 rgba(201,204,209,.3) #F3F1F1 rgba(201,204,209,.3); box-shadow: 0 0 30px rgba(153,51,204,.6), inset 0 0 30px rgba(153,51,204,.4); transform: rotate(-18deg) scale(.2); opacity: 0; }
-  .alert .plasma { position: absolute; left: 50%; top: 50%; width: 900px; height: 420px; margin: -210px 0 0 -450px; border-radius: 50%; background: radial-gradient(ellipse, rgba(153,51,204,.55), rgba(86,28,115,.3) 45%, rgba(86,28,115,0) 70%); filter: blur(14px); opacity: 0; }
-  .alert.play .plasma { animation: plasma 1.2s .2s var(--kx-out) forwards; }
-  @keyframes plasma { 0% { opacity: 0; transform: scale(.4); } 100% { opacity: 1; transform: scale(1); } }
-  .alert .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 10px; filter: drop-shadow(0 16px 26px rgba(42,43,44,.65)); }
-  .alert .label { display: flex; align-items: center; gap: 14px; height: 46px; padding: 0 38px; background: var(--kx-plate); box-shadow: var(--kx-lit), inset 0 2px 0 var(--kx-violet); --cut: 16px; }
-  .alert .label img { width: 28px; height: 28px; object-fit: contain; }
-  .alert .label span { font: 700 16px/1 var(--f-body); letter-spacing: .34em; text-transform: uppercase; color: var(--kx-silver); }
-  .alert .name { position: relative; padding: 6px 76px 12px; background: var(--kx-energy); box-shadow: var(--kx-lit), inset 0 4px 0 rgba(243,241,241,.25); --cut: 34px; overflow: hidden; }
-  .alert .name b { font-size: 100px; white-space: nowrap; display: block; padding-right: 10px; }
-  .alert .name::after { content: ''; position: absolute; top: -10%; bottom: -10%; width: 120px; background: linear-gradient(100deg, rgba(243,241,241,0), rgba(243,241,241,.5), rgba(243,241,241,0)); transform: translateX(-200%) skewX(-24deg); }
-  .alert .amount { display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 42px; background: var(--kx-energy-deep); box-shadow: var(--kx-lit); --cut: 18px; font: italic 800 32px/1 var(--f-title); text-transform: uppercase; }
-  .alert .amount .k { width: 10px; height: 10px; background: var(--kx-chrome); transform: rotate(45deg); box-shadow: 0 0 10px var(--kx-violet); }
-  .alert .msg { max-width: 760px; text-align: center; font: 500 24px/1.35 var(--f-body); color: var(--kx-white); background: var(--kx-plate); box-shadow: var(--kx-lit); padding: 12px 30px; --c: 14px; }
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  .al { position: absolute; left: 0; right: 0; top: 140px; display: flex; flex-direction: column; align-items: center; gap: 14px; visibility: hidden; }
+  .al.play, .al.leave { visibility: visible; }
+  .al-card { display: flex; align-items: stretch; height: 240px; filter: var(--kx-shadow); }
+  /* Badge : icône du type d'alerte dans un losange */
+  .al-badge { position: relative; width: 240px; flex: none; display: grid; place-items: center; overflow: hidden;
+    background: linear-gradient(180deg, rgba(243,241,241,.2), transparent 55%), var(--kx-grad); box-shadow: inset 0 0 0 1px rgba(243,241,241,.18); }
+  .al-ico { position: relative; width: 120px; height: 120px; display: grid; place-items: center; }
+  .al-ico::before { content: ''; position: absolute; inset: 6px; border: 2px solid rgba(243,241,241,.55); transform: rotate(45deg); }
+  .al-ico::after { content: ''; position: absolute; inset: 6px; border: 3px solid #F3F1F1; transform: rotate(45deg); opacity: 0; }
+  .al-ico svg { position: relative; width: 62px; height: 62px; fill: none; stroke: #F3F1F1; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+  /* Panneau principal : soie animée, type, pseudo, montant */
+  .al-main { position: relative; min-width: 660px; max-width: 1180px; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 90px 0 44px; overflow: hidden;
+    background: var(--kx-bg); clip-path: polygon(0 0, 100% 0, calc(100% - 34px) 100%, 0 100%); box-shadow: inset 0 -4px 0 var(--kx-violet); }
+  .al-silk { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+  .al-silk.on { opacity: 1; }
+  .al-main > :not(canvas):not(.al-edge) { position: relative; }
+  .al-kick { display: flex; align-items: center; gap: 14px; }
+  .al-kick img { width: 30px; height: 30px; object-fit: contain; }
+  .al-kick span { font: 700 17px/1 var(--f-body); letter-spacing: .3em; text-transform: uppercase; color: var(--kx-white); }
+  .al-kick .claws { --h: 18px; }
+  .al-name { overflow: hidden; padding: 12px 8px 2px 0; margin: -12px 0 -2px; }
+  .al-name b { display: block; font-size: 112px; white-space: nowrap; line-height: .95; text-shadow: 0 8px 30px rgba(18,18,20,.4); }
+  .al-amt { display: flex; align-items: baseline; gap: 14px; }
+  .al-amt[hidden] { display: none; }
+  .al-num { font: italic 800 54px/1 var(--f-title); font-variant-numeric: tabular-nums; color: var(--kx-white); padding: 2px 14px 0; background: var(--kx-violet); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+  .al-num:empty { display: none; }
+  .al-unit { font: italic 800 34px/1 var(--f-title); text-transform: uppercase; letter-spacing: .03em; color: var(--kx-silver); }
+  .al-edge { position: absolute; top: -10px; bottom: -10px; left: -50px; width: 40px; transform: skewX(-8deg); background: var(--kx-violet); opacity: 0; z-index: 3; }
+  .al-edge::after { content: ''; position: absolute; top: 0; bottom: 0; right: -6px; width: 6px; background: var(--kx-white); }
+  .al-msg { max-width: 920px; padding: 14px 32px; text-align: center; font: 500 25px/1.38 var(--f-body); color: var(--kx-white);
+    background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .al-msg:empty { display: none; }
 
-  .alert.play svg.slash path { animation: draw .45s var(--kx-out) forwards; }
-  .alert.play svg.slash path:nth-child(2) { animation-delay: .07s; } .alert.play svg.slash path:nth-child(3) { animation-delay: .14s; }
-  .alert.play .burst { animation: burst 1s .25s var(--kx-out) forwards; }
-  .alert.play .label { animation: rise .6s .35s var(--kx-out) both; }
-  .alert.play .name { animation: slice .7s .3s var(--kx-out) both; }
-  .alert.play .name::after { animation: kx-shine 1.6s 1s var(--kx-ease); }
-  .alert.play .amount, .alert.play .msg { animation: rise .6s .55s var(--kx-out) both; }
-  .alert.leave { animation: leave .5s var(--kx-ease) forwards; }
-  @keyframes draw { 0% { stroke-dashoffset: 900; opacity: 1; } 70% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: .25; } }
-  @keyframes burst { 0% { opacity: .9; transform: rotate(-18deg) scale(.2); } 100% { opacity: 0; transform: rotate(-18deg) scale(1.6); } }
-  @keyframes slice { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); transform: translateX(-60px) skewX(-8deg); } }
-  @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
-  @keyframes leave { to { opacity: 0; transform: translateY(-30px) scale(.96); filter: blur(4px); } }
-  /* Refonte : plus sobre, plus lisible */
-  .alert .burst, .alert .plasma { display: none; }
-  .alert svg.slash { opacity: .5; }
-  .alert svg.slash path { filter: none; }
-  .alert .name { padding: 10px 64px 14px; box-shadow: none; }
-  .alert .name b { font-size: 110px; }
-  .alert .name::after { display: none; }
-  .alert .label { background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); }
-  .alert .label span { color: var(--kx-white); letter-spacing: .2em; }
-  .alert .amount { background: var(--kx-white); color: var(--kx-bg); font-size: 34px; }
-  .alert .amount .kx-chrome-text { color: inherit; } /* sinon texte blanc sur fond blanc : le montant était invisible */
-  .alert .amount .k { background: var(--kx-violet); box-shadow: none; }
-  .alert .msg { background: var(--kx-panel); box-shadow: none; }
-  .alert .card { filter: var(--kx-shadow); }
+  /* Entrée */
+  .al.play .al-badge { animation: bdIn .5s var(--kx-out) backwards; }
+  .al.play .al-ico { animation: icIn .7s var(--kx-out) .18s backwards; }
+  .al.play .al-ico::after { animation: ring 1s var(--kx-out) .35s; }
+  .al.play .al-main { animation: reveal .7s var(--sw) .08s backwards; }
+  .al.play .al-edge { animation: edge .7s var(--sw) .08s both; }
+  .al.play .al-kick { animation: kxp-up .6s var(--kx-out) .4s backwards; }
+  .al.play .al-name .kx-ch { animation: kx-chIn .6s var(--kx-out) backwards; animation-delay: calc(.5s + var(--i) * 32ms); }
+  .al.play .al-amt { animation: kxp-up .6s var(--kx-out) .8s backwards; }
+  .al.play .al-msg { animation: kxp-up .6s var(--kx-out) 1s backwards; }
+  @keyframes bdIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  @keyframes icIn { from { transform: scale(.6) rotate(-45deg); opacity: 0; } }
+  @keyframes ring { 0% { opacity: 1; transform: rotate(45deg) scale(.9); } 100% { opacity: 0; transform: rotate(45deg) scale(1.9); } }
+  @keyframes reveal { from { clip-path: polygon(0 0, 34px 0, 0 100%, 0 100%); } to { clip-path: polygon(0 0, 100% 0, calc(100% - 34px) 100%, 0 100%); } }
+  @keyframes edge { 0% { left: -50px; opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 50px); opacity: 0; } }
+  /* Sortie */
+  .al.leave .al-name .kx-ch { animation: kx-chOut .25s ease-in forwards; animation-delay: calc(var(--i) * 14ms); }
+  .al.leave .al-msg, .al.leave .al-amt, .al.leave .al-kick { animation: fadeUp .3s ease-in forwards; }
+  .al.leave .al-main { animation: hide .45s var(--sw) .15s forwards; }
+  .al.leave .al-badge { animation: hide .4s var(--sw) .35s forwards; }
+  @keyframes fadeUp { to { opacity: 0; transform: translateY(-14px); } }
+  @keyframes hide { to { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); } }
 </style>
 </head>
 <body class="overlay">
-<div class="stage" id="stage"></div>
+<div class="al" id="al">
+  <div class="al-card">
+    <div class="al-badge"><div class="al-ico" id="ico"></div></div>
+    <div class="al-main"><canvas class="al-silk" id="silk"></canvas>
+      <div class="al-kick"><span id="logo"></span><div class="claws"><i></i><i></i><i></i></div><span id="type"></span></div>
+      <div class="al-name"><b class="t-title" id="nm"></b></div>
+      <div class="al-amt" id="amt"><span class="al-num" id="num"></span><span class="al-unit" id="unit"></span></div>
+      <i class="al-edge"></i>
+    </div>
+  </div>
+  <div class="al-msg" id="msg"></div>
+</div>
 <script src="/js/kx.js"></script>
+<script src="/js/kx-fx.js"></script>
 <script>
-const LABELS = {
-  follow: ['Nouveau follow', () => ''],
-  sub: ['Nouvel abonné', a => a > 1 ? `${a} mois` : 'Bienvenue'],
-  gift: ['Subs offerts', a => `${a || 1} sub${(a || 1) > 1 ? 's' : ''} offert${(a || 1) > 1 ? 's' : ''}`],
-  bits: ['Bits', a => `${a || 0} bits`],
-  raid: ['Raid', a => `${a || 0} viewers`],
-  don: ['Don', a => `${a || 0} €`]
+const ICONS = {
+  follow: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/>',
+  sub: '<path d="M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z"/>',
+  gift: '<rect x="3.5" y="9" width="17" height="11.5"/><path d="M2.5 9h19v-3.5h-19zM12 5.5v15M12 5.5C10 2 6.5 2.5 7 4.5S12 5.5 12 5.5zm0 0c2-3.5 5.5-3 5-1S12 5.5 12 5.5z"/>',
+  bits: '<path d="M6.5 3h11l4 6.2L12 21 2.5 9.2z"/><path d="M2.5 9.2h19M9 3l3 18 3-18"/>',
+  raid: '<path d="M4 4l7.5 8L4 20M12.5 4l7.5 8-7.5 8"/>',
+  don: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.6A4.4 4.4 0 1 0 15.5 15.4M6.8 10.8h6.4M6.8 13.4h6.4"/>'
 };
+// Libellé, nombre affiché (compteur), unité
+const TYPES = {
+  follow: a => ['Nouveau follow', null, 'Merci !'],
+  sub: a => ['Nouvel abonné', a > 1 ? a : null, a > 1 ? 'mois' : 'Bienvenue'],
+  gift: a => ['Subs offerts', a || 1, (a || 1) > 1 ? 'subs offerts' : 'sub offert'],
+  bits: a => ['Bits', a || 0, 'bits'],
+  raid: a => ['Raid', a || 0, 'viewers'],
+  don: a => ['Don', a || 0, '€']
+};
+const al = document.getElementById('al');
+const silk = KXFX.silk(document.getElementById('silk'), { width: 1180, height: 240, scale: .5, paused: true, strength: 1.1, focus: [.35, .5] });
 const queue = []; let busy = false;
 const sound = new Audio('/sounds/alert.mp3'); sound.volume = .6;
 
@@ -76,27 +107,26 @@ function next() {
   if (busy || !queue.length) return;
   busy = true;
   const t = queue.shift();
-  const [label, fmt] = LABELS[t.type] || LABELS.follow;
-  const amt = fmt(Number(t.amount) || 0);
+  const type = TYPES[t.type] ? t.type : 'follow';
+  const amount = Number(t.amount) || 0;
+  const [label, num, unit] = TYPES[type](amount);
   const st = KX.state || { settings: {} };
-  const dur = Math.max(2, Number(st.settings?.alertDuration) || 6) * 1000;
-  const stage = document.getElementById('stage');
-  stage.innerHTML = `<div class="alert" id="a">
-    <svg class="slash" viewBox="0 0 760 420" aria-hidden="true">
-      <path d="M560 20 L200 400" stroke-width="10"/><path d="M620 60 L300 400" stroke-width="7"/><path d="M670 110 L400 400" stroke-width="5"/>
-    </svg>
-    <div class="plasma"></div><div class="burst"></div>
-    <div class="card">
-      <div class="label blade kx-neon-line bottom" style="--nd:2.2s">${KX.logo(st)}<span>${KX.esc(label)}</span></div>
-      <div class="name blade"><b class="t-title kx-chrome-text">${KX.esc(t.user || 'Viewer')}</b></div>
-      ${amt ? `<div class="amount blade"><i class="k"></i><span class="kx-chrome-text sm">${KX.esc(amt)}</span><i class="k"></i></div>` : ''}
-      ${t.message ? `<div class="msg chamfer">${KX.esc(t.message)}</div>` : ''}
-    </div></div>`;
-  const a = document.getElementById('a');
-  requestAnimationFrame(() => a.classList.add('play'));
+  const dur = Math.max(3, Number(st.settings?.alertDuration) || 6) * 1000;
+  document.getElementById('ico').innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[type]}</svg>`;
+  document.getElementById('logo').innerHTML = KX.logo(st);
+  document.getElementById('type').textContent = label;
+  document.getElementById('nm').innerHTML = KX.chars(t.user || 'Viewer');
+  const n = document.getElementById('num');
+  n.dataset.v = 0; n.textContent = '';
+  document.getElementById('unit').textContent = unit;
+  document.getElementById('msg').textContent = t.message || '';
+  al.classList.remove('leave', 'play'); void al.offsetWidth; al.classList.add('play');
+  silk.play();
+  // Le montant défile de 0 à sa valeur, une fois le pseudo affiché
+  if (num !== null) setTimeout(() => KX.roll(n, num, Math.min(1600, 600 + String(num).length * 220)), 850);
   sound.currentTime = 0; sound.play().catch(() => {});
-  setTimeout(() => { a.classList.add('leave'); }, dur - 500);
-  setTimeout(() => { stage.innerHTML = ''; busy = false; setTimeout(next, 400); }, dur);
+  setTimeout(() => { al.classList.remove('play'); al.classList.add('leave'); }, dur - 800);
+  setTimeout(() => { al.classList.remove('leave'); silk.pause(); busy = false; setTimeout(next, 400); }, dur);
 }
 </script>
 </body>

@@ -123,6 +123,38 @@ const KX = (() => {
     })(0);
   }
 
+  // Texte découpé en lettres (animations lettre par lettre) : chaque lettre est un <span class="kx-ch" style="--i:n">
+  function chars(text, start = 0) {
+    let i = start;
+    return String(text ?? '').split(' ').map(w => `<span class="kx-w">${[...w].map(c => `<span class="kx-ch" style="--i:${i++}">${esc(c)}</span>`).join('')}</span>`).join(' ');
+  }
+  // Nombre qui défile de la valeur affichée jusqu'à « to » (points, bits, viewers…) ; el._fmt peut le mettre en forme
+  function roll(el, to, ms = 900) {
+    if (!el) return;
+    to = Number(to) || 0;
+    const from = Number(el.dataset.v ?? 0), fmt = el._fmt || (v => v);
+    el.dataset.v = to;
+    cancelAnimationFrame(el._roll);
+    if (from === to) { el.textContent = fmt(to); return; }
+    const t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(Math.round(from + (to - from) * e));
+      if (k < 1) el._roll = requestAnimationFrame(step);
+    };
+    el._roll = requestAnimationFrame(step);
+  }
+  // Plaque nom (même style que les POV) : carré logo ou photo, nom, infos, pseudo réseau, embout oblique.
+  // o : { name, meta (HTML déjà échappé), photo, handle (HTML), right, cls, style }
+  function plate(st, o = {}) {
+    const ph = o.photo ? `<img class="ph" src="${esc(o.photo)}" alt="" onerror="this.parentElement.classList.remove('has-ph');this.remove()">` : '';
+    return `<div class="kxp ${o.right ? 'right' : ''} ${o.cls || ''}" style="${o.style || ''}">
+      <div class="kxp-sq ${o.photo ? 'has-ph' : ''}">${ph}${logo(st)}</div>
+      <div class="kxp-main kx-neon-line bottom"><b class="kxp-name t-title">${esc(o.name)}</b>${o.meta ? `<span class="kxp-meta t-label">${o.meta}</span>` : ''}</div>
+      ${o.handle ? `<div class="kxp-hd">${o.handle}</div>` : ''}
+      <div class="kxp-cap" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
+  }
+
   function initials(name) {
     return String(name || '?').replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
   }
@@ -158,7 +190,7 @@ const KX = (() => {
 
   connect();
   watch(st => st.settings?.neon, applyNeon);
-  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, mv: MV, get state() { return state; } };
+  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, chars, roll, plate, mv: MV, get state() { return state; } };
 })();
 
 /* Overlay ouvert directement dans un navigateur (pas dans OBS, ni dans l'aperçu de l'admin) :

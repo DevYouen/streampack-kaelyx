@@ -8,12 +8,24 @@
   body.embed { height: 64px; }
   .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; display: flex; transition: transform .6s var(--kx-out), opacity .4s; }
   .bar.off { transform: translateY(100%); opacity: 0; }
-  .badge { position: relative; z-index: 2; flex: none; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 40px 0 28px;
-    background: var(--kx-grad); clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); }
+  .badge { position: relative; z-index: 2; flex: none; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 40px 0 28px; overflow: hidden;
+    background: linear-gradient(180deg, rgba(243,241,241,.18), transparent 55%), var(--kx-grad); clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); }
+  .badge::after { content: ''; position: absolute; top: 0; bottom: 0; width: 70px; left: -100px; background: linear-gradient(100deg, transparent, rgba(243,241,241,.35), transparent); animation: bShine 9s ease-in-out 3s infinite; }
+  @keyframes bShine { 0%, 85% { left: -100px; } 100% { left: 110%; } }
+  .badge i.live { width: 9px; height: 9px; border-radius: 50%; background: var(--kx-white); animation: live 1.6s ease-out infinite; }
+  @keyframes live { 0% { box-shadow: 0 0 0 0 rgba(243,241,241,.9); } 100% { box-shadow: 0 0 0 9px rgba(243,241,241,0); } }
   .badge img { width: 34px; height: 34px; object-fit: contain; }
   .badge b { font: italic 800 28px/1 var(--f-title); letter-spacing: .03em; text-transform: uppercase; padding-right: 4px; }
   .strip { position: relative; flex: 1; margin-left: -20px; overflow: hidden; background: var(--kx-panel); box-shadow: inset 0 2px 0 var(--kx-violet); display: flex; align-items: center; }
   .strip::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 70px; z-index: 1; background: linear-gradient(90deg, rgba(42,43,44,1) 35%, rgba(42,43,44,0)); }
+  .strip .fade-r { position: absolute; inset: 0 0 0 auto; width: 90px; z-index: 1; background: linear-gradient(-90deg, rgba(42,43,44,1) 20%, rgba(42,43,44,0)); }
+  .item .sep { display: inline-grid; place-items: center; width: 26px; height: 26px; opacity: .85; }
+  .item .sep img { width: 100%; height: 100%; object-fit: contain; }
+  /* Entrée : la bande monte, le badge se dévoile, puis le texte apparaît */
+  .bar:not(.off) .badge { animation: kx-wipe .6s var(--kx-out) .1s backwards; }
+  .bar:not(.off) .strip { animation: stripIn .7s var(--kx-out) .25s backwards; }
+  .bar:not(.off) .track { animation-delay: 0s; }
+  @keyframes stripIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
   .track { display: flex; flex: none; align-items: center; white-space: nowrap; will-change: transform; }
   .item { display: inline-flex; align-items: center; gap: 30px; padding-right: 30px; font: 600 21px/1 var(--f-body); color: var(--kx-white); }
   .item .k { width: 8px; height: 8px; background: var(--kx-violet); transform: rotate(45deg); }
@@ -26,14 +38,14 @@
 <body class="overlay">
 <div class="bar off" id="bar">
   <div class="badge" id="badge"></div>
-  <div class="strip kx-neon-line" style="--nh:2px;--nd:6s"><div class="track" id="track"></div></div>
+  <div class="strip kx-neon-line" style="--nh:2px;--nd:6s"><div class="track" id="track"></div><i class="fade-r"></i></div>
 </div>
 <script src="/js/kx.js"></script>
 <script>
 if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
 KX.watch(st => !!st.ticker?.visible, st => document.getElementById('bar').classList.toggle('off', !st.ticker?.visible));
 KX.watch(st => [st.settings?.logo, st.settings?.teamName], st => {
-  document.getElementById('badge').innerHTML = `${KX.logo(st)}<b>${KX.esc(st.settings?.teamName)}</b>`;
+  document.getElementById('badge').innerHTML = `${KX.logo(st)}<b>${KX.esc(st.settings?.teamName)}</b><i class="live"></i>`;
 });
 // Défilement sans couture : un « groupe » assez long pour couvrir toute la bande, répété deux fois,
 // et on décale exactement de la largeur d'un groupe (en px) pour boucler sans saut ni trou.
@@ -59,9 +71,10 @@ function layout() {
   }));
 }
 // La piste ne redémarre que si les messages, les réseaux ou la vitesse changent
-KX.watch(st => [messages(st), KX.socials(st), st.ticker?.speed], st => {
-  const soc = KX.socials(st).map(s => `<span class="item">${KX.icon(s.key, 22)}<em>${KX.esc(s.handle)}</em><i class="k"></i></span>`).join('');
-  html = messages(st).map(x => `<span class="item">${KX.esc(x)}<i class="k"></i></span>`).join('') + soc;
+KX.watch(st => [messages(st), KX.socials(st), st.ticker?.speed, st.settings?.logo], st => {
+  const sep = `<span class="sep">${KX.logo(st)}</span>`; // séparateur : le logo de l'équipe
+  const soc = KX.socials(st).map(s => `<span class="item">${KX.icon(s.key, 22)}<em>${KX.esc(s.handle)}</em>${sep}</span>`).join('');
+  html = messages(st).map(x => `<span class="item">${KX.esc(x)}${sep}</span>`).join('') + soc;
   speed = Math.max(20, Number(st.ticker?.speed) || 60); // jamais figé, même pendant la saisie de la vitesse
   layout();
 });

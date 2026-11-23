@@ -1,7 +1,7 @@
 {
   "name": "streampack-kaelyx",
   "productName": "Streampack Kaelyx",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Overlays OBS Kaelyx Esport avec console admin",
   "main": "electron/main.js",
   "private": true,

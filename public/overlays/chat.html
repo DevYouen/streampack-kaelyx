@@ -22,7 +22,16 @@
   .m .t img { height: 28px; vertical-align: -7px; margin: 0 1px; }
   @keyframes in { from { opacity: 0; transform: translateX(40px); } }
   /* Refonte : pseudo blanc (meilleur contraste), barre violette à gauche */
-  .m { box-shadow: inset 4px 0 0 var(--kx-violet); --c: 0px; }
+  .m { box-shadow: none; --c: 0px; overflow: hidden; animation: mIn .55s var(--kx-out) both;
+    transition: opacity .35s, transform .35s var(--kx-ease), height .4s var(--kx-ease), padding .4s var(--kx-ease), margin .4s var(--kx-ease); }
+  /* Barre violette qui pousse d'abord, puis le message sort de son masque */
+  .m::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--kx-violet); transform-origin: top; animation: mBar .35s var(--kx-out) both; }
+  .m .h, .m .t { animation: mTxt .5s var(--kx-out) .12s both; }
+  @keyframes mIn { from { clip-path: inset(0 100% 0 0); transform: translateX(-12px); } to { clip-path: inset(0); transform: none; } }
+  @keyframes mBar { from { transform: scaleY(0); } }
+  @keyframes mTxt { from { opacity: 0; transform: translateY(10px); } }
+  .m.out { opacity: 0; transform: translateX(-24px); }
+  .m.gone { height: 0 !important; padding-top: 0; padding-bottom: 0; margin-top: -10px; }
   .embed .m { background: rgba(42,43,44,.82); }
   .m .u { font: italic 800 21px/1.1 var(--f-title); color: var(--kx-white); text-shadow: none; letter-spacing: .03em; }
   .m .b { background: var(--kx-deep); box-shadow: none; }
@@ -58,7 +67,14 @@ function add(m, animate = true) {
   while (list.children.length > MAX) list.firstElementChild.remove();
   if (hide) setTimeout(() => remove(el), (hide - age) * 1000);
 }
-function remove(el) { el.classList.add('out'); setTimeout(() => el.remove(), 500); }
+// Sortie : le message glisse, puis la liste se referme en douceur
+function remove(el) {
+  if (el.classList.contains('out')) return;
+  el.style.height = el.offsetHeight + 'px'; el.style.animation = 'none';
+  el.classList.add('out');
+  setTimeout(() => el.classList.add('gone'), 300);
+  setTimeout(() => el.remove(), 750);
+}
 
 KX.on('chat', m => add(m));
 KX.on('chat-clear', c => {

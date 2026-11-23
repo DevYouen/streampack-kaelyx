@@ -32,38 +32,42 @@
 
   /* Cam + plaque nom */
   .cam { position: absolute; }
-  .plate { position: absolute; display: flex; height: var(--ph, 72px); filter: var(--kx-shadow); }
-  .plate .lg { width: var(--ph, 72px); flex: none; display: grid; place-items: center; background: var(--kx-grad); }
-  .plate .lg img { width: 60%; height: 60%; object-fit: contain; }
-  .plate .mn { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 20px;
-    background: var(--kx-panel); box-shadow: inset 0 -3px 0 var(--kx-violet); }
-  .plate .mn b { font-size: calc(var(--ph, 72px) * .56); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
-  .plate .mn small { font-size: calc(var(--ph, 72px) * .17); white-space: nowrap; }
-  .plate .hd { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 24px 0 18px; background: var(--kx-deep);
-    font: 600 calc(var(--ph, 72px) * .22)/1 var(--f-body); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
-  .plate .mn:last-child { clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .plate { position: absolute; }
 
   #ticker { position: absolute; left: 0; bottom: 0; width: 1920px; height: 64px; border: 0; }
 
   .enter .cam { animation: camIn .6s var(--kx-out) both; }
-  .enter .plate { animation: kx-wipe .7s .15s var(--kx-out) both; }
   .enter .head, .enter .score { animation: kx-rise .7s var(--kx-out) both; }
+  .enter .head h1 .kx-ch { animation: kx-chIn .7s var(--kx-out) backwards; animation-delay: calc(.15s + var(--i) * 30ms); }
+  .head .mask { overflow: hidden; padding: 12px 10px 2px 0; margin: -12px 0 -2px; }
+  /* Fond soie (WebGL) et bande fine */
+  .silk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 1.6s ease; }
+  .silk.on { opacity: 1; } .silk.on ~ .halo { display: none; }
+  .band.hair { width: 4px; opacity: .45; background: var(--kx-silver); }
+  /* Score : chiffres qui défilent, flash quand une équipe marque */
+  .score .sc.hit { animation: scHit .9s var(--kx-out); }
+  @keyframes scHit { 0% { box-shadow: 0 0 0 0 rgba(243,241,241,.9), 0 0 36px rgba(153,51,204,.9); transform: scale(1.12); } 100% { box-shadow: 0 0 0 12px rgba(243,241,241,0); transform: none; } }
   @keyframes camIn { from { opacity: 0; transform: scale(.97); } }
 </style>
 </head>
 <body class="overlay">
 <div class="bg" id="bg">
+  <canvas class="silk" id="silk"></canvas>
   <div class="halo"></div>
   <div class="grid-bg"></div>
   <div class="band" style="left:1780px"></div>
   <div class="band thin" style="left:1730px"></div>
+  <div class="band hair" style="left:1686px"></div>
 </div>
 <div id="root"></div>
 <iframe id="ticker" scrolling="no" style="display:none"></iframe>
 <script src="/js/kx.js"></script>
+<script src="/js/kx-fx.js"></script>
 <script>
 const PIP = location.pathname.replace(/\/$/, '').endsWith('/pip');
 if (PIP) document.getElementById('bg').classList.add('off');
+else KXFX.silk(document.getElementById('silk'), { focus: [.5, .5], strength: .85 });
+let scorePrev = null;
 let lastKey = '';
 
 // Plein écran : place les cams selon leur nombre
@@ -74,11 +78,10 @@ const DESK = {
 };
 const PIP_SIZES = { s: [320, 180], m: [384, 216], l: [480, 270] };
 
-function plate(st, c, x, y, w, ph) {
-  const handle = c.handle ? `<div class="hd">${KX.icon('twitch', Math.round(ph * .26))}${KX.esc(c.handle)}</div>` : '';
-  return `<div class="plate" style="left:${x}px;top:${y}px;width:${w}px;--ph:${ph}px">
-    <div class="lg">${KX.logo(st)}</div>
-    <div class="mn kx-neon-line bottom"><b class="t-title">${KX.esc(c.name || 'Caster')}</b>${c.role ? `<small class="t-label">${KX.esc(c.role)}</small>` : ''}</div>${handle}</div>`;
+function plate(st, c, x, y, w, ph, k) {
+  const enter = document.getElementById('root').classList.contains('enter');
+  return KX.plate(st, { name: c.name || 'Caster', meta: c.role ? KX.esc(c.role) : '', handle: c.handle ? KX.icon('twitch', Math.round(ph * .26)) + KX.esc(c.handle) : '',
+    cls: 'plate' + (enter ? ' kxp-in' : ''), style: `left:${x}px;top:${y}px;width:${w}px;--ph:${ph}px;--d:${(0.15 + k * 0.1).toFixed(2)}s` });
 }
 
 function render(st) {
@@ -109,14 +112,23 @@ function render(st) {
     // En-tête et score
     const v = st.scoreboard?.vs || {};
     html += `<div class="head">${KX.logo(st)}<div class="claws" style="--h:44px"><i></i><i></i><i></i></div>
-      <div><div class="t-label">${KX.esc(C.kicker)}</div><h1 class="t-title">${KX.esc(C.title)}</h1></div></div>`;
-    if (C.showScore && v.a && v.b) html += `<div class="score"><div class="tm a">${KX.esc(v.a)}</div><div class="sc a">${Number(v.scoreA) || 0}</div>
-      <div class="lb">${KX.esc(v.label || 'VS')}</div><div class="sc">${Number(v.scoreB) || 0}</div><div class="tm b">${KX.esc(v.b)}</div></div>`;
+      <div><div class="t-label">${KX.esc(C.kicker)}</div><div class="mask"><h1 class="t-title">${KX.chars(C.title)}</h1></div></div></div>`;
+    if (C.showScore && v.a && v.b) html += `<div class="score"><div class="tm a">${KX.esc(v.a)}</div><div class="sc a" id="scA" data-v="${scorePrev ? scorePrev.a : 0}">${scorePrev ? scorePrev.a : 0}</div>
+      <div class="lb">${KX.esc(v.label || 'VS')}</div><div class="sc" id="scB" data-v="${scorePrev ? scorePrev.b : 0}">${scorePrev ? scorePrev.b : 0}</div><div class="tm b">${KX.esc(v.b)}</div></div>`;
     KX.holeMask(document.getElementById('bg'), 1920, 1080, boxes.map(b => KX.chamferPts(b.x, b.y, b.w, b.h, 0)));
   }
   html += boxes.map(b => `<div class="cam" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${KX.frame(b.w, b.h, PIP ? 18 : undefined)}</div>`
-    + plate(st, b.c, b.x, b.y + b.h + (PIP ? 10 : 14), b.w, b.ph)).join('');
+    + plate(st, b.c, b.x, b.y + b.h + (PIP ? 10 : 14), b.w, b.ph, boxes.indexOf(b))).join('');
   root.innerHTML = html;
+  // Score du VS : défile jusqu'à sa valeur, et flash sur l'équipe qui vient de marquer
+  const v2 = st.scoreboard?.vs || {}, a = Number(v2.scoreA) || 0, bb = Number(v2.scoreB) || 0;
+  const sA = document.getElementById('scA'), sB = document.getElementById('scB');
+  if (sA && sB) {
+    KX.roll(sA, a, 600); KX.roll(sB, bb, 600);
+    if (scorePrev && a > scorePrev.a) sA.classList.add('hit');
+    if (scorePrev && bb > scorePrev.b) sB.classList.add('hit');
+  }
+  scorePrev = { a, b: bb };
 
   const tf = document.getElementById('ticker');
   const showT = st.ticker?.visible && !PIP;

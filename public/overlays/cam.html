@@ -8,14 +8,7 @@
   /* La source OBS fait exactement la taille réglée (ex. 640 × 360). Le cadre est dessiné 6 px à l’intérieur pour les équerres. */
   html, body { background: transparent; overflow: hidden; color: var(--kx-white); font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
   #box { position: absolute; left: 6px; top: 6px; }
-  .name { position: absolute; left: 0; bottom: 0; display: flex; align-items: stretch; height: var(--nh); max-width: 92%; }
-  .name .lg { width: var(--nh); flex: none; display: grid; place-items: center; background: var(--kx-grad); }
-  .name .lg img { width: 62%; height: 62%; object-fit: contain; }
-  .name .tx { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 calc(var(--nh) * .5) 0 calc(var(--nh) * .3);
-    background: var(--kx-panel); clip-path: polygon(0 0, 100% 0, calc(100% - var(--nh) * .25) 100%, 0 100%); }
-  .name b { font-size: calc(var(--nh) * .56); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
-  .name small { font-size: calc(var(--nh) * .2); white-space: nowrap; color: var(--kx-silver); }
-  .name { animation: kx-wipe .6s .2s var(--kx-out) both; }
+  .name { position: absolute; left: 0; bottom: 0; max-width: 92%; }
 </style>
 </head>
 <body>
@@ -36,8 +29,8 @@ KX.watch(st => [st.camframe, st.settings?.logo, q.get('player') && (st.players |
   const fw = w - 12, fh = h - 12; // le cadre est dessiné 6 px à l'intérieur : la source OBS fait w × h
   box.style.width = fw + 'px'; box.style.height = fh + 'px';
   box.style.setProperty('--nh', Math.round(Math.max(34, Math.min(64, fh * .15))) + 'px');
-  box.innerHTML = KX.frame(fw, fh) + (name ? `<div class="name"><div class="lg">${KX.logo(st)}</div>
-    <div class="tx"><b class="t-title">${KX.esc(name)}</b>${sub ? `<small class="t-label">${KX.esc(sub)}</small>` : ''}</div></div>` : '');
+  const nh = Math.round(Math.max(34, Math.min(64, fh * .15)));
+  box.innerHTML = KX.frame(fw, fh) + (name ? KX.plate(st, { name, meta: sub ? KX.esc(sub) : '', photo: pl?.photo, cls: 'name kxp-in', style: `--ph:${nh}px;--d:.2s` }) : '');
 });
 </script>
 </body>

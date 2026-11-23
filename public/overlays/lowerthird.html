@@ -5,51 +5,87 @@
 <title>Lower third — Kaelyx</title>
 <link rel="stylesheet" href="/css/kx.css">
 <style>
-  .lt { position: absolute; left: 96px; bottom: 140px; display: flex; align-items: stretch; height: 112px; filter: var(--kx-shadow); }
-  .lt-mark { width: 112px; flex: none; display: grid; place-items: center; background: var(--kx-grad); z-index: 2; }
-  .lt-mark img { width: 70px; height: 70px; object-fit: contain; }
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  .lt { position: absolute; left: 96px; bottom: 140px; display: flex; align-items: stretch; height: 116px; filter: var(--kx-shadow); visibility: hidden; }
+  .lt.in, .lt.out { visibility: visible; }
+  /* Carré logo (ou photo du joueur) */
+  .lt-mark { position: relative; width: 116px; flex: none; overflow: hidden; z-index: 2; perspective: 600px;
+    background: linear-gradient(180deg, rgba(243,241,241,.22), transparent 55%), var(--kx-grad); box-shadow: inset 0 0 0 1px rgba(243,241,241,.18); }
+  .lt-mk { position: absolute; inset: 0; display: grid; place-items: center; }
+  .lt-mk img { width: 64%; height: 64%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,.35)); }
+  .lt-mk img.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: none; }
+  .lt-mk.has-ph img:not(.ph) { display: none; }
+  .lt-mark::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; left: -90px; background: linear-gradient(100deg, transparent, rgba(243,241,241,.4), transparent); animation: mkShine 7s ease-in-out 1.5s infinite; }
+  @keyframes mkShine { 0%, 85% { left: -90px; } 100% { left: 130%; } }
   .lt-body { display: flex; flex-direction: column; }
-  .lt-name { flex: 1; display: flex; align-items: center; padding: 0 56px 0 28px; background: var(--kx-panel); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
-  .lt-name span { font-size: 64px; white-space: nowrap; padding-right: 8px; }
-  .lt-title { height: 38px; display: flex; align-items: center; gap: 12px; padding: 0 36px 0 28px; width: max-content; background: var(--kx-violet); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
-  .lt-title .k { display: none; }
-  .lt-title span { font: 700 16px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--kx-white); }
-  .lt .claws { display: none; }
-  .lt .bar { display: none; }
-
-  .lt { visibility: hidden; }
-  .lt.in { visibility: visible; }
-  .lt.in .lt-mark { animation: pop .5s var(--kx-out) both; }
-  /* "backwards" et non "both" : à la fin de l'animation, la coupe en biais (clip-path) de chaque bloc revient */
-  .lt.in .lt-name { animation: kx-wipe .6s .12s var(--kx-out) backwards; }
-  .lt.in .lt-title { animation: kx-wipe .6s .26s var(--kx-out) backwards; }
-  .lt-title { --nh: 100%; --nd: 4s; }
+  /* Bandeau nom : dévoilé par un volet oblique violet qui le traverse */
+  .lt-name { position: relative; flex: 1; display: flex; align-items: center; padding: 0 64px 0 30px; overflow: hidden;
+    background: linear-gradient(180deg, rgba(243,241,241,.08), rgba(243,241,241,0) 45%),
+      repeating-linear-gradient(-66deg, rgba(153,51,204,.10) 0 2px, transparent 2px 10px) right / 30% 100% no-repeat, var(--kx-panel);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  .lt-name .mask { overflow: hidden; padding: 10px 8px 4px 0; margin: -10px 0 -4px; }
+  .lt-name .mask > span { display: block; font-size: 66px; white-space: nowrap; }
+  .lt-edge { position: absolute; top: -10px; bottom: -10px; left: -40px; width: 34px; transform: skewX(-9deg); background: var(--kx-violet); opacity: 0; pointer-events: none; }
+  .lt-edge::after { content: ''; position: absolute; top: 0; bottom: 0; right: -5px; width: 5px; background: var(--kx-white); }
+  .lt-title { position: relative; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 40px 0 30px; width: max-content; overflow: hidden;
+    background: var(--kx-violet); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); --nh: 100%; --nd: 4s; }
   .lt-title.kx-neon-line::after { opacity: .55; }
-  .lt.out { visibility: visible; animation: out .4s var(--kx-ease) both; }
-  @keyframes pop { from { transform: scaleY(0); } }
-  @keyframes out { to { clip-path: inset(0 100% 0 0); opacity: 0; } }
+  .lt-title span { display: block; font: 700 16px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--kx-white); white-space: nowrap; }
+  .lt-cap { display: flex; gap: 6px; align-self: flex-start; height: 116px; padding: 16px 0 56px; margin-left: 4px; transform: skewX(-12deg); }
+  .lt-cap i { width: 7px; background: var(--kx-violet); } .lt-cap i:nth-child(2) { opacity: .6; } .lt-cap i:nth-child(3) { opacity: .3; }
+
+  /* Entrée */
+  .lt.in .lt-mark { animation: mkIn .5s var(--kx-out) backwards; }
+  .lt.in .lt-mk { animation: mkTurn .8s var(--kx-out) .12s backwards; }
+  .lt.in .lt-name { animation: reveal .65s var(--sw) .1s backwards; }
+  .lt.in .lt-edge { animation: edge .65s var(--sw) .1s both; }
+  .lt.in .lt-name .kx-ch { animation: kx-chIn .6s var(--kx-out) backwards; animation-delay: calc(.38s + var(--i) * 26ms); }
+  .lt.in .lt-title { animation: reveal2 .55s var(--sw) .34s backwards; }
+  .lt.in .lt-title span { animation: kxp-up .55s var(--kx-out) .5s backwards; }
+  .lt.in .lt-cap i { animation: kxp-cap .4s var(--kx-out) backwards; animation-delay: .6s; }
+  .lt.in .lt-cap i:nth-child(2) { animation-delay: .66s; } .lt.in .lt-cap i:nth-child(3) { animation-delay: .72s; }
+  @keyframes mkIn { from { transform: scaleY(0); } }
+  @keyframes mkTurn { from { transform: rotateY(90deg); opacity: 0; } }
+  @keyframes reveal { from { clip-path: polygon(0 0, 18px 0, 0 100%, 0 100%); } to { clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); } }
+  @keyframes reveal2 { from { clip-path: polygon(0 0, 12px 0, 0 100%, 0 100%); } to { clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); } }
+  @keyframes edge { 0% { left: -40px; opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 40px); opacity: 0; } }
+  /* Sortie : le texte rentre, le bandeau se replie, le carré se ferme */
+  .lt.out .lt-name .kx-ch { animation: kx-chOut .25s ease-in forwards; animation-delay: calc(var(--i) * 12ms); }
+  .lt.out .lt-title, .lt.out .lt-cap { animation: hideL .35s var(--sw) .1s forwards; }
+  .lt.out .lt-name { animation: hideL .45s var(--sw) .18s forwards; }
+  .lt.out .lt-mark { animation: mkOut .3s var(--sw) .45s forwards; }
+  @keyframes hideL { to { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); } }
+  @keyframes mkOut { to { transform: scaleY(0); } }
 </style>
 </head>
 <body class="overlay">
 <div class="lt" id="lt">
-  <div class="claws"><i></i><i></i><i></i></div>
-  <div class="lt-mark" id="mark"></div>
+  <div class="lt-mark"><div class="lt-mk" id="mark"></div></div>
   <div class="lt-body">
-    <div class="lt-name"><span class="t-title" id="name"></span></div>
-    <div class="lt-title kx-neon-line"><i class="k"></i><span id="title"></span></div>
+    <div class="lt-name"><div class="mask"><span class="t-title" id="name"></span></div><i class="lt-edge"></i></div>
+    <div class="lt-title kx-neon-line"><span id="title"></span></div>
   </div>
-  <div class="bar"></div>
+  <div class="lt-cap" aria-hidden="true"><i></i><i></i><i></i></div>
 </div>
 <script src="/js/kx.js"></script>
 <script>
 const lt = document.getElementById('lt');
-let shown = false, hideT, lastKey = '', lastShowAt;
-function show() { lt.classList.remove('out'); void lt.offsetWidth; lt.classList.add('in'); shown = true; }
-function hide() { if (!shown) return; lt.classList.remove('in'); lt.classList.add('out'); shown = false; }
-KX.watch(st => st.settings?.logo, st => { document.getElementById('mark').innerHTML = KX.logo(st); });
+let shown = false, hideT, outT, lastKey = '', lastShowAt, lastMark = '';
+function show() { clearTimeout(outT); lt.classList.remove('out', 'in'); void lt.offsetWidth; lt.classList.add('in'); shown = true; }
+function hide() { if (!shown) return; lt.classList.remove('in'); lt.classList.add('out'); shown = false; outT = setTimeout(() => lt.classList.remove('out'), 900); }
 KX.on('state', st => {
   const l = st.lowerthird || {};
-  document.getElementById('name').textContent = l.name || '';
+  // Photo du joueur si le nom correspond à un joueur qui en a une, sinon le logo
+  const pl = (st.players || []).find(p => p.photo && p.pseudo && p.pseudo.toLowerCase() === String(l.name || '').trim().toLowerCase());
+  const markKey = (pl?.photo || '') + '|' + (st.settings?.logo || '');
+  if (markKey !== lastMark) {
+    lastMark = markKey;
+    const m = document.getElementById('mark');
+    m.classList.toggle('has-ph', !!pl);
+    m.innerHTML = (pl ? `<img class="ph" src="${KX.esc(pl.photo)}" alt="" onerror="this.parentElement.classList.remove('has-ph');this.remove()">` : '') + KX.logo(st);
+  }
+  const nameEl = document.getElementById('name');
+  if (nameEl.dataset.t !== (l.name || '')) { nameEl.dataset.t = l.name || ''; nameEl.innerHTML = KX.chars(l.name || ''); }
   document.getElementById('title').textContent = l.title || '';
   const auto = Number(l.autoHide) || 0;
   const key = (l.visible ? 1 : 0) + '|' + (l.showAt || 0) + '|' + auto;

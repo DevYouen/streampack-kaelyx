@@ -131,3 +131,49 @@ html.kx-viewer { height: 100%; overflow: hidden; background-color: #1d1e1f;
   background-size: 32px 32px; background-position: 0 0, 16px 16px; }
 html.kx-viewer body.overlay { position: absolute; left: 50%; top: 50%; transform-origin: center;
   transform: translate(-50%, -50%) scale(var(--kx-fit, 1)); outline: 1px solid rgba(201, 204, 209, .25); }
+
+/* ---------- Texte lettre par lettre (KX.chars) ---------- */
+.kx-w { display: inline-block; white-space: nowrap; }
+.kx-ch { display: inline-block; }
+@keyframes kx-chIn { from { transform: translateY(106%) skewX(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kx-chOut { to { transform: translateY(-70%); opacity: 0; } }
+
+/* ---------- Plaque nom (KX.plate) : même style que les plaques des POV ---------- */
+.kxp { display: flex; height: var(--ph, 72px); filter: var(--kx-shadow); }
+.kxp-sq { position: relative; width: var(--ph, 72px); flex: none; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(180deg, rgba(243,241,241,.22), transparent 55%), var(--kx-grad); box-shadow: inset 0 0 0 1px rgba(243,241,241,.18); }
+.kxp-sq img { position: relative; width: 60%; height: 60%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+.kxp-sq img.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: none; }
+.kxp-sq.has-ph img:not(.ph) { display: none; }
+.kxp-sq.has-ph::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 -3px 0 var(--kx-violet), inset 0 0 0 1px rgba(243,241,241,.18); }
+.kxp-main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--ph, 72px) * .07);
+  padding: 0 calc(var(--ph, 72px) * .42) 0 calc(var(--ph, 72px) * .28);
+  background: linear-gradient(180deg, rgba(243,241,241,.08), rgba(243,241,241,0) 45%),
+    repeating-linear-gradient(-66deg, rgba(153,51,204,.10) 0 2px, transparent 2px 9px) right / 34% 100% no-repeat, var(--kx-panel);
+  box-shadow: inset 0 -3px 0 var(--kx-violet), inset 0 1px 0 rgba(243,241,241,.1); }
+.kxp-name { display: block; font-size: calc(var(--ph, 72px) * .56); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+.kxp-meta { display: block; font-size: max(11px, calc(var(--ph, 72px) * .17)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kxp-meta i { display: inline-block; width: 4px; height: 4px; margin: 0 10px 2px; background: var(--kx-violet); vertical-align: middle; }
+.kxp-hd { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 24px 0 18px; background: var(--kx-deep); font: 600 calc(var(--ph, 72px) * .22)/1 var(--f-body); color: var(--kx-white); }
+.kxp-cap { flex: none; display: flex; gap: 5px; align-items: stretch; margin-left: -6px; padding: calc(var(--ph, 72px) * .14) 0; transform: skewX(-12deg); }
+.kxp-cap i { display: block; width: 6px; background: var(--kx-violet); }
+.kxp-cap i:nth-child(2) { opacity: .6; } .kxp-cap i:nth-child(3) { opacity: .3; }
+.kxp > :nth-last-child(2) { clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.kxp.right { flex-direction: row-reverse; }
+.kxp.right .kxp-main { text-align: right; padding: 0 calc(var(--ph, 72px) * .28) 0 calc(var(--ph, 72px) * .42); }
+.kxp.right .kxp-cap { margin: 0 -6px 0 0; transform: skewX(12deg); }
+.kxp.right > :nth-last-child(2) { clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); }
+/* Entrée en trois temps : classe .kxp-in, délai réglable avec --d */
+.kxp-in { animation: kx-wipe .7s var(--kx-out) backwards; animation-delay: var(--d, 0s); }
+.kxp-in.right { animation-name: kxp-wipeR; }
+.kxp-in .kxp-sq { animation: kxp-sq .55s var(--kx-out) backwards; animation-delay: var(--d, 0s); }
+.kxp-in.right .kxp-sq { animation-name: kxp-sqR; }
+.kxp-in .kxp-name { animation: kxp-up .6s var(--kx-out) backwards; animation-delay: calc(var(--d, 0s) + .18s); }
+.kxp-in .kxp-meta, .kxp-in .kxp-hd { animation: kxp-up .6s var(--kx-out) backwards; animation-delay: calc(var(--d, 0s) + .26s); }
+.kxp-in .kxp-cap i { animation: kxp-cap .4s var(--kx-out) backwards; animation-delay: calc(var(--d, 0s) + .32s); }
+.kxp-in .kxp-cap i:nth-child(2) { animation-delay: calc(var(--d, 0s) + .38s); } .kxp-in .kxp-cap i:nth-child(3) { animation-delay: calc(var(--d, 0s) + .44s); }
+@keyframes kxp-wipeR { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes kxp-sq { from { transform: translateX(-100%); } }
+@keyframes kxp-sqR { from { transform: translateX(100%); } }
+@keyframes kxp-up { from { transform: translateY(70%); opacity: 0; } }
+@keyframes kxp-cap { from { transform: translateX(-14px); opacity: 0; } }
