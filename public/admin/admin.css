@@ -646,3 +646,48 @@ body:has(.login) { overflow: hidden; }
 .preview.private .pv-screen { border-color: var(--kx-white); box-shadow: 0 0 0 4px rgba(243,241,241,.15), 0 0 40px -6px rgba(243,241,241,.35); }
 .preview.private .pv-head code { color: var(--kx-white); font-family: var(--f-body); font-weight: 700; padding: 6px 10px; background: var(--kx-deep); border-left: 3px solid var(--kx-white); }
 .preview.private .pv-title::before { background: var(--kx-white); animation: none; }
+
+/* ---------- Interactif ---------- */
+.poll-res { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.pr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 2fr) 50px; align-items: center; gap: 12px; font-weight: 600; }
+.pr span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr b { text-align: right; font: 800 22px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+.chat-list { display: flex; flex-direction: column; gap: 4px; max-height: 420px; overflow: auto; }
+.cm { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 7px 8px 7px 12px; background: var(--sink); border: 1px solid var(--line); }
+.cm b { font: italic 800 17px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; }
+.cm span { font-size: 14px; color: var(--kx-silver); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm .btn { min-height: 32px; padding: 0 12px; font-size: 10px; }
+.cm:hover { border-color: rgba(153,51,204,.5); }
+
+/* ---------- Tournoi ---------- */
+.br-list { display: flex; flex-direction: column; gap: 8px; }
+.br-m { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px; background: var(--sink); border: 1px solid var(--line); }
+.br-m.done { border-color: rgba(153,51,204,.55); }
+.br-m > b { font: italic 800 20px/1 var(--f-title); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-m > b.tbd { color: rgba(201,204,209,.45); font: 600 13px/1 var(--f-body); text-transform: none; }
+.br-m .rg-num { font-size: 26px; min-width: 34px; }
+.br-m .btn.sq { width: 34px; min-height: 34px; font-size: 15px; }
+.br-vs { font: italic 800 14px/1 var(--f-title); color: var(--kx-violet); }
+.kx-compact .br-m { grid-template-columns: 1fr auto; }
+
+/* ---------- Check-list ---------- */
+.ck-sum { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ck-sum b { font: italic 800 30px/1 var(--f-title); text-transform: uppercase; }
+.ck-sum.ok { border-color: rgba(153,51,204,.6); background: linear-gradient(110deg, rgba(86,28,115,.5), rgba(42,43,44,.55) 60%); }
+.ck-sum.warn b { color: var(--kx-white); }
+.ck-list { display: flex; flex-direction: column; gap: 6px; }
+.ck { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 12px; background: var(--sink); border: 1px solid var(--line); }
+.ck i { width: 30px; height: 30px; display: grid; place-items: center; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+.ck i svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.ck.ok i { background: var(--kx-violet); color: var(--kx-white); }
+.ck.warn i { background: var(--kx-white); color: var(--kx-bg); }
+.ck.warn { border-color: rgba(243,241,241,.45); }
+.ck.info i { background: var(--surface-3); color: var(--kx-silver); }
+.ck b { display: block; font-weight: 700; } .ck span { display: block; font-size: 13px; color: var(--kx-silver); margin-top: 2px; }
+.ck .btn { min-height: 34px; padding: 0 14px; font-size: 11px; }
+.ck-banner { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-bottom: 16px; padding: 12px 18px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--surface); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); transition: background .2s; }
+.ck-banner b { font-weight: 700; } .ck-banner span { font: 700 11px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--kx-silver); }
+.ck-banner.warn { background: linear-gradient(90deg, rgba(243,241,241,.16), rgba(243,241,241,.03)); border-color: rgba(243,241,241,.5); }
+.ck-banner.ok { background: linear-gradient(90deg, rgba(153,51,204,.28), rgba(153,51,204,.05)); border-color: rgba(153,51,204,.5); }
+.ck-banner:hover { filter: brightness(1.15); }

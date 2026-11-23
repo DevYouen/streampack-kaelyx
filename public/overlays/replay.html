@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Replay — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  /* Habillage du replay, posé sur la vidéo dans la scène OBS « Kaelyx · Replay » (créée par l'admin) */
+  .rp { position: absolute; inset: 0; visibility: hidden; }
+  .rp.in, .rp.out { visibility: visible; }
+  .corner { position: absolute; width: 70px; height: 70px; border: 0 solid var(--kx-white); opacity: .85; }
+  .corner.tl { left: 36px; top: 36px; border-width: 4px 0 0 4px; } .corner.tr { right: 36px; top: 36px; border-width: 4px 4px 0 0; }
+  .corner.bl { left: 36px; bottom: 36px; border-width: 0 0 4px 4px; } .corner.br { right: 36px; bottom: 36px; border-width: 0 4px 4px 0; }
+  .edge { position: absolute; inset: 0; box-shadow: inset 0 0 0 6px rgba(153,51,204,.55), inset 0 0 120px rgba(86,28,115,.45); }
+  .band { position: absolute; left: 70px; top: 70px; display: flex; align-items: stretch; height: 84px; filter: var(--kx-shadow); }
+  .band .lg { width: 84px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(243,241,241,.2), transparent 55%), var(--kx-grad); }
+  .band .lg img { width: 54px; height: 54px; object-fit: contain; }
+  .band .tx { display: flex; align-items: center; gap: 18px; padding: 0 44px 0 24px; background: rgba(42,43,44,.95); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  .band .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--kx-violet); animation: rec 1.2s ease-in-out infinite; }
+  @keyframes rec { 50% { opacity: .25; } }
+  .band b { font: italic 900 62px/1 var(--f-title); letter-spacing: .06em; text-transform: uppercase; padding-right: 6px; }
+  .band .slow { display: none; padding: 7px 12px; font: 800 14px/1 var(--f-body); letter-spacing: .22em; text-transform: uppercase; background: var(--kx-white); color: var(--kx-bg); }
+  .rp.slow .band .slow { display: inline-block; }
+  .tag { position: absolute; right: 70px; bottom: 70px; display: flex; align-items: center; gap: 12px; font: 800 14px/1 var(--f-body); letter-spacing: .26em; text-transform: uppercase; color: rgba(243,241,241,.8); }
+  .tag .claws { --h: 18px; }
+  .rp.in .band .lg { animation: lgIn .45s var(--kx-out) backwards; }
+  .rp.in .band .tx { animation: kx-wipe .6s var(--kx-out) .1s backwards; }
+  .rp.in .band b .kx-ch { animation: kx-chIn .55s var(--kx-out) backwards; animation-delay: calc(.25s + var(--i) * 40ms); }
+  .rp.in .corner, .rp.in .edge, .rp.in .tag { animation: fadeIn .5s ease .2s backwards; }
+  @keyframes lgIn { from { transform: scaleY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .rp.out { animation: rpOut .4s ease forwards; }
+  @keyframes rpOut { to { opacity: 0; } }
+</style>
+</head>
+<body class="overlay">
+<div class="rp" id="rp">
+  <div class="edge"></div><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+  <div class="band"><div class="lg" id="lg"></div><div class="tx"><i class="dot"></i><b class="t-title" id="word"></b><span class="slow">Ralenti</span></div></div>
+  <div class="tag"><div class="claws"><i></i><i></i><i></i></div><span id="team"></span></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const rp = document.getElementById('rp');
+document.getElementById('word').innerHTML = KX.chars('Replay');
+let shown = false;
+function show(slow) { rp.classList.toggle('slow', !!slow); rp.classList.remove('out', 'in'); void rp.offsetWidth; rp.classList.add('in'); shown = true; }
+function hide() { if (!shown) return; rp.classList.remove('in'); rp.classList.add('out'); shown = false; setTimeout(() => { if (!shown) rp.classList.remove('out'); }, 450); }
+KX.watch(st => [st.settings?.logo, st.settings?.teamName, st.settings?.teamSub], st => {
+  document.getElementById('lg').innerHTML = KX.logo(st);
+  document.getElementById('team').textContent = [st.settings?.teamName, st.settings?.teamSub].filter(Boolean).join(' ');
+});
+KX.on('trigger', t => { if (t.kind === 'replay-start') show(t.slow); if (t.kind === 'replay-end') hide(); });
+// La scène de replay passe à l'antenne : l'habillage entre (même sans message du serveur)
+addEventListener('obsSourceActiveChanged', e => { if (e.detail?.active && !shown) show(false); if (!e.detail?.active) hide(); });
+// Aperçu (admin, navigateur) : visible pour voir le rendu
+if (!window.obsstudio) show(false);
+</script>
+</body>
+</html>

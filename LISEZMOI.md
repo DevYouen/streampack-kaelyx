@@ -34,6 +34,14 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 - **Aperçu privé** : bouton « Tester en privé » (lower third, alertes) : l'overlay s'affiche dans l'aperçu de l'admin seulement, rien n'est envoyé à l'antenne.
 - **Configurations enregistrées** (Réglages) : enregistre toute la config pour un événement et recharge-la en un clic.
 
+## Interactif, tournoi, check-list
+- **Sondage par le chat** (Admin › Interactif, overlay `/sondage`) : une question, 2 à 4 choix ; les viewers tapent `1`, `2`… dans le chat Twitch (un vote par compte, ces messages ne s'affichent pas dans le chat à l'écran). Les barres bougent en direct, durée réglable.
+- **Message du chat à l'écran** (`/message`) : les derniers messages s'affichent dans l'onglet Interactif ; « À l'écran » met celui que tu veux à l'antenne, avec le pseudo.
+- **Joueur du match** (`/mvp`) : plein écran avec la photo du joueur, son pseudo et jusqu'à 4 stats qui défilent.
+- **Replay instantané** : OBS garde les dernières secondes (tampon de relecture). Dans Admin › Interactif, renseigne le WebSocket d'OBS (Outils › Paramètres du serveur WebSocket), active le tampon (Paramètres › Sortie › Tampon de relecture, 30 s ou plus), puis clique sur **Préparer OBS** : la scène « Kaelyx · Replay » est créée. **Replay** (ou Ctrl + Alt + R ; ralenti : Ctrl + Alt + Maj + R) passe sur cette scène avec le bandeau REPLAY, puis revient tout seul à la scène d'avant.
+- **Tournoi** (onglet, overlay `/tournoi`) : 4, 8 ou 16 équipes ; écris le premier tour, puis les scores ; coche « Terminé » et le vainqueur passe au tour suivant.
+- **Check-list** (onglet, et bandeau dans la Régie) : mot de passe, overlays ouverts dans OBS, chat Twitch, joueurs, photos, POV, replay, mise à jour… tout ce qui manque avant le live.
+
 ## Dans OBS
 - Une **Source navigateur** par overlay, en **1920 × 1080** (les URL sont dans Admin > Liens OBS).
 - Admin dans OBS : *Docks > Docks de navigateur personnalisés*, URL `http://localhost:3000/admin`.

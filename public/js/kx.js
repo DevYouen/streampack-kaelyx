@@ -1,6 +1,6 @@
 /* KAELYX — client temps réel partagé par tous les overlays */
 const KX = (() => {
-  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [], presence: [] };
+  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [], presence: [], obs: [], toast: [] };
   let state = null;
 
   function on(ev, fn) {
@@ -45,7 +45,7 @@ const KX = (() => {
     es.onopen = () => listeners.open.forEach(f => safe(f));
     es.onerror = () => listeners.error.forEach(f => safe(f));
     es.addEventListener('state', e => { state = JSON.parse(e.data); listeners.state.forEach(f => safe(f, state)); });
-    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update', 'presence'])
+    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update', 'presence', 'obs', 'toast'])
       es.addEventListener(ev, e => { const d = JSON.parse(e.data); listeners[ev].forEach(f => safe(f, d)); });
   }
 
@@ -155,6 +155,25 @@ const KX = (() => {
       <div class="kxp-cap" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
   }
 
+  // Arbre de tournoi : les équipes des tours suivants sont déduites des vainqueurs (seuls les noms du 1er tour sont saisis)
+  const ROUND_NAMES = { 1: 'Finale', 2: 'Demi-finales', 4: 'Quarts de finale', 8: 'Huitièmes' };
+  function bracket(b) {
+    const size = [4, 8, 16].includes(Number(b?.size)) ? Number(b.size) : 8, ms = b?.matches || [];
+    const rounds = []; let idx = 0;
+    for (let n = size / 2; n >= 1; n /= 2) {
+      const prev = rounds[rounds.length - 1], r = [];
+      for (let k = 0; k < n; k++) {
+        const m = ms[idx] || {};
+        const a = prev ? prev.matches[2 * k].winner : (m.a || ''), bb = prev ? prev.matches[2 * k + 1].winner : (m.b || '');
+        const sa = Number(m.sa) || 0, sb = Number(m.sb) || 0;
+        const winner = m.done && a && bb && sa !== sb ? (sa > sb ? a : bb) : '';
+        r.push({ i: idx++, a, b: bb, sa, sb, done: !!m.done, winner });
+      }
+      rounds.push({ name: ROUND_NAMES[n] || n * 2 + 'es', matches: r });
+    }
+    return rounds;
+  }
+
   function initials(name) {
     return String(name || '?').replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
   }
@@ -190,7 +209,7 @@ const KX = (() => {
 
   connect();
   watch(st => st.settings?.neon, applyNeon);
-  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, chars, roll, plate, mv: MV, get state() { return state; } };
+  return { on, watch, esc, slug, frame, holeMask, chamferPts, starfield, photo, logo, icon, socials, initials, chars, roll, plate, bracket, mv: MV, get state() { return state; } };
 })();
 
 /* Overlay ouvert directement dans un navigateur (pas dans OBS, ni dans l'aperçu de l'admin) :

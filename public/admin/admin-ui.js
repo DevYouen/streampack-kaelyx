@@ -14,7 +14,7 @@ syncCompact(); compactQ.addEventListener('change', syncCompact);
 
 /* ---------- Présence OBS ---------- */
 const TAB_SRC = { pov: ['/pov'], scenes: ['/scene/'], lowerthird: ['/lowerthird'], ticker: ['/ticker'], scoreboard: ['/scoreboard'],
-  alerts: ['/alerts', '/stinger'], players: ['/p/', '/roster'], casters: ['/caster', '/cam'], twitch: ['/chat'], infos: ['/programme', '/sponsors', '/objectif'] };
+  alerts: ['/alerts', '/stinger'], players: ['/p/', '/roster'], casters: ['/caster', '/cam'], twitch: ['/chat'], infos: ['/programme', '/sponsors', '/objectif'], live: ['/sondage', '/message', '/mvp', '/replay'], tournoi: ['/tournoi'] };
 const srcMatch = (src, prefixes) => prefixes.some(x => src.path === x || src.path.startsWith(x.endsWith('/') ? x : x + '/') || src.path.startsWith(x + '?'));
 function srcLevel(prefixes) {
   const hit = obsList.filter(s => srcMatch(s, prefixes));
@@ -23,7 +23,8 @@ function srcLevel(prefixes) {
 const NAMES = { '/scene/starting': 'Starting soon', '/scene/brb': 'BRB', '/scene/ending': 'Fin de stream', '/scene/tech': 'Difficultés techniques',
   '/scene/chatting': 'Just chatting', '/pov': 'POV', '/caster': 'Casters (desk)', '/caster/pip': 'Casters (petites cams)', '/cam': 'Cadre webcam',
   '/lowerthird': 'Lower third', '/ticker': 'Ticker', '/scoreboard': 'Scoreboard', '/alerts': 'Alertes', '/stinger': 'Stinger', '/chat': 'Chat', '/roster': 'Roster',
-  '/programme': 'Programme', '/sponsors': 'Sponsors', '/objectif': 'Objectif' };
+  '/programme': 'Programme', '/sponsors': 'Sponsors', '/objectif': 'Objectif', '/sondage': 'Sondage', '/message': 'Message du chat',
+  '/mvp': 'Joueur du match', '/tournoi': 'Tournoi', '/replay': 'Replay' };
 function nameOf(path) {
   const p = path.split('?')[0].replace(/\/$/, '');
   if (p.startsWith('/p/')) { const pl = S?.players.find(x => x.id === p.slice(3)); return 'Joueur · ' + (pl ? pl.pseudo : p.slice(3)); }
@@ -45,6 +46,7 @@ function tabOn(t) {
   if (t === 'scoreboard') return !!S.scoreboard.visible;
   if (t === 'scenes') return Object.values(S.scenes).some(sc => (sc.endAt || 0) > Date.now());
   if (t === 'infos') return !!(S.sponsors?.visible || S.goal?.visible);
+  if (t === 'live') return !!(S.poll?.open || S.poll?.visible || S.chatpin?.visible || S.mvp?.visible);
   return false;
 }
 function paintNav() {

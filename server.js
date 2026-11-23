@@ -42,6 +42,14 @@ const DEFAULTS = {
   sponsors: { visible: false, inTicker: false, title: 'Partenaires', every: 6, items: [] },
   // Barre d'objectif (/objectif, scènes, ticker) ; kind : subs | follows | bits | manuel (compté automatiquement via Twitch, sauf manuel)
   goal: { visible: false, label: 'Objectif subs', kind: 'subs', current: 0, target: 50, inTicker: false, inScenes: false },
+  // Sondage par le chat (/sondage) : les viewers tapent 1, 2, 3 ou 4 ; un vote par compte ; duration en secondes (0 = sans limite)
+  poll: { visible: false, question: '', options: ['Oui', 'Non'], votes: [0, 0], open: false, duration: 60, endAt: 0 },
+  // Message du chat mis à l'écran (/message)
+  chatpin: { visible: false, user: '', color: '', badges: [], parts: [], at: 0, hide: 12 },
+  // Joueur du match (/mvp)
+  mvp: { visible: false, player: '', title: 'Joueur du match', stats: [{ label: 'Élims', value: '' }, { label: 'Dégâts', value: '' }, { label: 'Classement', value: '' }] },
+  // Arbre de tournoi (/tournoi) : size équipes (4, 8 ou 16), size - 1 matchs ; seuls les noms du 1er tour sont saisis
+  bracket: { title: 'Tournoi', size: 8, matches: [] },
   // Desk caster : 1 à 3 casters, plein écran (/caster) ou petites cams sur le jeu (/caster/pip)
   casters: { kicker: 'Desk', title: 'Analyse', showScore: true, pipPos: 'tr', pipSize: 'm', list: [] },
   // Cadre webcam seul (/cam) : la source OBS fait la taille du cadre
@@ -56,6 +64,8 @@ const PLAYER = { id: '', pseudo: '', role: 'Joueur', game: '', photo: '', twitch
 // Élément d'une mise en page POV, en pixels du 1920 × 1080. kind : pov | plate | cam | logo ; slot : n° de POV (0 = principale)
 const POV_ITEM = { id: '', kind: 'pov', slot: 0, x: 0, y: 0, w: 480, h: 270 };
 const SCHED_ITEM = { time: '', label: '', sub: '' };
+const MATCH = { a: '', b: '', sa: 0, sb: 0, done: false };
+const STAT = { label: '', value: '' };
 const SPONSOR = { name: '', logo: '' };
 const POV_LAYOUT = { id: '', name: 'Mise en page', bg: true, items: [] }; // bg : fond animé derrière les POV
 const it = (kind, slot, x, y, w, h) => ({ id: kind + slot + '-' + x + '-' + y, kind, slot, x, y, w, h });
@@ -108,6 +118,14 @@ function normalize(s) {
   out.sponsors.items = out.sponsors.items.filter(isObj).map(i => fill(SPONSOR, i)).slice(0, 24);
   out.sponsors.every = clampN(out.sponsors.every, 2, 60);
   if (!['subs', 'follows', 'bits', 'manuel'].includes(out.goal.kind)) out.goal.kind = 'subs';
+  const po = out.poll;
+  po.options = po.options.map(o => String(o ?? '').slice(0, 60)).slice(0, 4); while (po.options.length < 2) po.options.push('');
+  po.votes = po.options.map((_, i) => clampN(po.votes[i], 0, 1e6)); po.duration = clampN(po.duration, 0, 3600);
+  out.chatpin.parts = out.chatpin.parts.filter(isObj).map(p => ({ t: String(p.t ?? '').slice(0, 500), e: /^[\w-]{1,40}$/.test(p.e || '') ? p.e : '' })).slice(0, 200);
+  out.chatpin.badges = out.chatpin.badges.map(String).slice(0, 4); out.chatpin.hide = clampN(out.chatpin.hide, 0, 120);
+  out.mvp.stats = out.mvp.stats.filter(isObj).map(s => fill(STAT, s)).slice(0, 4);
+  const br = out.bracket; br.size = [4, 8, 16].includes(Number(br.size)) ? Number(br.size) : 8;
+  br.matches = Array.from({ length: br.size - 1 }, (_, i) => { const m = fill(MATCH, isObj(br.matches[i]) ? br.matches[i] : {}); m.sa = clampN(m.sa, 0, 99); m.sb = clampN(m.sb, 0, 99); return m; });
   out.goal.current = clampN(out.goal.current, 0, 1e7); out.goal.target = clampN(out.goal.target, 1, 1e7);
   if (!['main', 'none', 'all'].includes(pv.audio)) pv.audio = 'main';
   if (!['logo', 'sweep', 'fade', 'none'].includes(pv.transition)) pv.transition = 'logo';
@@ -188,7 +206,24 @@ let presenceTimer;
 const presence = () => [...obsSources.values()].map(({ path, active, visible }) => ({ path, active, visible }));
 function presenceChanged() { clearTimeout(presenceTimer); presenceTimer = setTimeout(() => broadcast('presence', presence()), 150); }
 let updater = null; // { status(), check(manual), install() } quand le serveur tourne dans l'application de bureau
-const twitch = require('./twitch')({ dataDir: DATA_DIR, broadcast: (e, d) => { if (e === 'trigger' && d && d.kind === 'alert') goalCount(d); broadcast(e, d); }, getConfig: () => state.settings.twitch });
+const twitch = require('./twitch')({ dataDir: DATA_DIR, getConfig: () => state.settings.twitch, broadcast: (e, d) => {
+  if (e === 'trigger' && d && d.kind === 'alert') goalCount(d);
+  if (e === 'chat' && d && pollVote(d)) return; // un vote (« 1 », « 2 »…) ne s'affiche pas dans le chat à l'écran
+  broadcast(e, d);
+} });
+const obs = require('./obs')({ dataDir: DATA_DIR, broadcast: (e, d) => broadcast(e, d), port: PORT });
+
+// Sondage : un vote par compte Twitch, comptes envoyés aux overlays au plus 3 fois par seconde
+let pollVoters = new Set(), pollT = null;
+function pollVote(m) {
+  const po = state.poll; if (!po.open) return false;
+  const txt = (m.parts || []).map(p => p.t).join('').trim();
+  const n = /^!?([1-4])$/.exec(txt); if (!n) return false;
+  const i = +n[1] - 1; if (i >= po.options.length || !po.options[i]) return false;
+  if (!pollVoters.has(m.login)) { pollVoters.add(m.login); po.votes[i] += 1; if (!pollT) pollT = setTimeout(() => { pollT = null; commit(); }, 300); }
+  return true;
+}
+setInterval(() => { const po = state.poll; if (po.open && po.endAt && Date.now() >= po.endAt) { po.open = false; commit(); } }, 1000);
 
 // Modification faite par le serveur lui-même (raccourci, Stream Deck, objectif) : nouvelle version, sauvegarde, envoi à tous
 function commit() { state.rev += 1; save(); broadcast('state', state); }
@@ -234,6 +269,16 @@ const ACTIONS = {
     const amount = { sub: 3, gift: 5, bits: 500, raid: 42, don: 10 }[type] || 0;
     broadcast('trigger', { kind: 'alert', type: ['follow', 'sub', 'gift', 'bits', 'raid', 'don'].includes(type) ? type : 'follow', user: 'Viewer', amount, at: Date.now() });
   },
+  'poll-start': () => {
+    const po = state.poll; pollVoters = new Set();
+    po.votes = po.options.map(() => 0); po.open = true; po.visible = true; po.endAt = po.duration ? Date.now() + po.duration * 1000 : 0; commit();
+  },
+  'poll-stop': () => { state.poll.open = false; state.poll.endAt = 0; commit(); },
+  poll: () => { state.poll.visible = !state.poll.visible; commit(); },
+  mvp: () => { state.mvp.visible = !state.mvp.visible; commit(); },
+  replay: () => { obs.play({ slow: false }).catch(e => broadcast('toast', { error: e.message })); },
+  'replay-slow': () => { obs.play({ slow: true }).catch(e => broadcast('toast', { error: e.message })); },
+  'replay-stop': () => { obs.stop(); },
   count: arg => { // ex. starting-5 : compte à rebours de 5 min sur Starting soon ; starting-0 : arrêt
     const [k, m] = String(arg || '').split('-'); const sc = state.scenes[k]; if (!sc) return false;
     const min = Number(m) || 0; sc.endAt = min ? Date.now() + min * 60000 : 0; sc.startAt = Date.now(); commit();
@@ -269,6 +314,11 @@ const ROUTES = [
   [/^\/programme\/?$/, 'overlays/programme.html'],
   [/^\/sponsors\/?$/, 'overlays/sponsors.html'],
   [/^\/objectif\/?$/, 'overlays/objectif.html'],
+  [/^\/sondage\/?$/, 'overlays/sondage.html'],
+  [/^\/message\/?$/, 'overlays/message.html'],
+  [/^\/mvp\/?$/, 'overlays/mvp.html'],
+  [/^\/tournoi\/?$/, 'overlays/tournoi.html'],
+  [/^\/replay\/?$/, 'overlays/replay.html'],
   [/^\/caster(\/pip)?\/?$/, 'overlays/caster.html'],
   [/^\/chat\/?$/, 'overlays/chat.html'],
   [/^\/twitch-auth\/?$/, 'twitch-auth.html']
@@ -422,7 +472,9 @@ async function handle(req, res) {
         // Envoyé depuis une version plus ancienne : un autre admin a modifié entre-temps
         if (next.rev !== undefined && next.rev !== state.rev) return send(res, 409, state);
         const rev = state.rev + 1;
+        const live = state.poll;
         state = normalize(next); state.rev = rev;
+        if (live.open && state.poll.open) state.poll.votes = live.votes;
         save(); broadcast('state', state); twitch.configure();
         return send(res, 200, { ok: true, rev, state });
       } catch { return send(res, 400, { error: 'json invalide' }); }
@@ -432,6 +484,21 @@ async function handle(req, res) {
   // Clé Stream Deck : lecture et renouvellement (session obligatoire, même en lecture)
   if (p === '/api/deck/info') return loggedIn(req) ? send(res, 200, { key: auth.deckKey, actions: Object.keys(ACTIONS) }) : send(res, 401, { error: 'connexion requise' });
   if (p === '/api/deck/reset' && req.method === 'POST') { auth.deckKey = crypto.randomBytes(12).toString('hex'); saveAuth(); return send(res, 200, { key: auth.deckKey }); }
+  // OBS (replay) : état, réglages (mot de passe rangé à part), préparation de la scène, replay
+  if (p === '/api/obs') return loggedIn(req) ? send(res, 200, obs.status()) : send(res, 401, { error: 'connexion requise' });
+  if (p.startsWith('/api/obs/') && req.method === 'POST') {
+    let b; try { b = await readBody(req); } catch { return send(res, 400, { error: 'json invalide' }); }
+    try {
+      if (p === '/api/obs/config') { obs.configure(b); return send(res, 200, obs.status()); }
+      if (p === '/api/obs/setup') return send(res, 200, await obs.setup());
+      if (p === '/api/obs/replay') return send(res, 200, await obs.play({ slow: !!b.slow }));
+      if (p === '/api/obs/stop') { await obs.stop(); return send(res, 200, { ok: true }); }
+    } catch (e) { return send(res, 409, { error: e.message }); }
+    return send(res, 404, { error: 'inconnu' });
+  }
+  // Check-list avant le live : ce que l'admin ne peut pas savoir seul
+  if (p === '/api/checklist') return loggedIn(req) ? send(res, 200, { passwordChanged: !!auth.hash, twitch: twitch.status(), obs: obs.status() }) : send(res, 401, { error: 'connexion requise' });
+
   if (p === '/api/action' && req.method === 'POST') {
     let b; try { b = await readBody(req); } catch { return send(res, 400, { error: 'json invalide' }); }
     return send(res, doAction(String(b.name || ''), b.arg) ? 200 : 404, { ok: true });
@@ -532,6 +599,7 @@ module.exports.port = PORT;
 module.exports.broadcast = broadcast;
 module.exports.setUpdater = u => { updater = u; };
 module.exports.action = doAction;
+module.exports.chatIn = m => pollVote(m); // tests : simule un message du chat
 module.exports.getState = () => state;
 module.exports.close = () => {
   clearTimeout(saveTimer);

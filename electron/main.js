@@ -216,6 +216,7 @@ app.on('will-quit', () => globalShortcut.unregisterAll());
 const GLOBAL_KEYS = [
   ['Control+Alt+S', 'stinger'], ['Control+Alt+P', 'pov-sting'], ['Control+Alt+L', 'lowerthird'],
   ['Control+Alt+D', 'ticker'], ['Control+Alt+B', 'scoreboard'], ['Control+Alt+K', 'sponsors'], ['Control+Alt+O', 'goal'],
+  ['Control+Alt+R', 'replay'], ['Control+Alt+Shift+R', 'replay-slow'],
   ...Array.from({ length: 8 }, (_, i) => [`Control+Alt+F${i + 1}`, 'pov-main', String(i + 1)])
 ];
 let keysOn = null;

@@ -70,7 +70,11 @@ function guideUrls() {
     ['Programme (scène)', '/programme', '1920 × 1080', 'Avant le live, pauses', ''],
     ['Programme (bandeau)', '/programme?bandeau', '1920 × 1080', 'Sur le jeu (en cours / à suivre)', ''],
     ['Sponsors', '/sponsors', '1920 × 1080', 'Scènes de jeu (coin en bas à droite)', ''],
-    ['Objectif', '/objectif', '1920 × 1080', 'Où tu veux (coin en haut à gauche)', '']
+    ['Objectif', '/objectif', '1920 × 1080', 'Où tu veux (coin en haut à gauche)', ''],
+    ['Sondage', '/sondage', '1920 × 1080', 'Scènes de jeu (à gauche)', ''],
+    ['Message du chat', '/message', '1920 × 1080', 'Scènes de jeu', ''],
+    ['Joueur du match', '/mvp', '1920 × 1080', 'Après un match (plein écran)', ''],
+    ['Tournoi', '/tournoi', '1920 × 1080', 'Entre deux matchs (plein écran)', '']
   ];
 }
 // Pile de sources d'une scène OBS (de haut en bas, comme dans OBS)
@@ -170,7 +174,7 @@ TABS.guide = function () {
       <div class="g-keyset"><h3>Pendant le live</h3>${live.map(krow).join('')}</div>
       <div class="g-keyset"><h3>Globaux (même dans le jeu ou OBS)</h3>
         ${[['Ctrl + Alt + S', 'Stinger'], ['Ctrl + Alt + P', 'Animation logo des POV'], ['Ctrl + Alt + L', 'Lower third'], ['Ctrl + Alt + D', 'Ticker'], ['Ctrl + Alt + B', 'Scoreboard'],
-           ['Ctrl + Alt + K', 'Sponsors'], ['Ctrl + Alt + O', 'Objectif'], ['Ctrl + Alt + F1', 'Mettre en grand le joueur 1 (F2 : joueur 2… F8)']].map(krow).join('')}
+           ['Ctrl + Alt + K', 'Sponsors'], ['Ctrl + Alt + O', 'Objectif'], ['Ctrl + Alt + R', 'Replay (Maj : ralenti)'], ['Ctrl + Alt + F1', 'Mettre en grand le joueur 1 (F2 : joueur 2… F8)']].map(krow).join('')}
         <p class="note" style="margin-top:8px">Application de bureau uniquement. À couper dans Réglages si un jeu utilise déjà ces touches.</p></div>
       <div class="g-keyset"><h3>Changer d’onglet</h3>${tabs.map(krow).join('')}</div>
       <div class="g-keyset"><h3>Dans la recherche (Ctrl + K)</h3>

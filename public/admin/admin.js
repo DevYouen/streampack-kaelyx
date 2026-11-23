@@ -425,6 +425,7 @@ const TABS = {
       ['Lower third', '/lowerthird'], ['Ticker', '/ticker'], ['Chat', '/chat'], ['Scoreboard', '/scoreboard'], ['Alertes', '/alerts'], ['Stinger', '/stinger'],
       ['POV joueurs', '/pov'], ['Casters (desk)', '/caster'], ['Casters (petites cams)', '/caster/pip'], ['Cadre webcam', '/cam'],
       ['Programme (scène)', '/programme'], ['Programme (bandeau)', '/programme?bandeau'], ['Sponsors', '/sponsors'], ['Objectif', '/objectif'],
+      ['Sondage', '/sondage'], ['Message du chat', '/message'], ['Joueur du match', '/mvp'], ['Tournoi', '/tournoi'], ['Replay (scène OBS créée par l’admin)', '/replay'],
       ['Roster', '/roster'], ['Roster Fortnite', '/roster?game=Fortnite'], ['Roster LoL', '/roster?game=League of Legends']
     ];
     return head('Pour OBS', 'Liens OBS', '') + `

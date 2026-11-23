@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sondage — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  /* Panneau à gauche, centré verticalement (?pos=tl|tr|bl|br pour le déplacer) */
+  .po { position: absolute; left: 40px; top: 50%; transform: translateY(-50%); width: 620px; filter: var(--kx-shadow); visibility: hidden; }
+  .po.pos-tl { top: 40px; transform: none; } .po.pos-bl { top: auto; bottom: 40px; transform: none; }
+  .po.pos-tr { left: auto; right: 40px; top: 40px; transform: none; } .po.pos-br { left: auto; right: 40px; top: auto; bottom: 40px; transform: none; }
+  .po.in, .po.out { visibility: visible; }
+  .po-head { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 18px; background: linear-gradient(180deg, rgba(243,241,241,.18), transparent 55%), var(--kx-grad);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .po-head img { width: 26px; height: 26px; object-fit: contain; }
+  .po-head span { flex: 1; font: 800 13px/1 var(--f-body); letter-spacing: .26em; text-transform: uppercase; }
+  .po-head em { font-style: normal; font: 800 22px/1 var(--f-title); font-variant-numeric: tabular-nums; padding-right: 10px; }
+  .po-body { padding: 18px 22px 20px; background: linear-gradient(180deg, rgba(243,241,241,.07), rgba(243,241,241,0) 40%), rgba(42,43,44,.95); box-shadow: inset 0 -3px 0 var(--kx-violet); }
+  .po-q { margin: 0 0 16px; font: italic 800 40px/1.02 var(--f-title); text-transform: uppercase; }
+  .po-opts { display: flex; flex-direction: column; gap: 10px; }
+  .op { position: relative; display: grid; grid-template-columns: 46px 1fr auto; align-items: center; height: 52px; overflow: hidden; background: rgba(201,204,209,.08); }
+  .op .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, rgba(86,28,115,.95), rgba(153,51,204,.85)); transition: width .9s cubic-bezier(.16, 1, .3, 1); }
+  .op .fill::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: var(--kx-white); box-shadow: 0 0 12px var(--kx-violet); }
+  .op .n { position: relative; height: 100%; display: grid; place-items: center; font: 800 26px/1 var(--f-title); background: var(--kx-white); color: var(--kx-bg); }
+  .op .lb { position: relative; padding: 0 14px; font: 700 21px/1 var(--f-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .op .pc { position: relative; padding-right: 16px; font: 800 26px/1 var(--f-title); font-variant-numeric: tabular-nums; }
+  .op .pc small { font: 600 13px/1 var(--f-body); color: var(--kx-silver); margin-left: 6px; }
+  .op.lead .n { background: var(--kx-violet); color: var(--kx-white); }
+  .po.closed .op:not(.lead) { opacity: .5; }
+  .po.closed .op.lead { box-shadow: 0 0 0 2px var(--kx-white), 0 0 26px rgba(153,51,204,.7); }
+  .po-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font: 600 15px/1 var(--f-body); color: var(--kx-silver); }
+  .po-foot b { color: var(--kx-white); }
+  .po-timer { height: 4px; background: rgba(201,204,209,.18); }
+  .po-timer i { display: block; height: 100%; background: var(--kx-white); transition: width 1s linear; }
+  .po.in .po-head { animation: kx-wipe .55s var(--kx-out) backwards; }
+  .po.in .po-body { animation: kx-wipe .65s var(--kx-out) .1s backwards; }
+  .po.in .po-q .kx-ch { animation: kx-chIn .6s var(--kx-out) backwards; animation-delay: calc(.3s + var(--i) * 18ms); }
+  .po.in .op { animation: kx-wipe .55s var(--kx-out) backwards; animation-delay: calc(.45s + var(--k) * 80ms); }
+  .po.out { animation: poOut .45s var(--sw) forwards; }
+  @keyframes poOut { to { clip-path: inset(0 100% 0 0); } }
+</style>
+</head>
+<body class="overlay">
+<div class="po" id="po">
+  <div class="po-head"><span id="lg"></span><span id="state">Sondage</span><em id="time"></em></div>
+  <div class="po-timer"><i id="bar"></i></div>
+  <div class="po-body"><h2 class="po-q t-title" id="q"></h2><div class="po-opts" id="opts"></div>
+    <div class="po-foot"><span><b id="total">0</b> votes</span><span id="hint">Tape le numéro dans le chat</span></div></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const po = document.getElementById('po');
+const pos = new URLSearchParams(location.search).get('pos');
+if (['tl', 'tr', 'bl', 'br'].includes(pos)) po.classList.add('pos-' + pos);
+let shown = false, key = '', poll = null;
+function tick() {
+  if (!poll) return;
+  const left = poll.open && poll.endAt ? Math.max(0, Math.ceil((poll.endAt - Date.now()) / 1000)) : 0;
+  document.getElementById('time').textContent = left ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : '';
+  document.getElementById('bar').style.width = poll.open && poll.endAt && poll.duration ? (left / poll.duration * 100) + '%' : (poll.open ? '100%' : '0%');
+}
+setInterval(tick, 500);
+KX.on('state', st => {
+  const p = st.poll || {}; poll = p;
+  const lg = document.getElementById('lg'), lk = st.settings?.logo || '';
+  if (lg.dataset.k !== lk) { lg.dataset.k = lk; lg.innerHTML = KX.logo(st); }
+  const opts = (p.options || []).map((o, i) => [o, Number(p.votes?.[i]) || 0, i]).filter(x => x[0]);
+  const total = opts.reduce((a, x) => a + x[1], 0), max = Math.max(0, ...opts.map(x => x[1]));
+  const k2 = JSON.stringify([p.question, opts.map(x => x[0])]);
+  if (k2 !== key) {
+    key = k2;
+    document.getElementById('q').innerHTML = KX.chars(p.question || 'Sondage');
+    document.getElementById('opts').innerHTML = opts.map(([o, , i], k) => `<div class="op" data-i="${i}" style="--k:${k}"><i class="fill"></i><span class="n">${i + 1}</span><span class="lb">${KX.esc(o)}</span><span class="pc"><b>0 %</b><small>0</small></span></div>`).join('');
+  }
+  opts.forEach(([, v, i]) => {
+    const el = document.querySelector(`.op[data-i="${i}"]`); if (!el) return;
+    const pct = total ? Math.round(v / total * 100) : 0;
+    el.querySelector('.fill').style.width = pct + '%';
+    el.querySelector('.pc b').textContent = pct + ' %';
+    KX.roll(el.querySelector('.pc small'), v, 500);
+    el.classList.toggle('lead', total > 0 && v === max);
+  });
+  KX.roll(document.getElementById('total'), total, 500);
+  po.classList.toggle('closed', !p.open && total > 0);
+  document.getElementById('state').textContent = p.open ? 'Sondage en cours' : total ? 'Résultats du sondage' : 'Sondage';
+  document.getElementById('hint').textContent = p.open ? `Tape ${opts.map(x => x[2] + 1).join(', ')} dans le chat` : total ? 'Merci pour vos votes !' : '';
+  tick();
+  if (p.visible && !shown) { po.classList.remove('out'); void po.offsetWidth; po.classList.add('in'); shown = true; }
+  else if (!p.visible && shown) { po.classList.remove('in'); po.classList.add('out'); shown = false; setTimeout(() => { if (!shown) po.classList.remove('out'); }, 500); }
+});
+</script>
+</body>
+</html>

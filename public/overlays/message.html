@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Message du chat — Kaelyx</title>
+<link rel="stylesheet" href="/css/kx.css">
+<style>
+  :root { --sw: cubic-bezier(.65, 0, .35, 1); }
+  /* Message mis en avant (choisi dans l'admin) : en bas à gauche, au-dessus du lower third */
+  .ms { position: absolute; left: 96px; bottom: 300px; display: flex; align-items: stretch; max-width: 1100px; filter: var(--kx-shadow); visibility: hidden; }
+  .ms.in, .ms.out { visibility: visible; }
+  .ms-av { position: relative; width: 104px; flex: none; display: grid; place-items: center; background: linear-gradient(180deg, rgba(243,241,241,.2), transparent 55%), var(--kx-grad); }
+  .ms-av b { font: italic 900 54px/1 var(--f-title); text-transform: uppercase; }
+  .ms-av::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--uc, #F3F1F1); }
+  .ms-main { position: relative; min-width: 420px; padding: 18px 46px 20px 26px; background: linear-gradient(180deg, rgba(243,241,241,.07), rgba(243,241,241,0) 45%), rgba(42,43,44,.95);
+    box-shadow: inset 0 -3px 0 var(--kx-violet); clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+  .ms-main::before { content: '\201C'; position: absolute; right: 40px; top: -22px; font: italic 900 160px/1 var(--f-title); color: rgba(153,51,204,.25); }
+  .ms-u { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .ms-u b { font: italic 800 30px/1 var(--f-title); text-transform: uppercase; letter-spacing: .02em; }
+  .ms-u .bd { padding: 4px 8px; font: 800 10px/1 var(--f-body); letter-spacing: .18em; text-transform: uppercase; background: var(--kx-deep); }
+  .ms-u .bd.st { background: var(--kx-violet); }
+  .ms-u small { font: 700 11px/1 var(--f-body); letter-spacing: .24em; text-transform: uppercase; color: var(--kx-silver); }
+  .ms-t { position: relative; font: 600 30px/1.32 var(--f-body); overflow-wrap: anywhere; }
+  .ms-t img { height: 40px; vertical-align: -9px; margin: 0 2px; }
+  .ms-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--kx-white); transform-origin: left; }
+  .ms-bar.run { animation: msBar linear forwards; }
+  @keyframes msBar { to { transform: scaleX(0); } }
+  .ms.in .ms-av { animation: avIn .5s var(--kx-out) backwards; }
+  .ms.in .ms-main { animation: kx-wipe .65s var(--kx-out) .1s backwards; }
+  .ms.in .ms-u, .ms.in .ms-t { animation: kxp-up .55s var(--kx-out) backwards; } .ms.in .ms-u { animation-delay: .3s; } .ms.in .ms-t { animation-delay: .42s; }
+  @keyframes avIn { from { transform: scaleY(0); } }
+  .ms.out { animation: msOut .45s var(--sw) forwards; }
+  @keyframes msOut { to { clip-path: inset(0 100% 0 0); } }
+</style>
+</head>
+<body class="overlay">
+<div class="ms" id="ms">
+  <div class="ms-av" id="av"></div>
+  <div class="ms-main"><div class="ms-u" id="u"></div><div class="ms-t" id="t"></div><i class="ms-bar" id="bar"></i></div>
+</div>
+<script src="/js/kx.js"></script>
+<script>
+const ms = document.getElementById('ms');
+const BADGES = { broadcaster: ['Streamer', 'st'], moderator: ['Mod', ''], vip: ['VIP', ''], subscriber: ['Sub', ''] };
+let shown = false, lastAt = 0, hideT;
+function hide() { if (!shown) return; ms.classList.remove('in'); ms.classList.add('out'); shown = false; setTimeout(() => { if (!shown) ms.classList.remove('out'); }, 500); }
+KX.on('state', st => {
+  const c = st.chatpin || {};
+  const left = c.hide > 0 ? c.hide * 1000 - (Date.now() - (Number(c.at) || 0)) : Infinity;
+  if (!c.visible || left <= 0) { clearTimeout(hideT); return hide(); }
+  if (c.at === lastAt && shown) return;
+  lastAt = c.at;
+  const av = document.getElementById('av');
+  av.style.setProperty('--uc', /^#[0-9a-f]{6}$/i.test(c.color) ? c.color : '#F3F1F1');
+  av.innerHTML = `<b>${KX.esc((c.user || '?').slice(0, 1))}</b>`;
+  document.getElementById('u').innerHTML = `<b>${KX.esc(c.user)}</b>${(c.badges || []).filter(b => BADGES[b]).map(b => `<span class="bd ${BADGES[b][1]}">${BADGES[b][0]}</span>`).join('')}<small>dans le chat</small>`;
+  document.getElementById('t').innerHTML = (c.parts || []).map(p => p.e ? `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${p.e}/default/dark/2.0" alt="${KX.esc(p.t)}">` : KX.esc(p.t)).join('');
+  const bar = document.getElementById('bar'); bar.classList.remove('run'); void bar.offsetWidth;
+  if (left !== Infinity) { bar.style.animationDuration = left + 'ms'; bar.classList.add('run'); bar.style.display = ''; } else bar.style.display = 'none';
+  ms.classList.remove('out', 'in'); void ms.offsetWidth; ms.classList.add('in'); shown = true;
+  clearTimeout(hideT); if (left !== Infinity) hideT = setTimeout(hide, left);
+});
+</script>
+</body>
+</html>
