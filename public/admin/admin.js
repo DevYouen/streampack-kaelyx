@@ -12,6 +12,8 @@ const { esc, slug, initials } = KX; // fonctions partagées avec les overlays (p
 const origin = location.origin;
 const clone = o => o === undefined ? o : JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Même contenu à l'écran : « rev » (numéro de version) change à chaque envoi sans rien changer à afficher
+const sameView = (a, b) => same({ ...a, rev: 0 }, { ...b, rev: 0 });
 
 /* ---------- Connexion à l'admin (mot de passe) ----------
    Le serveur renvoie un jeton de session gardé seulement dans la page ouverte : le mot de passe est redemandé à chaque
@@ -117,7 +119,7 @@ async function push() {
       if (rev >= base.rev) {
         const before = clone(S);
         S = merge3(sent, S, state); base = state;
-        if (!same(before, S)) renderSoon(); // le serveur a complété l'état (ex. import incomplet)
+        if (!sameView(before, S)) renderSoon(); // le serveur a complété l'état (ex. import incomplet)
       }
       status('ok');
     } else status('err');
@@ -130,7 +132,8 @@ function adopt(remote) {
   if (!base || remote.rev <= base.rev) return; // écho de notre propre envoi, ou plus ancien
   const before = clone(S);
   S = merge3(base, S, remote); base = remote;
-  if (!same(before, S)) renderSoon();
+  // Sans ça, l'écho de notre propre envoi (seul « rev » diffère) redessinait tout l'onglet après chaque clic
+  if (!sameView(before, S)) renderSoon();
 }
 // Re-rendre sans casser une saisie en cours : on attend que le champ perde le focus
 let renderPending = false;
@@ -466,6 +469,8 @@ const DEFAULT_PV = { regie: () => pvPath || '/pov', players: () => S.players[0] 
 
 function renderTab() {
   const y = scrollY;
+  // L'arrivée en cascade des cartes est réservée au changement d'onglet (go) : un simple rafraîchissement ne la rejoue pas
+  $('#view').classList.remove('enter');
   try { $('#view').innerHTML = (TABS[tab] || TABS.players)(); }
   catch (err) {
     console.error(err);
@@ -474,16 +479,20 @@ function renderTab() {
   }
   document.querySelectorAll('#nav button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   window.scrollTo(0, y);
+  // Animations en boucle (reflet, rotation) : même phase qu'avant le rafraîchissement, au lieu de repartir de zéro
+  $('#view').getAnimations({ subtree: true }).forEach(a => { if (a.effect?.getTiming().iterations === Infinity) a.startTime = 0; });
   tickCounts();
   window.afterRender?.();
 }
+let enterT;
 function go(t) {
   tab = t; localStorage.setItem('kx-tab', t);
   window.scrollTo(0, 0);
   setPreview(DEFAULT_PV[t]());
   renderTab();
-  // Transition d'entrée de l'onglet (cartes qui arrivent en cascade)
+  // Transition d'entrée de l'onglet (cartes qui arrivent en cascade), retirée une fois jouée pour ne plus se redéclencher
   const v = $('#view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter');
+  clearTimeout(enterT); enterT = setTimeout(() => v.classList.remove('enter'), 1000);
 }
 
 /* ---------- Aperçu ---------- */
