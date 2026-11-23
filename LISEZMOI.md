@@ -43,6 +43,14 @@ Les réglages et le token Twitch sont rangés à part, dans `%APPDATA%\Streampac
 - **Tournoi** (onglet, overlay `/tournoi`) : 4, 8 ou 16 équipes ; écris le premier tour, puis les scores ; coche « Terminé » et le vainqueur passe au tour suivant.
 - **Check-list** (onglet, et bandeau dans la Régie) : mot de passe, overlays ouverts dans OBS, chat Twitch, joueurs, photos, POV, replay, mise à jour… tout ce qui manque avant le live.
 
+## Replay des POV (30 dernières secondes de chaque joueur)
+- **Admin › Interactif › Replay des POV** : active « Enregistrer les POV ». L'application garde en continu les dernières secondes (10 à 60 s, 30 par défaut) de chaque POV, telle qu'elle s'affiche (lecteur Twitch officiel ou VDO.Ninja).
+- **Rejouer** : bouton du joueur dans **Régie › Replay des POV**, **Ctrl + Alt + Maj + F1…F8** (joueur 1 à 8), palette Ctrl + K ou Stream Deck (Réglages › Stream Deck). Option **Ralenti** dans la Régie.
+- Le replay passe en plein écran **dans la source /pov** (rien à ajouter dans OBS), entre deux transitions logo, avec un bandeau « REPLAY · pseudo ». Son du replay et volume réglables ; il ne sort que dans OBS.
+- **POV enregistrées** : celles à l'écran (par défaut) ou tous les joueurs (8 max). Chaque POV enregistrée ouvre le live du joueur une deuxième fois en arrière-plan, son coupé sur le PC : compte 3 à 6 Mb/s et un peu de carte graphique par POV.
+- **Garder une copie** : chaque replay est aussi enregistré en MP4 dans `Documents\Streampack Kaelyx\replays`.
+- Application de bureau uniquement. Les POV « source OBS » ne peuvent pas être enregistrées (l'image n'existe que dans OBS) : pour celles-là, utilise le replay OBS ci-dessus.
+
 ## Dans OBS
 - Une **Source navigateur** par overlay, en **1920 × 1080** (les URL sont dans Admin > Liens OBS).
 - Admin dans OBS : *Docks > Docks de navigateur personnalisés*, URL `http://localhost:3000/admin`.

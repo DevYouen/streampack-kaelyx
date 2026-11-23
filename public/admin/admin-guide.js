@@ -174,7 +174,7 @@ TABS.guide = function () {
       <div class="g-keyset"><h3>Pendant le live</h3>${live.map(krow).join('')}</div>
       <div class="g-keyset"><h3>Globaux (même dans le jeu ou OBS)</h3>
         ${[['Ctrl + Alt + S', 'Stinger'], ['Ctrl + Alt + P', 'Animation logo des POV'], ['Ctrl + Alt + L', 'Lower third'], ['Ctrl + Alt + D', 'Ticker'], ['Ctrl + Alt + B', 'Scoreboard'],
-           ['Ctrl + Alt + K', 'Sponsors'], ['Ctrl + Alt + O', 'Objectif'], ['Ctrl + Alt + R', 'Replay (Maj : ralenti)'], ['Ctrl + Alt + F1', 'Mettre en grand le joueur 1 (F2 : joueur 2… F8)']].map(krow).join('')}
+           ['Ctrl + Alt + K', 'Sponsors'], ['Ctrl + Alt + O', 'Objectif'], ['Ctrl + Alt + R', 'Replay (Maj : ralenti)'], ['Ctrl + Alt + F1', 'Mettre en grand le joueur 1 (F2 : joueur 2… F8)'], ['Ctrl + Alt + Maj + F1', 'Replay de la POV du joueur 1 (F2 : joueur 2… F8)']].map(krow).join('')}
         <p class="note" style="margin-top:8px">Application de bureau uniquement. À couper dans Réglages si un jeu utilise déjà ces touches.</p></div>
       <div class="g-keyset"><h3>Changer d’onglet</h3>${tabs.map(krow).join('')}</div>
       <div class="g-keyset"><h3>Dans la recherche (Ctrl + K)</h3>

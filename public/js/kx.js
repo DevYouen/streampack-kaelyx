@@ -1,6 +1,6 @@
 /* KAELYX — client temps réel partagé par tous les overlays */
 const KX = (() => {
-  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [], presence: [], obs: [], toast: [] };
+  const listeners = { state: [], trigger: [], open: [], error: [], chat: [], 'chat-clear': [], twitch: [], update: [], presence: [], obs: [], toast: [], povrec: [] };
   let state = null;
 
   function on(ev, fn) {
@@ -45,7 +45,7 @@ const KX = (() => {
     es.onopen = () => listeners.open.forEach(f => safe(f));
     es.onerror = () => listeners.error.forEach(f => safe(f));
     es.addEventListener('state', e => { state = JSON.parse(e.data); listeners.state.forEach(f => safe(f, state)); });
-    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update', 'presence', 'obs', 'toast'])
+    for (const ev of ['trigger', 'chat', 'chat-clear', 'twitch', 'update', 'presence', 'obs', 'toast', 'povrec'])
       es.addEventListener(ev, e => { const d = JSON.parse(e.data); listeners[ev].forEach(f => safe(f, d)); });
   }
 

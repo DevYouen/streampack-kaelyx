@@ -152,6 +152,11 @@ function checks() {
   const povEmpty = Array.from({ length: n }, (_, i) => S.pov.slots[i]).filter(x => !x).length;
   add(povBad.length || povEmpty ? 'warn' : 'ok', 'POV', povBad.length ? 'Chaîne Twitch manquante : ' + povBad.join(', ') + '.' : povEmpty ? povEmpty + ' emplacement' + (povEmpty > 1 ? 's' : '') + ' sans joueur dans la mise en page en direct.' : 'Toutes les POV de la mise en page en direct ont une source.', 'pov', 'POV');
   add(ob.state === 'connected' ? (ob.replayBuffer ? 'ok' : 'warn') : 'info', 'Replay (OBS)', ob.state === 'connected' ? (ob.replayBuffer ? 'OBS connecté, tampon de relecture démarré.' : 'OBS connecté mais tampon de relecture arrêté : clique sur « Préparer OBS ».') : 'Optionnel : connecte OBS pour le replay instantané.', 'live', 'Interactif');
+  if (S.povrec.enabled && typeof prs !== 'undefined') {
+    const bad = prs.list.filter(x => x.state === 'error');
+    add(!prs.supported ? 'info' : bad.length ? 'warn' : prs.list.length ? 'ok' : 'info', 'Replay des POV', !prs.supported ? 'Disponible dans l’application de bureau.'
+      : bad.length ? 'En erreur : ' + bad.map(x => x.pseudo + ' (' + x.error + ')').join(', ') + '.' : prs.list.length ? prs.list.length + ' POV enregistrée' + (prs.list.length > 1 ? 's' : '') + ' en continu.' : 'Aucune POV à enregistrer pour l’instant.', 'live', 'Interactif');
+  }
   add(upd.state === 'ready' ? 'warn' : 'ok', 'Application', upd.state === 'ready' ? 'Une mise à jour est prête : installe-la avant le live.' : 'Version ' + (upd.current || '') + ' à jour.', 'settings', 'Réglages');
   add('info', 'Transition stinger dans OBS', 'À vérifier dans OBS : transition Stinger avec kaelyx-stinger.webm, point de transition 1200 ms.', 'guide', 'Guide');
   return L;

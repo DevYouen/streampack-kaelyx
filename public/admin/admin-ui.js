@@ -143,6 +143,7 @@ TABS.regie = function () {
       <p class="rg-label">Alerte de test</p>
       <div class="chips">${[['follow', 'Follow'], ['sub', 'Sub'], ['gift', 'Gift sub'], ['bits', 'Bits'], ['raid', 'Raid'], ['don', 'Don']].map(([v, l]) => `<button type="button" class="chip" data-act="quick-alert" data-type="${v}">${l}</button>`).join('')}</div>
     </section>
+    ${typeof rgPovrec === 'function' ? rgPovrec() : ''}
     ${typeof rgInfos === 'function' ? rgInfos() : ''}
   </div>
   <div class="sec-mini"><div class="kicker"><span class="claws"><i></i><i></i><i></i></span>Multivue</div>

@@ -27,6 +27,7 @@ function resetSpec(key) {
     case 'chatpin': return whole('Message du chat', 'chatpin');
     case 'mvp': return whole('Joueur du match', 'mvp');
     case 'bracket': return whole('Tournoi', 'bracket');
+    case 'povrec': return whole('Replay des POV', 'povrec');
     case 'alerts': return part('Alertes', 'settings', ['alertDuration']);
     case 'chat': return part('Chat', 'settings.twitch', ['chatHide', 'ignore', 'hideCommands']);
     case 'twalerts': return whole('Alertes Twitch', 'settings.twitch.alerts');

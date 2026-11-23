@@ -130,6 +130,33 @@
   .logo-box .glint { position: absolute; inset: 0; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
     background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.9) 50%, transparent 60%) no-repeat; background-size: 300% 100%; background-position: 130% 0; animation: plGlint 14s ease-in-out 3s infinite; }
 
+
+  /* Replay d'une POV (Admin › Régie › Replay des POV) : plein écran au-dessus des POV, sous la transition logo */
+  #rpv { position: absolute; inset: 0; z-index: 50; background: #000; visibility: hidden; opacity: 0; }
+  #rpv.on { visibility: visible; opacity: 1; }
+  #rpv.fade { transition: opacity .35s ease, visibility 0s .35s; }
+  #rpv.fade.on { transition: opacity .35s ease; }
+  #rpv video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #rpv .edge { position: absolute; inset: 0; box-shadow: inset 0 0 0 6px rgba(153,51,204,.6), inset 0 0 140px rgba(86,28,115,.5); pointer-events: none; }
+  #rpv .c { position: absolute; width: 70px; height: 70px; border: 0 solid var(--kx-white); opacity: .9; }
+  #rpv .c.tl { left: 36px; top: 36px; border-width: 4px 0 0 4px; } #rpv .c.tr { right: 36px; top: 36px; border-width: 4px 4px 0 0; }
+  #rpv .c.bl { left: 36px; bottom: 36px; border-width: 0 0 4px 4px; } #rpv .c.br { right: 36px; bottom: 36px; border-width: 0 4px 4px 0; }
+  #rpv .band { position: absolute; left: 70px; top: 70px; display: flex; align-items: stretch; height: 84px; filter: var(--kx-shadow); }
+  #rpv .band .lg { width: 84px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(243,241,241,.2), transparent 55%), var(--kx-grad); }
+  #rpv .band .lg img { width: 54px; height: 54px; object-fit: contain; }
+  #rpv .band .tx { display: flex; align-items: center; gap: 18px; padding: 0 46px 0 24px; background: rgba(42,43,44,.95); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  #rpv .band .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--kx-violet); animation: rpvRec 1.2s ease-in-out infinite; }
+  @keyframes rpvRec { 50% { opacity: .25; } }
+  #rpv .band b { font: italic 900 62px/1 var(--f-title); letter-spacing: .06em; text-transform: uppercase; padding-right: 4px; }
+  #rpv .band .who { font: italic 800 34px/1 var(--f-title); text-transform: uppercase; color: var(--kx-silver); padding-left: 18px; border-left: 2px solid rgba(201,204,209,.35); }
+  #rpv .band .slow { display: none; padding: 7px 12px; font: 800 14px/1 var(--f-body); letter-spacing: .22em; text-transform: uppercase; background: var(--kx-white); color: var(--kx-bg); }
+  #rpv.slow .band .slow { display: inline-block; }
+  #rpv .bar { position: absolute; left: 70px; right: 70px; bottom: 58px; height: 4px; background: rgba(243,241,241,.18); }
+  #rpv .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--kx-violet); box-shadow: 0 0 12px rgba(153,51,204,.9); }
+  #rpv.on .band .lg { animation: rpvLg .45s var(--kx-out) backwards; }
+  #rpv.on .band .tx { animation: kx-wipe .6s var(--kx-out) .1s backwards; }
+  #rpv.on .band b .kx-ch { animation: kx-chIn .55s var(--kx-out) backwards; animation-delay: calc(.25s + var(--i) * 40ms); }
+  @keyframes rpvLg { from { transform: scaleY(0); } }
 </style>
 </head>
 <body class="overlay">
@@ -153,6 +180,10 @@
 </div>
 <div id="players"></div>
 <div id="deco"></div>
+<div id="rpv" aria-hidden="true"><video id="rpvV" playsinline preload="auto"></video><div class="edge"></div>
+  <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+  <div class="band"><div class="lg" id="rpvLg"></div><div class="tx"><i class="dot"></i><b class="t-title" id="rpvWord"></b><span class="who" id="rpvWho"></span><span class="slow">Ralenti</span></div></div>
+  <div class="bar"><i id="rpvBar"></i></div></div>
 <script src="/js/kx.js"></script>
 <script src="/js/kx-sting.js"></script>
 <script src="/js/kx-fx.js"></script>
@@ -279,6 +310,45 @@ function render(st) {
 const sting = KXSting.mount(document.body);
 function playSting(st) { sting.play('logo', st || lastSt); }
 KX.on('trigger', t => { if (t && t.kind === 'pov-sting') playSting(); });
+
+/* Replay d'une POV : le clip (dernières secondes enregistrées par l'application) passe en plein écran,
+   entre deux transitions logo (ou un fondu) ; le son ne sort que dans OBS (jamais dans l'aperçu de l'admin) */
+const rpv = document.getElementById('rpv'), rpvV = document.getElementById('rpvV'), rpvBar = document.getElementById('rpvBar');
+document.getElementById('rpvWord').innerHTML = KX.chars('Replay');
+let rpvOn = false, rpvSeq = 0, rpvRaf = 0;
+function rpvMode() { const m = (lastSt && lastSt.pov && lastSt.pov.transition) || 'logo'; return m === 'logo' || m === 'sweep' ? m : 'fade'; }
+function rpvCover(fn) { // change ce qui est à l'écran pendant que la transition le couvre
+  const m = rpvMode();
+  if (m === 'logo') { playSting(); later(fn, 1000); }
+  else if (m === 'sweep') { sting.play('sweep', lastSt); later(fn, 450); }
+  else { rpv.classList.add('fade'); fn(); }
+}
+function rpvTick() { if (!rpvOn) return; const d = rpvV.duration || 0; rpvBar.style.width = (d ? Math.min(100, rpvV.currentTime / d * 100) : 0) + '%'; rpvRaf = requestAnimationFrame(rpvTick); }
+function rpvStart(t) {
+  const seq = ++rpvSeq;
+  rpv.classList.toggle('slow', !!t.slow);
+  document.getElementById('rpvWho').textContent = t.pseudo || '';
+  document.getElementById('rpvLg').innerHTML = KX.logo(lastSt || {});
+  rpvV.muted = !window.obsstudio || !t.sound || KX.mv; // aperçu admin / multivue : image seulement
+  rpvV.volume = Math.max(0, Math.min(1, (Number(t.volume) || 0) / 100));
+  rpvV.src = t.clip; rpvV.load();
+  const go = () => {
+    if (seq !== rpvSeq) return;
+    rpvV.playbackRate = t.slow ? 0.5 : 1; rpvV.defaultPlaybackRate = rpvV.playbackRate;
+    rpvV.currentTime = 0;
+    rpvV.play().catch(() => { rpvV.muted = true; rpvV.play().catch(() => {}); });
+    rpvOn = true; rpv.classList.add('on'); rpvBar.style.width = '0%'; cancelAnimationFrame(rpvRaf); rpvTick();
+  };
+  rpvCover(go);
+}
+function rpvStop() {
+  if (!rpvOn) return;
+  const seq = ++rpvSeq;
+  rpvCover(() => { if (seq !== rpvSeq) return; rpvOn = false; rpv.classList.remove('on'); cancelAnimationFrame(rpvRaf); rpvV.pause(); rpvV.removeAttribute('src'); rpvV.load(); });
+}
+rpvV.addEventListener('ended', rpvStop);
+rpvV.addEventListener('error', () => { if (rpvOn) rpvStop(); });
+KX.on('trigger', t => { if (t && t.kind === 'replay-pov') rpvStart(t); if (t && t.kind === 'replay-pov-stop') rpvStop(); });
 
 function leave(el) {
   el.classList.remove('enter', 'flash'); el.classList.add('leave');

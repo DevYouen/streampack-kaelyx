@@ -50,6 +50,9 @@ const DEFAULTS = {
   mvp: { visible: false, player: '', title: 'Joueur du match', stats: [{ label: 'Élims', value: '' }, { label: 'Dégâts', value: '' }, { label: 'Classement', value: '' }] },
   // Arbre de tournoi (/tournoi) : size équipes (4, 8 ou 16), size - 1 matchs ; seuls les noms du 1er tour sont saisis
   bracket: { title: 'Tournoi', size: 8, matches: [] },
+  // Replay des POV (application de bureau) : les `seconds` dernières secondes de chaque POV, rejouées dans /pov
+  // who : 'slots' (POV à l'écran) | 'all' (tous les joueurs) ; quality : '720' | '1080' ; save : copie MP4 dans Documents\…\replays
+  povrec: { enabled: false, seconds: 30, quality: '720', who: 'slots', slow: false, sound: true, volume: 80, save: false },
   // Desk caster : 1 à 3 casters, plein écran (/caster) ou petites cams sur le jeu (/caster/pip)
   casters: { kicker: 'Desk', title: 'Analyse', showScore: true, pipPos: 'tr', pipSize: 'm', list: [] },
   // Cadre webcam seul (/cam) : la source OBS fait la taille du cadre
@@ -127,6 +130,9 @@ function normalize(s) {
   const br = out.bracket; br.size = [4, 8, 16].includes(Number(br.size)) ? Number(br.size) : 8;
   br.matches = Array.from({ length: br.size - 1 }, (_, i) => { const m = fill(MATCH, isObj(br.matches[i]) ? br.matches[i] : {}); m.sa = clampN(m.sa, 0, 99); m.sb = clampN(m.sb, 0, 99); return m; });
   out.goal.current = clampN(out.goal.current, 0, 1e7); out.goal.target = clampN(out.goal.target, 1, 1e7);
+  const pr = out.povrec; pr.seconds = clampN(pr.seconds, 10, 60); pr.volume = clampN(pr.volume, 0, 100);
+  if (!['720', '1080'].includes(String(pr.quality))) pr.quality = '720'; pr.quality = String(pr.quality);
+  if (!['slots', 'all'].includes(pr.who)) pr.who = 'slots';
   if (!['main', 'none', 'all'].includes(pv.audio)) pv.audio = 'main';
   if (!['logo', 'sweep', 'fade', 'none'].includes(pv.transition)) pv.transition = 'logo';
   for (const p of out.players) {
@@ -279,12 +285,79 @@ const ACTIONS = {
   replay: () => { obs.play({ slow: false }).catch(e => broadcast('toast', { error: e.message })); },
   'replay-slow': () => { obs.play({ slow: true }).catch(e => broadcast('toast', { error: e.message })); },
   'replay-stop': () => { obs.stop(); },
+  // Replay d'une POV : arg = identifiant ou n° du joueur (comme « Mettre en grand »), sans arg = POV principale
+  'replay-pov': arg => povReplay(arg, !!state.povrec.slow),
+  'replay-pov-slow': arg => povReplay(arg, true),
+  'replay-pov-stop': () => { povEnd(true); },
   count: arg => { // ex. starting-5 : compte à rebours de 5 min sur Starting soon ; starting-0 : arrêt
     const [k, m] = String(arg || '').split('-'); const sc = state.scenes[k]; if (!sc) return false;
     const min = Number(m) || 0; sc.endAt = min ? Date.now() + min * 60000 : 0; sc.startAt = Date.now(); commit();
   }
 };
 function doAction(name, arg) { const f = ACTIONS[name]; if (!f) return false; return f(arg) !== false; }
+
+/* ---------- Replay des POV ----------
+   L'enregistrement tourne dans l'application de bureau (electron/povrec.js, branché par setPovRec) ; ici : clips et lecture. */
+let povrec = null;                                   // { clip(id, seconds) -> Promise<{ buf, duration }> }
+let povStatus = { supported: false, list: [], playing: null };
+const povClips = new Map();                          // n° -> { buf, at }
+let povEndT = null;
+const povSend = () => broadcast('povrec', povStatus);
+function povPlayer(arg) {
+  const P = state.players;
+  if (arg === undefined || arg === null || arg === '' || arg === 'main') return P.find(p => p.id === state.pov.slots[0]);
+  return P.find(p => p.id === arg) || P[Number(arg) - 1];
+}
+async function povReplay(arg, slow) {
+  if (!povrec) return broadcast('toast', { error: 'Replay des POV : disponible dans l’application de bureau' });
+  if (!state.povrec.enabled) return broadcast('toast', { error: 'Replay des POV désactivé (Admin › Interactif)' });
+  const p = povPlayer(arg);
+  if (!p) return broadcast('toast', { error: 'Replay : aucun joueur sur cette POV' });
+  if (povStatus.busy) return; // un clip est déjà en préparation
+  povStatus.busy = p.id; povSend();
+  try {
+    const c = await povrec.clip(p.id, state.povrec.seconds);
+    const id = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+    povClips.set(id, { buf: c.buf, at: Date.now() });
+    while (povClips.size > 4) povClips.delete(povClips.keys().next().value); // mémoire : les 4 derniers clips
+    const rate = slow ? 0.5 : 1, length = c.duration / rate;
+    povStatus.playing = { id: p.id, pseudo: p.pseudo, slow, until: Date.now() + length * 1000 + 2500 };
+    broadcast('trigger', { kind: 'replay-pov', clip: `/povrec/clip/${id}.mp4`, player: p.id, pseudo: p.pseudo, slow, duration: c.duration,
+      sound: !!state.povrec.sound, volume: state.povrec.volume, at: Date.now() });
+    clearTimeout(povEndT); povEndT = setTimeout(() => povEnd(false), length * 1000 + 2500);
+    if (state.povrec.save) povSave(c.buf, p);
+  } catch (e) {
+    broadcast('toast', { error: `Replay de ${p.pseudo} : ${e.message}` });
+  }
+  povStatus.busy = null; povSend();
+}
+function povEnd(stop) {
+  clearTimeout(povEndT);
+  if (stop && povStatus.playing) broadcast('trigger', { kind: 'replay-pov-stop', at: Date.now() });
+  povStatus.playing = null; povSend();
+}
+// Copie du clip dans Documents\Streampack Kaelyx\replays (réglage « Garder une copie »)
+function povSave(buf, p) {
+  const dir = path.join(USER_DIR || DATA_DIR, 'replays');
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  const name = `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}h${z(d.getMinutes())}m${z(d.getSeconds())}_${fileSlug(p.pseudo) || 'pov'}.mp4`;
+  fs.mkdir(dir, { recursive: true }, () => fs.writeFile(path.join(dir, name), buf, e => { if (e) console.error('  Replay non enregistré :', e.message); }));
+}
+// Clip MP4 (avec Range : le lecteur vidéo de l'overlay demande le fichier par morceaux)
+function sendClip(req, res, id) {
+  const c = povClips.get(id);
+  if (!c) return send(res, 404, 'Introuvable', 'text/plain; charset=utf-8');
+  const size = c.buf.length, m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (m) {
+    let a = m[1] === '' ? size - Number(m[2]) : Number(m[1]), b = m[1] !== '' && m[2] !== '' ? Number(m[2]) : size - 1;
+    a = Math.max(0, a); b = Math.min(size - 1, b);
+    if (a > b) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); return res.end(); }
+    res.writeHead(206, { 'Content-Type': 'video/mp4', 'Content-Length': b - a + 1, 'Content-Range': `bytes ${a}-${b}/${size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' });
+    return res.end(c.buf.subarray(a, b + 1));
+  }
+  res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' });
+  res.end(c.buf);
+}
 
 // Réglages enregistrés (configurations par événement) : data/presets.json
 const PRESETS = path.join(DATA_DIR, 'presets.json');
@@ -463,6 +536,9 @@ async function handle(req, res) {
     return send(res, 200, { token: newSession() });
   }
 
+  // Replay des POV : état (admin) et clips (overlay /pov)
+  if (p === '/api/povrec' && req.method === 'GET') return send(res, 200, povStatus);
+  { const m = /^\/povrec\/clip\/([a-z0-9]{6,24})\.mp4$/.exec(p); if (m && req.method === 'GET') return sendClip(req, res, m[1]); }
   // Valeurs d'origine de chaque module (boutons « Réinitialiser » de l'admin)
   if (p === '/api/defaults' && req.method === 'GET') return send(res, 200, { state: normalize({}), player: fill(PLAYER, {}) });
   if (p === '/api/state') {
@@ -600,6 +676,8 @@ module.exports = new (require('events'))();
 module.exports.port = PORT;
 module.exports.broadcast = broadcast;
 module.exports.setUpdater = u => { updater = u; };
+module.exports.setPovRec = r => { povrec = r; povStatus.supported = !!r; povSend(); };
+module.exports.povrecStatus = s => { Object.assign(povStatus, s, { supported: !!povrec }); povSend(); };
 module.exports.action = doAction;
 module.exports.chatIn = m => pollVote(m); // tests : simule un message du chat
 module.exports.getState = () => state;

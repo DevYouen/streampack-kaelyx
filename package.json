@@ -28,6 +28,8 @@
       "obs.js",
       "public/**",
       "electron/main.js",
+      "electron/povrec.js",
+      "electron/povrec-preload.js",
       "electron/icon.png",
       "package.json"
     ],

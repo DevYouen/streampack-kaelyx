@@ -20,7 +20,7 @@ const USER_DIR = path.join(app.getPath('documents'), APP_NAME + (DEV ? ' (dev)' 
 // Fichiers livrés avec l'application (hors asar pour pouvoir les copier)
 const RES = app.isPackaged ? process.resourcesPath : path.join(__dirname, '..');
 
-let win, tray, server, quitting = false;
+let win, tray, server, povrec, quitting = false;
 const ICON = path.join(__dirname, 'icon.png');
 const icon = () => fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : nativeImage.createEmpty();
 
@@ -208,7 +208,7 @@ function setupUpdates() {
 // --- Démarrage -----------------------------------------------------------
 app.on('second-instance', showWindow);
 app.on('window-all-closed', () => {}); // on reste près de l'horloge
-app.on('before-quit', () => { quitting = true; try { server && server.close(); } catch {} });
+app.on('before-quit', () => { quitting = true; try { povrec && povrec.destroy(); } catch {} try { server && server.close(); } catch {} });
 app.on('will-quit', () => globalShortcut.unregisterAll());
 
 // --- Raccourcis clavier globaux : marchent même quand le jeu ou OBS est au premier plan (et depuis un Stream Deck) ---
@@ -217,7 +217,9 @@ const GLOBAL_KEYS = [
   ['Control+Alt+S', 'stinger'], ['Control+Alt+P', 'pov-sting'], ['Control+Alt+L', 'lowerthird'],
   ['Control+Alt+D', 'ticker'], ['Control+Alt+B', 'scoreboard'], ['Control+Alt+K', 'sponsors'], ['Control+Alt+O', 'goal'],
   ['Control+Alt+R', 'replay'], ['Control+Alt+Shift+R', 'replay-slow'],
-  ...Array.from({ length: 8 }, (_, i) => [`Control+Alt+F${i + 1}`, 'pov-main', String(i + 1)])
+  ...Array.from({ length: 8 }, (_, i) => [`Control+Alt+F${i + 1}`, 'pov-main', String(i + 1)]),
+  // Replay des 30 dernières secondes de la POV du joueur 1 à 8
+  ...Array.from({ length: 8 }, (_, i) => [`Control+Alt+Shift+F${i + 1}`, 'replay-pov', String(i + 1)])
 ];
 let keysOn = null;
 function applyGlobalKeys(on) {
@@ -327,5 +329,8 @@ app.whenReady().then(async () => {
   createWindow();
   setupUpdates();
   applyGlobalKeys(server.getState().settings.globalKeys !== false);
+  // Replay des POV : enregistrement continu dans des fenêtres cachées (seulement si activé dans Admin › Interactif)
+  try { povrec = require('./povrec')({ server }); server.setPovRec(povrec); }
+  catch (e) { console.error('Replay des POV indisponible :', e && e.message); }
   server.on('state', st => applyGlobalKeys(st.settings?.globalKeys !== false));
 });

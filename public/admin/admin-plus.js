@@ -176,7 +176,8 @@ const DECK_ACTIONS = [
   ['stinger', '', 'Lancer le stinger'], ['pov-sting', '', 'Animation logo des POV'], ['lowerthird', '', 'Lower third : afficher / masquer'],
   ['ticker', '', 'Ticker : afficher / masquer'], ['scoreboard', '', 'Scoreboard : afficher / masquer'], ['sponsors', '', 'Sponsors : afficher / masquer'],
   ['goal', '', 'Objectif : afficher / masquer'], ['goal-plus', '', 'Objectif +1'], ['score-a', '', 'Score VS : équipe A +1'], ['score-b', '', 'Score VS : équipe B +1'],
-  ['count', 'starting-5', 'Starting soon : 5 min'], ['count', 'brb-5', 'BRB : 5 min'], ['alert', 'follow', 'Alerte de test (follow)']
+  ['count', 'starting-5', 'Starting soon : 5 min'], ['count', 'brb-5', 'BRB : 5 min'], ['alert', 'follow', 'Alerte de test (follow)'],
+  ['replay-pov', '', 'Replay de la POV principale'], ['replay-pov-slow', '', 'Replay de la POV principale (ralenti)'], ['replay-pov-stop', '', 'Arrêter le replay des POV']
 ];
 function deckCard() {
   if (!deck) { api('/api/deck/info').then(d => { deck = d; if (tab === 'settings') renderSoon(); }).catch(() => {}); }
@@ -184,11 +185,12 @@ function deckCard() {
   const url = (a, arg) => deck ? `${base}${a}${arg ? '/' + encodeURIComponent(arg) : ''}?key=${deck.key}` : '…';
   const players = S.players.map((p, i) => ['pov-main', p.id, 'Mettre en grand : ' + p.pseudo + (i < 8 ? ` (Ctrl + Alt + F${i + 1})` : '')]);
   const layouts = S.pov.layouts.map(l => ['pov-layout', l.id, 'Mise en page POV : ' + l.name]);
+  const replays = S.players.map((p, i) => ['replay-pov', p.id, 'Replay POV : ' + p.pseudo + (i < 8 ? ` (Ctrl + Alt + Maj + F${i + 1})` : '')]);
   return `<div class="card" id="deckCard"><div class="card-head"><h3 class="grow">Stream Deck & raccourcis globaux</h3></div>
     <div class="row" style="margin-bottom:12px">${toggle('Raccourcis clavier globaux (marchent même dans le jeu ou dans OBS)', 'settings.globalKeys')}</div>
-    <p class="note" style="margin-bottom:12px">Application de bureau : <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> stinger · <kbd>P</kbd> animation logo · <kbd>L</kbd> lower third · <kbd>D</kbd> ticker · <kbd>B</kbd> scoreboard · <kbd>K</kbd> sponsors · <kbd>O</kbd> objectif · <kbd>F1</kbd>…<kbd>F8</kbd> mettre en grand le joueur 1 à 8. Sur un Stream Deck, l’action <b>Raccourci clavier</b> peut les envoyer.</p>
+    <p class="note" style="margin-bottom:12px">Application de bureau : <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> stinger · <kbd>P</kbd> animation logo · <kbd>L</kbd> lower third · <kbd>D</kbd> ticker · <kbd>B</kbd> scoreboard · <kbd>K</kbd> sponsors · <kbd>O</kbd> objectif · <kbd>F1</kbd>…<kbd>F8</kbd> mettre en grand le joueur 1 à 8 · <kbd>Maj</kbd> + <kbd>F1</kbd>…<kbd>F8</kbd> replay de sa POV. Sur un Stream Deck, l’action <b>Raccourci clavier</b> peut les envoyer.</p>
     <p class="note" style="margin-bottom:10px">Ou, avec l’extension <b>Web Requests</b> (ou <b>API Ninja</b>) du Stream Deck : une requête GET sur l’adresse du bouton. La clé est personnelle : en cas de fuite, renouvelle-la.</p>
-    <div class="deck-list">${[...DECK_ACTIONS, ...players, ...layouts].map(([a, arg, l]) => `<div class="deck-row"><b>${esc(l)}</b><code>${esc(url(a, arg))}</code>
+    <div class="deck-list">${[...DECK_ACTIONS, ...players, ...replays, ...layouts].map(([a, arg, l]) => `<div class="deck-row"><b>${esc(l)}</b><code>${esc(url(a, arg))}</code>
       <button type="button" class="btn ghost" data-act="deck-copy" data-u="${esc(url(a, arg))}" ${deck ? '' : 'disabled'}>Copier</button></div>`).join('')}</div>
     <div class="row" style="margin-top:12px"><button type="button" class="btn ghost danger" data-act="deck-reset">Nouvelle clé</button></div></div>`;
 }

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Source POV — Kaelyx</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #v, #v iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #C9CCD1; font: 600 28px/1.3 system-ui, sans-serif; text-align: center; }
+</style>
+</head>
+<body>
+<!-- Fenêtre cachée de l'application de bureau : la POV d'un joueur en plein cadre, capturée pour les replays (son coupé côté PC) -->
+<div id="v"></div>
+<script src="/js/kx.js"></script>
+<script>
+const q = new URLSearchParams(location.search), PID = q.get('p'), H = Number(q.get('h')) || 720;
+// Même source que l'overlay /pov
+const channelOf = p => (p.povChannel || p.twitch || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?twitch\.tv\//i, '').split(/[/?#]/)[0].toLowerCase();
+function sourceOf(p) {
+  if (!p) return null;
+  if (p.povSource === 'vdo') return p.povVdo ? { type: 'vdo', id: p.povVdo } : null;
+  if (p.povSource === 'obs') return null;
+  const c = channelOf(p);
+  return c ? { type: 'twitch', id: c } : null;
+}
+let key = '', player = null, frame = null;
+const box = document.getElementById('v');
+function loadTwitch() {
+  return new Promise(ok => {
+    if (window.Twitch && Twitch.Player) return ok();
+    const s = document.createElement('script');
+    s.src = 'https://player.twitch.tv/js/embed/v1.js'; s.onload = ok; s.onerror = ok;
+    document.head.appendChild(s);
+  });
+}
+// Qualité Twitch la plus proche de la capture (inutile de télécharger du 1080p pour un replay en 720p)
+function pickQuality() {
+  try {
+    const qs = player.getQualities() || [];
+    const h = g => g === 'chunked' ? 99999 : parseInt(g, 10) || 0;
+    const fit = qs.map(x => x.group).filter(g => g && g !== 'auto' && h(g) <= H).sort((a, b) => h(b) - h(a))[0];
+    const src = qs.find(x => x.group === 'chunked');
+    const want = src && parseInt(src.name, 10) <= H ? 'chunked' : fit;
+    if (want && player.getQuality() !== want) player.setQuality(want);
+  } catch {}
+}
+async function build(src) {
+  box.innerHTML = ''; player = null; frame = null;
+  if (!src) { box.innerHTML = '<div class="msg">Pas de POV Twitch ou VDO.Ninja pour ce joueur</div>'; return; }
+  if (src.type === 'vdo') {
+    frame = document.createElement('iframe');
+    frame.allow = 'autoplay; fullscreen';
+    frame.src = `https://vdo.ninja/?view=${encodeURIComponent(src.id)}&cleanoutput&noheader&autoplay`;
+    box.appendChild(frame);
+    return;
+  }
+  await loadTwitch();
+  const inner = document.createElement('div'); inner.id = 'tw' + Date.now(); inner.style.cssText = 'position:absolute;inset:0';
+  box.appendChild(inner);
+  if (window.Twitch && Twitch.Player) {
+    player = new Twitch.Player(inner.id, { channel: src.id, width: '100%', height: '100%', parent: [location.hostname], autoplay: true, muted: false });
+    player.addEventListener(Twitch.Player.PLAYING, () => { kxKick(); setTimeout(pickQuality, 1500); });
+  } else {
+    inner.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(src.id)}&parent=${location.hostname}&muted=false&autoplay=true" allow="autoplay; fullscreen"></iframe>`;
+  }
+}
+// Relancé régulièrement par l'application : son au maximum dans la capture (la fenêtre reste muette sur le PC), lecture en cours
+window.kxKick = () => {
+  try {
+    if (player) { player.setMuted(false); player.setVolume(1); if (player.isPaused()) player.play(); pickQuality(); }
+    if (frame) { frame.contentWindow.postMessage({ mute: false }, '*'); frame.contentWindow.postMessage({ volume: 1 }, '*'); }
+  } catch {}
+};
+KX.on('state', st => {
+  const src = sourceOf((st.players || []).find(p => p.id === PID));
+  const k = JSON.stringify(src);
+  if (k === key) return;
+  key = k; build(src);
+});
+</script>
+</body>
+</html>
