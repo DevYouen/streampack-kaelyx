@@ -21,6 +21,20 @@ const KXSting = (() => {
       repeating-linear-gradient(90deg, rgba(243,241,241,.024) 0 2px, rgba(243,241,241,0) 2px 30px),
       #2A2B2C; }
   .kxs.sweep .kxs-p2 { background: repeating-linear-gradient(90deg, rgba(243,241,241,.03) 0 2px, rgba(243,241,241,0) 2px 30px), #561C73; }
+  /* Traînées de mouvement : prolongent le bord des panneaux pendant la partie la plus rapide du geste (flou de bougé) */
+  .kxs-sm { position: absolute; top: -200px; height: 1480px; opacity: 0; will-change: transform, opacity; transform: translateX(-3400px) skewX(-24deg); }
+  .kxs-sm.r { left: 0; width: 3560px; }
+  .kxs-sm.l { left: -560px; width: 560px; }
+  .kxs-sm.r.c1 { background: linear-gradient(90deg, rgba(153,51,204,0) 0 3000px, rgba(153,51,204,.85) 3000px, rgba(153,51,204,0) 3560px); }
+  .kxs-sm.l.c1 { background: linear-gradient(270deg, rgba(86,28,115,.85), rgba(86,28,115,0)); }
+  .kxs-sm.r.c2 { background: linear-gradient(90deg, rgba(42,43,44,0) 0 3000px, rgba(42,43,44,.9) 3000px, rgba(42,43,44,0) 3560px); }
+  .kxs-sm.l.c2 { background: linear-gradient(270deg, rgba(42,43,44,.9), rgba(42,43,44,0)); }
+  .kxs.sweep .kxs-sm.r.c2 { background: linear-gradient(90deg, rgba(86,28,115,0) 0 3000px, rgba(86,28,115,.9) 3000px, rgba(86,28,115,0) 3560px); }
+  .kxs.sweep .kxs-sm.l.c2 { background: linear-gradient(270deg, rgba(86,28,115,.9), rgba(86,28,115,0)); }
+  /* Reflet qui balaie le panneau quand il se pose */
+  .kxs-sheen { position: absolute; top: 0; bottom: 0; left: -420px; width: 320px; will-change: transform;
+    background: linear-gradient(90deg, rgba(243,241,241,0), rgba(243,241,241,.075), rgba(243,241,241,0)); }
+  .kxs.sweep .kxs-sheen { display: none; }
   /* Bandes de la marque (comme sur les scènes), qui dérivent lentement pendant que le logo est affiché */
   .kxs-drift { position: absolute; top: 0; bottom: 0; left: 2150px; width: 400px; will-change: transform; }
   .kxs-drift i { position: absolute; top: 0; bottom: 0; }
@@ -57,7 +71,9 @@ const KXSting = (() => {
         ['p2', [{ transform: P(OFF_L) }, { transform: P(COVER) }], 520, 70, WHIP, 'both'],
         ['drift', [{ transform: 'translateX(0)' }, { transform: 'translateX(-320px)' }], 2620, 0, 'linear', 'both'],
         ['inner', [{ transform: 'translateX(-130px)' }, { transform: 'translateX(0)' }], 900, 70, OUT, 'both'],
-        ['logo', [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 1500, 600, 'linear', 'both'],
+        ['logo', [{ transform: 'perspective(1400px) rotateY(34deg)' }, { transform: 'perspective(1400px) rotateY(0deg)' }], 1000, 70, OUT, 'both'],
+        ['img', [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 1500, 600, 'linear', 'both'],
+        ['sheen', [{ transform: 'translateX(0)' }, { transform: 'translateX(3900px)' }], 1000, 360, 'cubic-bezier(.45, 0, .25, 1)', 'both'],
         ['name', [{ transform: 'translateY(105%)' }, { transform: 'translateY(0)' }], 560, 520, OUT, 'both'],
         ['line', [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 560, 640, OUT, 'both'],
         ['sub', [{ transform: 'translateY(105%)' }, { transform: 'translateY(0)' }], 560, 700, OUT, 'both'],
@@ -66,6 +82,7 @@ const KXSting = (() => {
         ['line', [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], 260, 1880, IN, 'forwards'],
         ['name', [{ transform: 'translateY(0)' }, { transform: 'translateY(105%)' }], 260, 1900, IN, 'forwards'],
         ['inner', [{ transform: 'translateX(0)' }, { transform: 'translateX(190px)' }], 520, 1990, IN, 'forwards'],
+        ['logo', [{ transform: 'perspective(1400px) rotateY(0deg)' }, { transform: 'perspective(1400px) rotateY(-30deg)' }], 520, 1990, IN, 'forwards'],
         ['p2', [{ transform: P(COVER) }, { transform: P(OFF_R) }], 540, 1980, EXIT, 'forwards'],
         ['p1', [{ transform: P(COVER) }, { transform: P(OFF_R) }], 560, 2060, EXIT, 'forwards']
       ]
@@ -76,7 +93,9 @@ const KXSting = (() => {
         ['p1', [{ transform: P(OFF_L) }, { transform: P(COVER) }], 420, 0, WHIP, 'both'],
         ['p2', [{ transform: P(OFF_L) }, { transform: P(COVER) }], 420, 50, WHIP, 'both'],
         ['inner', [{ transform: 'translateX(-90px)' }, { transform: 'translateX(0)' }], 520, 50, OUT, 'both'],
+        ['logo', [{ transform: 'perspective(1400px) rotateY(30deg)' }, { transform: 'perspective(1400px) rotateY(0deg)' }], 560, 50, OUT, 'both'],
         ['inner', [{ transform: 'translateX(0)' }, { transform: 'translateX(140px)' }], 420, 560, IN, 'forwards'],
+        ['logo', [{ transform: 'perspective(1400px) rotateY(0deg)' }, { transform: 'perspective(1400px) rotateY(-26deg)' }], 420, 560, IN, 'forwards'],
         ['p2', [{ transform: P(COVER) }, { transform: P(OFF_R) }], 440, 520, EXIT, 'forwards'],
         ['p1', [{ transform: P(COVER) }, { transform: P(OFF_R) }], 460, 600, EXIT, 'forwards']
       ]
@@ -90,7 +109,8 @@ const KXSting = (() => {
     const root = document.createElement('div');
     root.className = 'kxs'; root.setAttribute('aria-hidden', 'true');
     root.innerHTML = `<div class="kxs-p kxs-p1"><i class="kxs-edge l"></i><i class="kxs-edge r"></i></div>
-      <div class="kxs-p kxs-p2"><div class="kxs-drift"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div><div class="kxs-mat"><div class="kxs-in">
+      <i class="kxs-sm r c1"></i><i class="kxs-sm l c1"></i><i class="kxs-sm r c2"></i><i class="kxs-sm l c2"></i>
+      <div class="kxs-p kxs-p2"><i class="kxs-sheen"></i><div class="kxs-drift"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div><div class="kxs-mat"><div class="kxs-in">
         <div class="kxs-logo"><img alt=""></div>
         <div class="kxs-name"><span class="kxs-mask"><b></b></span><i class="kxs-line"></i><span class="kxs-mask"><small></small></span></div>
       </div></div></div>`;
@@ -98,8 +118,19 @@ const KXSting = (() => {
     const el = {
       p1: root.querySelector('.kxs-p1'), p2: root.querySelector('.kxs-p2'), drift: root.querySelector('.kxs-drift'),
       inner: root.querySelector('.kxs-in'), logo: root.querySelector('.kxs-logo'), name: root.querySelector('.kxs-mask b'),
-      line: root.querySelector('.kxs-line'), sub: root.querySelector('.kxs-mask small')
+      line: root.querySelector('.kxs-line'), sub: root.querySelector('.kxs-mask small'), img: root.querySelector('.kxs-logo img'),
+      sheen: root.querySelector('.kxs-sheen'), smR1: root.querySelector('.kxs-sm.r.c1'), smL1: root.querySelector('.kxs-sm.l.c1'),
+      smR2: root.querySelector('.kxs-sm.r.c2'), smL2: root.querySelector('.kxs-sm.l.c2')
     };
+    // Chaque geste d'un panneau a sa traînée : devant le bord à l'entrée, derrière le bord à la sortie,
+    // visible surtout au milieu du geste (là où il va le plus vite)
+    const SMEAR = { p1: ['smR1', 'smL1'], p2: ['smR2', 'smL2'] };
+    const withSmears = steps => steps.flatMap(st => {
+      const sm = SMEAR[st[0]]; if (!sm) return [st];
+      const [, frames, duration, delay, easing] = st;
+      const key = frames[0].transform === P(OFF_L) ? sm[0] : sm[1];
+      return [st, [key, [{ transform: frames[0].transform, opacity: 0 }, { opacity: 1, offset: .5 }, { transform: frames[1].transform, opacity: 0 }], duration, delay, easing, 'both']];
+    });
     const img = root.querySelector('img');
     let anims = [], endT = null;
 
@@ -118,7 +149,7 @@ const KXSting = (() => {
       stop(); dress(st || (typeof KX !== 'undefined' ? KX.state : null));
       root.classList.toggle('sweep', kind === 'sweep');
       root.classList.add('go');
-      anims = tl.steps.map(([k, frames, duration, delay, easing, fill]) => el[k].animate(frames, { duration, delay, easing, fill }));
+      anims = withSmears(tl.steps).map(([k, frames, duration, delay, easing, fill]) => el[k].animate(frames, { duration, delay, easing, fill }));
       endT = setTimeout(stop, tl.total + 60);
       return tl.total;
     }
